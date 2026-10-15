@@ -1,0 +1,34 @@
+# ── Secretos (nunca versionar) ──
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# ── Python ──
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── Node / frontend ──
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# ── Rust / Tauri ──
+target/
+desktop/src-tauri/gen/schemas/
+
+# ── Sistema / editores ──
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
