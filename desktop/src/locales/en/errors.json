@@ -1,0 +1,29 @@
+{
+  "unknown": "An unexpected error occurred.",
+  "common": {
+    "internal_error": "Internal server error. Please try again later.",
+    "validation_error": "Some data is not valid.",
+    "not_found": "The requested resource does not exist.",
+    "method_not_allowed": "Operation not allowed.",
+    "http_error": "Communication error with the server (HTTP {{status}})."
+  },
+  "auth": {
+    "unauthorized": "Your session is not valid. Please sign in again.",
+    "forbidden": "You do not have permission to perform this action."
+  },
+  "database": {
+    "unavailable": "The database is unavailable."
+  },
+  "ai": {
+    "provider_unavailable": "The AI service is currently unavailable.",
+    "invalid_response": "The AI service returned an invalid response."
+  },
+  "request": {
+    "not_found": "The request does not exist."
+  },
+  "client": {
+    "network_error": "Could not connect to the server.",
+    "timeout": "The server took too long to respond.",
+    "invalid_response": "The server returned an unexpected response."
+  }
+}
