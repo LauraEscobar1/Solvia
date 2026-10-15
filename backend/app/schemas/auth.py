@@ -1,13 +1,11 @@
 from datetime import datetime
-from typing import Annotated, Literal, Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_core import PydanticCustomError
 
 from app.models.enums import UILanguage, UITheme
-from app.schemas.user import UserRead
-
-Password = Annotated[str, Field(min_length=12, max_length=128)]
+from app.schemas.user import Password, UserRead
 
 
 class LoginRequest(BaseModel):

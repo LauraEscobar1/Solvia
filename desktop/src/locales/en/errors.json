@@ -26,6 +26,21 @@
   "request": {
     "not_found": "The request does not exist."
   },
+  "area": {
+    "not_found": "The area does not exist.",
+    "name_taken": "An area with that name already exists.",
+    "invalid_manager": "The manager must be an active supervisor or administrator."
+  },
+  "user": {
+    "not_found": "The user does not exist.",
+    "email_taken": "A user with that email already exists.",
+    "invalid_area": "The selected area does not exist or is deactivated.",
+    "last_admin": "At least one active administrator must remain.",
+    "cannot_deactivate_self": "You cannot deactivate your own account."
+  },
+  "sla": {
+    "incomplete_matrix": "The SLA matrix must contain exactly one policy per priority and stage."
+  },
   "client": {
     "network_error": "Could not connect to the server.",
     "timeout": "The server took too long to respond.",

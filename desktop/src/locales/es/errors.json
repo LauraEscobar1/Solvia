@@ -26,6 +26,21 @@
   "request": {
     "not_found": "La solicitud no existe."
   },
+  "area": {
+    "not_found": "El área no existe.",
+    "name_taken": "Ya existe un área con ese nombre.",
+    "invalid_manager": "El responsable debe ser un supervisor o administrador activo."
+  },
+  "user": {
+    "not_found": "El usuario no existe.",
+    "email_taken": "Ya existe un usuario con ese email.",
+    "invalid_area": "El área seleccionada no existe o está desactivada.",
+    "last_admin": "Debe quedar al menos un administrador activo.",
+    "cannot_deactivate_self": "No puedes desactivar tu propia cuenta."
+  },
+  "sla": {
+    "incomplete_matrix": "La matriz SLA debe incluir exactamente una política por prioridad y etapa."
+  },
   "client": {
     "network_error": "No se pudo conectar con el servidor.",
     "timeout": "El servidor tardó demasiado en responder.",

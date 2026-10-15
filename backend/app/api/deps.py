@@ -14,8 +14,11 @@ from app.db.session import ping_database
 from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.services.areas import AreaService
 from app.services.auth import AuthService
 from app.services.health import DatabaseProbe, HealthService
+from app.services.sla_policies import SlaPolicyService
+from app.services.users import UserService
 
 
 def get_container(request: Request) -> AppContainer:
@@ -89,7 +92,12 @@ def require_roles(*roles: UserRole) -> Callable[[User], Awaitable[User]]:
     return dependency
 
 
-AdminDep = Annotated[User, Depends(require_roles(UserRole.ADMIN))]
+_require_admin = require_roles(UserRole.ADMIN)
+_require_supervisor_or_admin = require_roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+
+AdminDep = Annotated[User, Depends(_require_admin)]
+AdminOnly = Depends(_require_admin)
+SupervisorOrAdminDep = Annotated[User, Depends(_require_supervisor_or_admin)]
 
 
 def get_auth_service(
@@ -99,6 +107,27 @@ def get_auth_service(
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_area_service(session: SessionDep) -> AreaService:
+    return AreaService(session)
+
+
+AreaServiceDep = Annotated[AreaService, Depends(get_area_service)]
+
+
+def get_user_service(session: SessionDep) -> UserService:
+    return UserService(session)
+
+
+UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+
+
+def get_sla_policy_service(session: SessionDep) -> SlaPolicyService:
+    return SlaPolicyService(session)
+
+
+SlaPolicyServiceDep = Annotated[SlaPolicyService, Depends(get_sla_policy_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:
