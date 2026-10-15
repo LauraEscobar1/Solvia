@@ -1,0 +1,22 @@
+{
+  "appName": "Solvia",
+  "tagline": "Gestión inteligente de solicitudes",
+  "comingSoon": "Esta sección estará disponible próximamente.",
+  "loading": "Cargando…",
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  },
+  "actions": {
+    "retry": "Reintentar",
+    "save": "Guardar",
+    "reset": "Restablecer"
+  }
+}
