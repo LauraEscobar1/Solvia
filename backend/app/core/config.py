@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     login_rate_limit_attempts: int = Field(default=5, gt=0)
     login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 
+    seed_admin_email: str | None = None
+    seed_admin_name: str = "Administrador"
+    seed_admin_password: SecretStr | None = None
+    seed_demo_password: SecretStr | None = None
+
     ai_provider: AIProviderName = AIProviderName.NONE
     deepseek_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
@@ -59,9 +64,15 @@ class Settings(BaseSettings):
     deepseek_timeout_seconds: float = Field(default=30.0, gt=0)
     deepseek_max_tokens: int = Field(default=1024, gt=0)
 
-    @field_validator("deepseek_api_key", mode="before")
+    @field_validator(
+        "deepseek_api_key",
+        "seed_admin_email",
+        "seed_admin_password",
+        "seed_demo_password",
+        mode="before",
+    )
     @classmethod
-    def _empty_key_is_none(cls, value: object) -> object:
+    def _blank_is_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
             return None
         return value

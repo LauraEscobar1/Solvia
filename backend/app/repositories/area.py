@@ -18,6 +18,9 @@ class AreaRepository(BaseRepository[Area]):
             .execution_options(populate_existing=True)
         )
 
+    async def get_by_name(self, name: str) -> Area | None:
+        return await self._session.scalar(select(Area).where(func.lower(Area.name) == name.lower()))
+
     async def search(
         self, *, q: str | None, is_active: bool | None, page: int, size: int
     ) -> tuple[list[Area], int]:
