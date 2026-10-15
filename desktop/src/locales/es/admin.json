@@ -1,0 +1,78 @@
+{
+  "sections": "Secciones de administración",
+  "tabs": {
+    "areas": "Áreas",
+    "users": "Usuarios",
+    "sla": "Políticas SLA"
+  },
+  "table": {
+    "actions": "Acciones",
+    "empty": "No hay resultados.",
+    "loading": "Cargando…"
+  },
+  "pagination": {
+    "label": "Paginación",
+    "summary": "{{from}}–{{to}} de {{total}}",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  },
+  "status": {
+    "label": "Estado",
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "areas": {
+    "search": "Buscar áreas…",
+    "new": "Nueva área",
+    "edit": "Editar área",
+    "name": "Nombre",
+    "description": "Descripción",
+    "manager": "Responsable del área",
+    "noManager": "Sin responsable",
+    "deactivateTitle": "Desactivar área",
+    "deactivateMessage": "El área «{{name}}» dejará de estar disponible. Podrás reactivarla más tarde.",
+    "activateTitle": "Reactivar área",
+    "activateMessage": "El área «{{name}}» volverá a estar disponible."
+  },
+  "users": {
+    "search": "Buscar por nombre o email…",
+    "allRoles": "Todos los roles",
+    "roleFilter": "Filtrar por rol",
+    "new": "Nuevo usuario",
+    "edit": "Editar usuario",
+    "fullName": "Nombre completo",
+    "email": "Email",
+    "role": "Rol",
+    "area": "Área",
+    "noArea": "Sin área",
+    "language": "Idioma",
+    "temporaryPassword": "Contraseña temporal",
+    "temporaryPasswordHint": "El usuario deberá cambiarla al iniciar sesión.",
+    "resetPassword": "Nueva contraseña temporal (opcional)",
+    "lastLogin": "Último acceso",
+    "never": "Nunca",
+    "you": "Tú",
+    "deactivateTitle": "Desactivar usuario",
+    "deactivateMessage": "{{name}} no podrá iniciar sesión y se cerrarán sus sesiones abiertas.",
+    "activateTitle": "Reactivar usuario",
+    "activateMessage": "{{name}} podrá volver a iniciar sesión."
+  },
+  "sla": {
+    "description": "Horas máximas por etapa y umbral de inactividad para cada prioridad.",
+    "priority": "Prioridad",
+    "maxHours": "Máx. (h)",
+    "inactivityHours": "Inactividad (h)",
+    "saved": "Políticas SLA guardadas.",
+    "stages": {
+      "received": "Recibida",
+      "assigned": "Asignada",
+      "in_progress": "En proceso"
+    },
+    "priorities": {
+      "critical": "Crítica",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    }
+  }
+}

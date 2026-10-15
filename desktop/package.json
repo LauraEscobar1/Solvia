@@ -14,6 +14,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.104.3",
     "@tauri-apps/api": "^2.12.4",
     "i18next": "^26.4.5",
@@ -21,8 +22,10 @@
     "lucide-react": "^1.57.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-hook-form": "^7.90.0",
     "react-i18next": "^17.0.17",
     "react-router": "^8.4.0",
+    "zod": "^4.6.7",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

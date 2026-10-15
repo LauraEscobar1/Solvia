@@ -1,0 +1,78 @@
+{
+  "sections": "Administration sections",
+  "tabs": {
+    "areas": "Areas",
+    "users": "Users",
+    "sla": "SLA policies"
+  },
+  "table": {
+    "actions": "Actions",
+    "empty": "No results.",
+    "loading": "Loading…"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "summary": "{{from}}–{{to}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "status": {
+    "label": "Status",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "areas": {
+    "search": "Search areas…",
+    "new": "New area",
+    "edit": "Edit area",
+    "name": "Name",
+    "description": "Description",
+    "manager": "Area manager",
+    "noManager": "No manager",
+    "deactivateTitle": "Deactivate area",
+    "deactivateMessage": "The “{{name}}” area will no longer be available. You can reactivate it later.",
+    "activateTitle": "Reactivate area",
+    "activateMessage": "The “{{name}}” area will be available again."
+  },
+  "users": {
+    "search": "Search by name or email…",
+    "allRoles": "All roles",
+    "roleFilter": "Filter by role",
+    "new": "New user",
+    "edit": "Edit user",
+    "fullName": "Full name",
+    "email": "Email",
+    "role": "Role",
+    "area": "Area",
+    "noArea": "No area",
+    "language": "Language",
+    "temporaryPassword": "Temporary password",
+    "temporaryPasswordHint": "The user will have to change it when signing in.",
+    "resetPassword": "New temporary password (optional)",
+    "lastLogin": "Last sign-in",
+    "never": "Never",
+    "you": "You",
+    "deactivateTitle": "Deactivate user",
+    "deactivateMessage": "{{name}} will not be able to sign in and their open sessions will be closed.",
+    "activateTitle": "Reactivate user",
+    "activateMessage": "{{name}} will be able to sign in again."
+  },
+  "sla": {
+    "description": "Maximum hours per stage and inactivity threshold for each priority.",
+    "priority": "Priority",
+    "maxHours": "Max (h)",
+    "inactivityHours": "Inactivity (h)",
+    "saved": "SLA policies saved.",
+    "stages": {
+      "received": "Received",
+      "assigned": "Assigned",
+      "in_progress": "In progress"
+    },
+    "priorities": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  }
+}

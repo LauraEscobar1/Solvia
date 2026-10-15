@@ -17,6 +17,14 @@
   "actions": {
     "retry": "Reintentar",
     "save": "Guardar",
-    "reset": "Restablecer"
+    "reset": "Restablecer",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "edit": "Editar",
+    "create": "Crear",
+    "deactivate": "Desactivar",
+    "activate": "Reactivar",
+    "close": "Cerrar",
+    "saving": "Guardando…"
   }
 }

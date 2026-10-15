@@ -10,6 +10,11 @@
   },
   "appearance": {
     "title": "Appearance",
-    "description": "Interface theme and language."
+    "description": "Interface theme and language.",
+    "syncNote": "While signed in, theme and language are saved to your profile."
+  },
+  "security": {
+    "title": "Security",
+    "description": "Change your account password."
   }
 }

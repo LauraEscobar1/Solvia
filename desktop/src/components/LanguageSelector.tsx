@@ -1,6 +1,6 @@
 import { Languages } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { setLanguage } from '@/i18n'
+import { saveLanguagePreference } from '@/lib/auth/preferences'
 import { isSupportedLanguage, SUPPORTED_LANGUAGES } from '@/locales'
 
 export function LanguageSelector() {
@@ -15,7 +15,7 @@ export function LanguageSelector() {
         value={current}
         onChange={(event) => {
           const { value } = event.target
-          if (isSupportedLanguage(value)) void setLanguage(value)
+          if (isSupportedLanguage(value)) void saveLanguagePreference(value)
         }}
         className="text-foreground cursor-pointer rounded-md bg-transparent py-0.5 text-sm outline-none"
       >

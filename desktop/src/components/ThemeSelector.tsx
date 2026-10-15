@@ -1,5 +1,6 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { saveThemePreference } from '@/lib/auth/preferences'
 import { THEME_PREFERENCES, type ThemePreference, useThemeStore } from '@/stores/theme'
 
 const ICONS = { light: Sun, dark: Moon, system: Monitor } satisfies Record<ThemePreference, unknown>
@@ -7,7 +8,6 @@ const ICONS = { light: Sun, dark: Moon, system: Monitor } satisfies Record<Theme
 export function ThemeSelector() {
   const { t } = useTranslation()
   const preference = useThemeStore((state) => state.preference)
-  const setPreference = useThemeStore((state) => state.setPreference)
 
   return (
     <div
@@ -27,7 +27,7 @@ export function ThemeSelector() {
             aria-label={t(`theme.${option}`)}
             title={t(`theme.${option}`)}
             onClick={() => {
-              setPreference(option)
+              void saveThemePreference(option)
             }}
             className={[
               'rounded-md p-1.5 transition-colors',

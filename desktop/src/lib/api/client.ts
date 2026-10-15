@@ -1,72 +1,31 @@
-import { useSettingsStore } from '@/stores/settings'
+import { refreshSession } from '@/lib/auth/session'
+import { useSessionStore } from '@/stores/session'
+import { type HttpRequestOptions, parseResponse, sendRequest } from './http'
 
-export type ErrorParams = Record<string, unknown>
+export { ApiError, type ErrorParams } from './http'
 
-export class ApiError extends Error {
-  readonly code: string
-  readonly params: ErrorParams
-  readonly status: number | null
-
-  constructor(code: string, params: ErrorParams = {}, status: number | null = null) {
-    super(code)
-    this.name = 'ApiError'
-    this.code = code
-    this.params = params
-    this.status = status
-  }
+export interface ApiRequestOptions extends Omit<HttpRequestOptions, 'accessToken'> {
+  auth?: boolean
 }
 
-interface ErrorEnvelope {
-  error: { code: string; params?: ErrorParams }
+async function tokenAfterUnauthorized(usedToken: string): Promise<string | null> {
+  const current = useSessionStore.getState().accessToken
+  if (current && current !== usedToken) return current
+  const refreshed = await refreshSession()
+  return refreshed ? useSessionStore.getState().accessToken : null
 }
-
-function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
-  if (typeof value !== 'object' || value === null || !('error' in value)) return false
-  const { error } = value
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof error.code === 'string'
-  )
-}
-
-export interface ApiRequestOptions extends Omit<RequestInit, 'signal'> {
-  baseUrl?: string
-  signal?: AbortSignal
-  timeoutMs?: number
-}
-
-const DEFAULT_TIMEOUT_MS = 10_000
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const { baseUrl, signal, timeoutMs = DEFAULT_TIMEOUT_MS, headers, ...init } = options
-  const base = baseUrl ?? useSettingsStore.getState().apiBaseUrl
-  const requestHeaders = new Headers(headers)
-  requestHeaders.set('Accept', 'application/json')
-  const timeout = AbortSignal.timeout(timeoutMs)
+  const { auth = true, ...requestOptions } = options
+  const accessToken = auth ? useSessionStore.getState().accessToken : null
+  const response = await sendRequest(path, { ...requestOptions, accessToken })
 
-  let response: Response
-  try {
-    response = await fetch(`${base}${path}`, {
-      ...init,
-      headers: requestHeaders,
-      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-    })
-  } catch (error) {
-    if (signal?.aborted) throw error
-    const timedOut = timeout.aborted
-    throw new ApiError(timedOut ? 'client.timeout' : 'client.network_error')
-  }
+  if (response.status !== 401 || !accessToken) return parseResponse<T>(response)
 
-  const body: unknown = await response.json().catch(() => null)
+  const renewedToken = await tokenAfterUnauthorized(accessToken)
+  if (!renewedToken) return parseResponse<T>(response)
 
-  if (!response.ok) {
-    if (isErrorEnvelope(body)) {
-      throw new ApiError(body.error.code, body.error.params ?? {}, response.status)
-    }
-    throw new ApiError('common.http_error', { status: response.status }, response.status)
-  }
-  if (body === null) throw new ApiError('client.invalid_response', {}, response.status)
-  return body as T
+  return parseResponse<T>(
+    await sendRequest(path, { ...requestOptions, accessToken: renewedToken }),
+  )
 }

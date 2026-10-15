@@ -1,7 +1,9 @@
 import { type FormEvent, type ReactNode, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ChangePasswordForm } from '@/components/ChangePasswordForm'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ThemeSelector } from '@/components/ThemeSelector'
+import { useSessionStore } from '@/stores/session'
 import { DEFAULT_API_BASE_URL, normalizeApiBaseUrl, useSettingsStore } from '@/stores/settings'
 
 function Section({
@@ -32,6 +34,7 @@ export function SettingsPage() {
   const resetApiBaseUrl = useSettingsStore((state) => state.resetApiBaseUrl)
   const [draft, setDraft] = useState(apiBaseUrl)
   const [status, setStatus] = useState<SaveStatus>('idle')
+  const authenticated = useSessionStore((state) => state.status === 'authenticated')
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -115,7 +118,16 @@ export function SettingsPage() {
             <LanguageSelector />
           </div>
         </div>
+        {authenticated && (
+          <p className="text-muted-foreground mt-4 text-xs">{t('appearance.syncNote')}</p>
+        )}
       </Section>
+
+      {authenticated && (
+        <Section title={t('security.title')} description={t('security.description')}>
+          <ChangePasswordForm />
+        </Section>
+      )}
     </div>
   )
 }

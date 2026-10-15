@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
-import { NAV_ITEMS } from './navigation'
+import { useSessionStore } from '@/stores/session'
+import { navItemsForRole } from './navigation'
 
 export function Sidebar() {
   const { t } = useTranslation(['common', 'nav'])
+  const role = useSessionStore((state) => state.user?.role)
 
   return (
     <aside className="bg-sidebar flex w-60 shrink-0 flex-col border-r">
@@ -16,7 +18,7 @@ export function Sidebar() {
       </div>
 
       <nav aria-label={t('nav:mainNavigation')} className="flex flex-col gap-0.5 px-3">
-        {NAV_ITEMS.map(({ path, labelKey, icon: Icon }) => (
+        {navItemsForRole(role).map(({ path, labelKey, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}

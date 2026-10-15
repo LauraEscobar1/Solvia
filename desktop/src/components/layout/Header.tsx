@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ThemeSelector } from '@/components/ThemeSelector'
 import { navItemForPath } from './navigation'
+import { UserMenu } from './UserMenu'
 
 export function Header() {
   const { t } = useTranslation(['common', 'nav'])
@@ -17,6 +18,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         <LanguageSelector />
         <ThemeSelector />
+        <UserMenu />
       </div>
     </header>
   )

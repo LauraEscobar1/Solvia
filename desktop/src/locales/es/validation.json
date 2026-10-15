@@ -1,0 +1,10 @@
+{
+  "invalid": "Valor no válido.",
+  "required": "Este campo es obligatorio.",
+  "email": "Introduce un email válido.",
+  "passwordMin": "Debe tener al menos 12 caracteres.",
+  "passwordMismatch": "Las contraseñas no coinciden.",
+  "tooLong": "El texto es demasiado largo.",
+  "positiveInteger": "Introduce un número entero mayor que 0.",
+  "inactivityExceedsMax": "No puede superar las horas máximas."
+}

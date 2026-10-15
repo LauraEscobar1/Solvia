@@ -10,6 +10,11 @@
   },
   "appearance": {
     "title": "Apariencia",
-    "description": "Tema e idioma de la interfaz."
+    "description": "Tema e idioma de la interfaz.",
+    "syncNote": "Con la sesión iniciada, el tema y el idioma se guardan en tu perfil."
+  },
+  "security": {
+    "title": "Seguridad",
+    "description": "Cambia la contraseña de tu cuenta."
   }
 }
