@@ -1,0 +1,15 @@
+{
+  "subtitle": "Preferencias de la aplicación",
+  "api": {
+    "title": "Conexión con la API",
+    "description": "Dirección del servidor de Solvia al que se conecta esta aplicación.",
+    "baseUrl": "URL base de la API",
+    "invalidUrl": "Introduce una URL válida que empiece por http:// o https://",
+    "saved": "Configuración guardada.",
+    "default": "Valor por defecto: {{url}}"
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "description": "Tema e idioma de la interfaz."
+  }
+}
