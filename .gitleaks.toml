@@ -1,0 +1,11 @@
+# Configuración de gitleaks: reglas por defecto + regla específica para DeepSeek.
+title = "Solvia"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "deepseek-api-key"
+description = "Clave de API de DeepSeek"
+regex = '''\bsk-[A-Za-z0-9]{32,}\b'''
+keywords = ["sk-"]
