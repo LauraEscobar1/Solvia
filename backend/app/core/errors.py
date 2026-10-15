@@ -1,0 +1,115 @@
+from collections.abc import Mapping
+from enum import StrEnum
+
+import structlog
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import JsonValue
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.schemas.errors import ErrorBody, ErrorResponse
+
+logger = structlog.get_logger(__name__)
+
+
+class ErrorCode(StrEnum):
+    INTERNAL_ERROR = "common.internal_error"
+    VALIDATION_ERROR = "common.validation_error"
+    NOT_FOUND = "common.not_found"
+    METHOD_NOT_ALLOWED = "common.method_not_allowed"
+    HTTP_ERROR = "common.http_error"
+    UNAUTHORIZED = "auth.unauthorized"
+    FORBIDDEN = "auth.forbidden"
+    DATABASE_UNAVAILABLE = "database.unavailable"
+    AI_PROVIDER_UNAVAILABLE = "ai.provider_unavailable"
+    AI_INVALID_RESPONSE = "ai.invalid_response"
+    REQUEST_NOT_FOUND = "request.not_found"
+
+
+class AppError(Exception):
+    def __init__(
+        self,
+        code: ErrorCode,
+        *,
+        status_code: int = status.HTTP_400_BAD_REQUEST,
+        params: Mapping[str, JsonValue] | None = None,
+    ) -> None:
+        super().__init__(code.value)
+        self.code = code
+        self.status_code = status_code
+        self.params: dict[str, JsonValue] = dict(params or {})
+
+
+class NotFoundError(AppError):
+    def __init__(
+        self,
+        code: ErrorCode = ErrorCode.NOT_FOUND,
+        *,
+        params: Mapping[str, JsonValue] | None = None,
+    ) -> None:
+        super().__init__(code, status_code=status.HTTP_404_NOT_FOUND, params=params)
+
+
+_HTTP_STATUS_CODES: dict[int, ErrorCode] = {
+    status.HTTP_401_UNAUTHORIZED: ErrorCode.UNAUTHORIZED,
+    status.HTTP_403_FORBIDDEN: ErrorCode.FORBIDDEN,
+    status.HTTP_404_NOT_FOUND: ErrorCode.NOT_FOUND,
+    status.HTTP_405_METHOD_NOT_ALLOWED: ErrorCode.METHOD_NOT_ALLOWED,
+}
+
+
+def error_response(
+    code: ErrorCode,
+    status_code: int,
+    params: Mapping[str, JsonValue] | None = None,
+    headers: Mapping[str, str] | None = None,
+) -> JSONResponse:
+    body = ErrorResponse(error=ErrorBody(code=code, params=dict(params or {})))
+    return JSONResponse(
+        status_code=status_code,
+        content=body.model_dump(mode="json"),
+        headers=dict(headers) if headers else None,
+    )
+
+
+async def _handle_app_error(_request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, AppError):
+        raise exc
+    return error_response(exc.code, exc.status_code, exc.params)
+
+
+async def _handle_http_exception(_request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, StarletteHTTPException):
+        raise exc
+    code = _HTTP_STATUS_CODES.get(exc.status_code, ErrorCode.HTTP_ERROR)
+    params: dict[str, JsonValue] = (
+        {"status": exc.status_code} if code is ErrorCode.HTTP_ERROR else {}
+    )
+    return error_response(code, exc.status_code, params, headers=exc.headers)
+
+
+async def _handle_validation_error(_request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, RequestValidationError):
+        raise exc
+    fields: list[JsonValue] = [
+        {"loc": ".".join(str(part) for part in error["loc"]), "type": error["type"]}
+        for error in exc.errors()
+    ]
+    return error_response(
+        ErrorCode.VALIDATION_ERROR,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        {"fields": fields},
+    )
+
+
+async def _handle_unexpected_error(_request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("unhandled_error", error_type=type(exc).__name__)
+    return error_response(ErrorCode.INTERNAL_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(AppError, _handle_app_error)
+    app.add_exception_handler(StarletteHTTPException, _handle_http_exception)
+    app.add_exception_handler(RequestValidationError, _handle_validation_error)
+    app.add_exception_handler(Exception, _handle_unexpected_error)
