@@ -1,11 +1,15 @@
 import uuid
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ForeignKey, Index, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey, Index, Text, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, CreatedAtMixin, UUIDMixin
 from app.models.enums import RequestEventType, RequestStatus
 from app.models.types import REQUEST_EVENT_TYPE, REQUEST_STATUS
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class RequestEvent(UUIDMixin, CreatedAtMixin, Base):
@@ -18,3 +22,8 @@ class RequestEvent(UUIDMixin, CreatedAtMixin, Base):
     to_status: Mapped[RequestStatus | None] = mapped_column(REQUEST_STATUS)
     actor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
     comment: Mapped[str | None] = mapped_column(Text)
+    details: Mapped[dict[str, Any]] = mapped_column(
+        default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    actor: Mapped["User | None"] = relationship(lazy="raise")

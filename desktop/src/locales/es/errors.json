@@ -24,7 +24,14 @@
     "invalid_response": "El servicio de IA devolvió una respuesta no válida."
   },
   "request": {
-    "not_found": "La solicitud no existe."
+    "not_found": "La solicitud no existe.",
+    "invalid_transition": "No se puede pasar la solicitud de «{{from}}» a «{{to}}».",
+    "version_conflict": "Esta solicitud fue modificada por otra persona. Se ha recargado con los últimos cambios.",
+    "closed": "La solicitud está cerrada y no se puede modificar.",
+    "comment_required": "Este cambio requiere un comentario.",
+    "assignee_required": "Este cambio requiere elegir un responsable.",
+    "invalid_assignee": "El responsable debe estar activo y pertenecer al área de la solicitud.",
+    "invalid_area": "El área seleccionada no existe o está desactivada."
   },
   "area": {
     "not_found": "El área no existe.",

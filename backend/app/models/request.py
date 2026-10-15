@@ -1,12 +1,19 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, String, Text, func, text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
 from app.models.enums import RequestPriority, RequestStatus
 from app.models.types import REQUEST_PRIORITY, REQUEST_STATUS
+
+if TYPE_CHECKING:
+    from app.models.area import Area
+    from app.models.user import User
+
+OPEN_STATUS_SQL = "status IN ('received', 'assigned', 'in_progress')"
 
 
 class ServiceRequest(UUIDMixin, TimestampMixin, Base):
@@ -15,6 +22,9 @@ class ServiceRequest(UUIDMixin, TimestampMixin, Base):
         Index("ix_requests_status_assignee_id", "status", "assignee_id"),
         Index("ix_requests_area_id_status", "area_id", "status"),
         Index("ix_requests_last_activity_at", "last_activity_at"),
+        Index("ix_requests_assignee_id", "assignee_id"),
+        Index("ix_requests_received_at", "received_at"),
+        Index("ix_requests_due_at_open", "due_at", postgresql_where=text(OPEN_STATUS_SQL)),
     )
 
     code: Mapped[str] = mapped_column(
@@ -35,3 +45,8 @@ class ServiceRequest(UUIDMixin, TimestampMixin, Base):
     due_at: Mapped[datetime | None]
     last_activity_at: Mapped[datetime] = mapped_column(server_default=func.now())
     completed_at: Mapped[datetime | None]
+    version: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+
+    area: Mapped["Area"] = relationship(lazy="raise")
+    requester: Mapped["User"] = relationship(foreign_keys=[requester_id], lazy="raise")
+    assignee: Mapped["User | None"] = relationship(foreign_keys=[assignee_id], lazy="raise")

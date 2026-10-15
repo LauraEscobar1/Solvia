@@ -39,6 +39,13 @@ class ErrorCode(StrEnum):
     AI_PROVIDER_UNAVAILABLE = "ai.provider_unavailable"
     AI_INVALID_RESPONSE = "ai.invalid_response"
     REQUEST_NOT_FOUND = "request.not_found"
+    REQUEST_INVALID_TRANSITION = "request.invalid_transition"
+    REQUEST_VERSION_CONFLICT = "request.version_conflict"
+    REQUEST_CLOSED = "request.closed"
+    REQUEST_COMMENT_REQUIRED = "request.comment_required"
+    REQUEST_ASSIGNEE_REQUIRED = "request.assignee_required"
+    REQUEST_INVALID_ASSIGNEE = "request.invalid_assignee"
+    REQUEST_INVALID_AREA = "request.invalid_area"
 
 
 class AppError(Exception):

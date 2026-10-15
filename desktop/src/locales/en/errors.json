@@ -24,7 +24,14 @@
     "invalid_response": "The AI service returned an invalid response."
   },
   "request": {
-    "not_found": "The request does not exist."
+    "not_found": "The request does not exist.",
+    "invalid_transition": "The request cannot move from “{{from}}” to “{{to}}”.",
+    "version_conflict": "This request was modified by someone else. It has been reloaded with the latest changes.",
+    "closed": "The request is closed and cannot be modified.",
+    "comment_required": "This change requires a comment.",
+    "assignee_required": "This change requires choosing an assignee.",
+    "invalid_assignee": "The assignee must be active and belong to the request's area.",
+    "invalid_area": "The selected area does not exist or is deactivated."
   },
   "area": {
     "not_found": "The area does not exist.",
