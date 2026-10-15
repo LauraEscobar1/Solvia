@@ -1,0 +1,15 @@
+{
+  "subtitle": "Application preferences",
+  "api": {
+    "title": "API connection",
+    "description": "Address of the Solvia server this application connects to.",
+    "baseUrl": "API base URL",
+    "invalidUrl": "Enter a valid URL starting with http:// or https://",
+    "saved": "Settings saved.",
+    "default": "Default value: {{url}}"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Interface theme and language."
+  }
+}
