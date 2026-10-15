@@ -1,0 +1,29 @@
+{
+  "unknown": "Ha ocurrido un error inesperado.",
+  "common": {
+    "internal_error": "Error interno del servidor. Inténtalo de nuevo más tarde.",
+    "validation_error": "Algunos datos no son válidos.",
+    "not_found": "El recurso solicitado no existe.",
+    "method_not_allowed": "Operación no permitida.",
+    "http_error": "Error de comunicación con el servidor (HTTP {{status}})."
+  },
+  "auth": {
+    "unauthorized": "Tu sesión no es válida. Vuelve a iniciar sesión.",
+    "forbidden": "No tienes permiso para realizar esta acción."
+  },
+  "database": {
+    "unavailable": "La base de datos no está disponible."
+  },
+  "ai": {
+    "provider_unavailable": "El servicio de IA no está disponible en este momento.",
+    "invalid_response": "El servicio de IA devolvió una respuesta no válida."
+  },
+  "request": {
+    "not_found": "La solicitud no existe."
+  },
+  "client": {
+    "network_error": "No se pudo conectar con el servidor.",
+    "timeout": "El servidor tardó demasiado en responder.",
+    "invalid_response": "El servidor devolvió una respuesta inesperada."
+  }
+}
