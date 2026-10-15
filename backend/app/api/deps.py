@@ -1,0 +1,65 @@
+from collections.abc import AsyncIterator
+from typing import Annotated
+
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.ai.base import AIProvider
+from app.container import AppContainer
+from app.core.config import Settings
+from app.db.session import ping_database
+from app.services.health import DatabaseProbe, HealthService
+
+
+def get_container(request: Request) -> AppContainer:
+    container = getattr(request.app.state, "container", None)
+    if not isinstance(container, AppContainer):
+        msg = "AppContainer no inicializado: la app debe arrancar con su lifespan"
+        raise TypeError(msg)
+    return container
+
+
+ContainerDep = Annotated[AppContainer, Depends(get_container)]
+
+
+def get_app_settings(container: ContainerDep) -> Settings:
+    return container.settings
+
+
+SettingsDep = Annotated[Settings, Depends(get_app_settings)]
+
+
+def get_ai_provider(container: ContainerDep) -> AIProvider:
+    return container.ai_provider
+
+
+AIProviderDep = Annotated[AIProvider, Depends(get_ai_provider)]
+
+
+async def get_session(container: ContainerDep) -> AsyncIterator[AsyncSession]:
+    async with container.session_factory() as session:
+        yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+def get_database_probe(container: ContainerDep) -> DatabaseProbe:
+    async def probe() -> bool:
+        return await ping_database(
+            container.engine, container.settings.database_connect_timeout_seconds
+        )
+
+    return probe
+
+
+DatabaseProbeDep = Annotated[DatabaseProbe, Depends(get_database_probe)]
+
+
+def get_health_service(
+    settings: SettingsDep, database_probe: DatabaseProbeDep, ai_provider: AIProviderDep
+) -> HealthService:
+    return HealthService(settings, database_probe, ai_provider)
+
+
+HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
