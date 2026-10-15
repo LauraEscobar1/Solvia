@@ -1,0 +1,19 @@
+# Secretos: nunca dentro de la imagen
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# Entorno local y cachés
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# No necesarios en producción
+tests/
+Dockerfile
+.dockerignore
