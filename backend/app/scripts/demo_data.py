@@ -1,3 +1,4 @@
+import math
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -350,7 +351,7 @@ class _DemoBuilder:
 
 
 def _age_hours(rng: random.Random) -> float:
-    return MIN_AGE_HOURS + (MAX_AGE_HOURS - MIN_AGE_HOURS) * rng.random() ** AGE_SKEW
+    return MIN_AGE_HOURS + (MAX_AGE_HOURS - MIN_AGE_HOURS) * math.pow(rng.random(), AGE_SKEW)
 
 
 async def _ensure_people(
