@@ -9,3 +9,9 @@ id = "deepseek-api-key"
 description = "Clave de API de DeepSeek"
 regex = '''\bsk-[A-Za-z0-9]{32,}\b'''
 keywords = ["sk-"]
+
+[[allowlists]]
+description = "Contraseñas ficticias de las pruebas automatizadas"
+condition = "AND"
+paths = ['''^backend/tests/''', '''^desktop/src/test/''']
+regexes = ['''^contrasena-[a-z0-9-]+$''']
