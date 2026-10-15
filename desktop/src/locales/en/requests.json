@@ -1,0 +1,67 @@
+{
+  "views": {
+    "label": "View",
+    "table": "Table",
+    "board": "Board"
+  },
+  "new": "New request",
+  "status": {
+    "received": "Received",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "priority": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "columns": {
+    "code": "Code",
+    "title": "Title",
+    "area": "Area",
+    "assignee": "Assignee",
+    "priority": "Priority",
+    "status": "Status",
+    "due_at": "Due date",
+    "last_activity_at": "Last activity"
+  },
+  "sortBy": "Sort by {{column}}",
+  "unassigned": "Unassigned",
+  "noDueDate": "No date",
+  "sla": {
+    "overdue": "Overdue",
+    "at_risk": "Due soon",
+    "stalled": "No activity"
+  },
+  "filters": {
+    "search": "Search by code or title…",
+    "status": "Status",
+    "priority": "Priority",
+    "area": "Area",
+    "allAreas": "All areas",
+    "assignee": "Assignee",
+    "anyAssignee": "Any assignee",
+    "overdue": "Overdue only",
+    "receivedFrom": "Received from",
+    "receivedTo": "Received until",
+    "clear": "Clear filters"
+  },
+  "empty": "No requests match these filters.",
+  "loading": "Loading requests…",
+  "create": {
+    "title": "New request",
+    "titleField": "Title",
+    "description": "Description",
+    "area": "Area",
+    "priority": "Priority",
+    "selectArea": "Select an area",
+    "estimate": "Estimated due date: {{date}}",
+    "estimateHours": "{{hours}} h according to this priority's SLA policy.",
+    "noEstimate": "There is no SLA policy for this priority: the request will have no due date.",
+    "submit": "Create request",
+    "created": "Request {{code}} created."
+  }
+}

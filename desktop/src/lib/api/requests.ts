@@ -1,0 +1,142 @@
+import {
+  keepPreviousData,
+  type QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { apiQuery, type RequestFilters, type RequestListParams } from '@/lib/requests/filters'
+import { apiRequest } from './client'
+import type {
+  DueEstimate,
+  Page,
+  RequestBoard,
+  RequestDetail,
+  RequestEvent,
+  RequestPriority,
+  RequestStatus,
+  RequestSummary,
+  User,
+} from './types'
+
+export const EVENTS_PAGE_SIZE = 20
+const OPTIONS_PAGE_SIZE = 100
+
+export const requestKeys = {
+  all: ['requests'] as const,
+  lists: () => [...requestKeys.all, 'list'] as const,
+  list: (params: RequestListParams) => [...requestKeys.lists(), params] as const,
+  boards: () => [...requestKeys.all, 'board'] as const,
+  board: (filters: RequestFilters) => [...requestKeys.boards(), filters] as const,
+  detail: (id: string) => [...requestKeys.all, 'detail', id] as const,
+  events: (id: string) => [...requestKeys.all, 'events', id] as const,
+  dueEstimates: () => [...requestKeys.all, 'due-estimates'] as const,
+  assignees: (areaId: string | undefined) => [...requestKeys.all, 'assignees', areaId] as const,
+}
+
+export interface NewRequestInput {
+  title: string
+  description: string
+  area_id: string
+  priority: RequestPriority
+}
+
+export interface RequestUpdateInput {
+  version: number
+  title?: string
+  description?: string
+  priority?: RequestPriority
+  due_at?: string | null
+}
+
+export interface TransitionInput {
+  to: RequestStatus
+  version: number
+  comment?: string
+  assignee_id?: string
+}
+
+export interface AssignInput {
+  assignee_id: string
+  version: number
+  comment?: string
+}
+
+export function invalidateRequest(queryClient: QueryClient, id?: string): Promise<void> {
+  const keys: (readonly unknown[])[] = [requestKeys.lists(), requestKeys.boards()]
+  if (id) keys.push(requestKeys.detail(id), requestKeys.events(id))
+  return Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))).then(
+    () => undefined,
+  )
+}
+
+export function useRequests(params: RequestListParams) {
+  return useQuery({
+    queryKey: requestKeys.list(params),
+    queryFn: ({ signal }) =>
+      apiRequest<Page<RequestSummary>>(`/api/v1/requests?${apiQuery(params)}`, { signal }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useRequestBoard(filters: RequestFilters) {
+  return useQuery({
+    queryKey: requestKeys.board(filters),
+    queryFn: ({ signal }) =>
+      apiRequest<RequestBoard>(`/api/v1/requests/board?${apiQuery(filters)}`, { signal }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useRequest(id: string) {
+  return useQuery({
+    queryKey: requestKeys.detail(id),
+    queryFn: ({ signal }) => apiRequest<RequestDetail>(`/api/v1/requests/${id}`, { signal }),
+  })
+}
+
+export function useRequestEvents(id: string) {
+  return useInfiniteQuery({
+    queryKey: requestKeys.events(id),
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      apiRequest<Page<RequestEvent>>(
+        `/api/v1/requests/${id}/events?page=${pageParam}&size=${EVENTS_PAGE_SIZE}`,
+        { signal },
+      ),
+    getNextPageParam: (last) =>
+      last.page * last.size < last.total ? last.page + 1 : undefined,
+  })
+}
+
+export function useDueEstimates() {
+  return useQuery({
+    queryKey: requestKeys.dueEstimates(),
+    queryFn: ({ signal }) => apiRequest<DueEstimate[]>('/api/v1/requests/due-estimates', { signal }),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useAssignableUsers(areaId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: requestKeys.assignees(areaId),
+    enabled,
+    queryFn: ({ signal }) => {
+      const search = new URLSearchParams({ is_active: 'true', size: String(OPTIONS_PAGE_SIZE) })
+      if (areaId) search.set('area_id', areaId)
+      return apiRequest<Page<User>>(`/api/v1/users?${search.toString()}`, { signal })
+    },
+    select: (page) =>
+      page.items.filter((user) => user.role === 'assignee' || user.role === 'supervisor'),
+  })
+}
+
+export function useCreateRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: NewRequestInput) =>
+      apiRequest<RequestDetail>('/api/v1/requests', { method: 'POST', body: data }),
+    onSuccess: () => invalidateRequest(queryClient),
+  })
+}

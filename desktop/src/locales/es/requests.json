@@ -1,0 +1,67 @@
+{
+  "views": {
+    "label": "Vista",
+    "table": "Tabla",
+    "board": "Tablero"
+  },
+  "new": "Nueva solicitud",
+  "status": {
+    "received": "Recibida",
+    "assigned": "Asignada",
+    "in_progress": "En proceso",
+    "completed": "Completada",
+    "cancelled": "Cancelada"
+  },
+  "priority": {
+    "critical": "Crítica",
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja"
+  },
+  "columns": {
+    "code": "Código",
+    "title": "Título",
+    "area": "Área",
+    "assignee": "Responsable",
+    "priority": "Prioridad",
+    "status": "Estado",
+    "due_at": "Fecha límite",
+    "last_activity_at": "Última actividad"
+  },
+  "sortBy": "Ordenar por {{column}}",
+  "unassigned": "Sin asignar",
+  "noDueDate": "Sin fecha",
+  "sla": {
+    "overdue": "Vencida",
+    "at_risk": "Por vencer",
+    "stalled": "Sin movimiento"
+  },
+  "filters": {
+    "search": "Buscar por código o título…",
+    "status": "Estado",
+    "priority": "Prioridad",
+    "area": "Área",
+    "allAreas": "Todas las áreas",
+    "assignee": "Responsable",
+    "anyAssignee": "Cualquier responsable",
+    "overdue": "Solo vencidas",
+    "receivedFrom": "Recibidas desde",
+    "receivedTo": "Recibidas hasta",
+    "clear": "Limpiar filtros"
+  },
+  "empty": "No hay solicitudes con estos filtros.",
+  "loading": "Cargando solicitudes…",
+  "create": {
+    "title": "Nueva solicitud",
+    "titleField": "Título",
+    "description": "Descripción",
+    "area": "Área",
+    "priority": "Prioridad",
+    "selectArea": "Selecciona un área",
+    "estimate": "Fecha límite estimada: {{date}}",
+    "estimateHours": "{{hours}} h según la política SLA de esta prioridad.",
+    "noEstimate": "No hay política SLA para esta prioridad: la solicitud no tendrá fecha límite.",
+    "submit": "Crear solicitud",
+    "created": "Solicitud {{code}} creada."
+  }
+}

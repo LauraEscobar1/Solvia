@@ -22,6 +22,28 @@ export function formatNumber(
   return new Intl.NumberFormat(locale, options).format(value)
 }
 
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60],
+]
+
+export function formatRelativeTime(
+  value: Date | string | number,
+  locale: string,
+  now: Date = new Date(),
+): string {
+  const seconds = (new Date(value).getTime() - now.getTime()) / 1000
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (Math.abs(seconds) >= size) return formatter.format(Math.round(seconds / size), unit)
+  }
+  return formatter.format(Math.round(seconds), 'second')
+}
+
 export function useFormatters() {
   const { i18n } = useTranslation()
   const locale = intlLocaleFor(i18n.resolvedLanguage ?? i18n.language)
@@ -32,6 +54,7 @@ export function useFormatters() {
         formatDateTime(value, locale, options),
       number: (value: number, options?: Intl.NumberFormatOptions) =>
         formatNumber(value, locale, options),
+      relative: (value: Date | string | number) => formatRelativeTime(value, locale),
     }),
     [locale],
   )

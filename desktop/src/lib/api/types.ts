@@ -74,3 +74,84 @@ export interface PageParams {
   size: number
   q?: string
 }
+
+export const REQUEST_STATUSES = [
+  'received',
+  'assigned',
+  'in_progress',
+  'completed',
+  'cancelled',
+] as const
+export type RequestStatus = (typeof REQUEST_STATUSES)[number]
+
+export const BOARD_STATUSES = ['received', 'assigned', 'in_progress', 'completed'] as const
+
+export type SlaStatus = 'on_track' | 'at_risk' | 'overdue'
+
+export type EditableField = 'title' | 'description' | 'priority' | 'due_at'
+
+export interface RequestSummary {
+  id: string
+  code: string
+  title: string
+  area: AreaRef
+  requester: UserRef
+  assignee: UserRef | null
+  priority: RequestPriority
+  status: RequestStatus
+  received_at: string
+  due_at: string | null
+  last_activity_at: string
+  completed_at: string | null
+  version: number
+  sla_status: SlaStatus | null
+  is_stalled: boolean
+}
+
+export interface AllowedTransition {
+  to: RequestStatus
+  requires_comment: boolean
+  requires_assignee: boolean
+}
+
+export interface RequestPermissions {
+  editable_fields: EditableField[]
+  can_assign: boolean
+  can_comment: boolean
+}
+
+export interface RequestDetail extends RequestSummary {
+  description: string
+  created_at: string
+  updated_at: string
+  allowed_transitions: AllowedTransition[]
+  permissions: RequestPermissions
+}
+
+export type RequestEventType = 'created' | 'status_changed' | 'assigned' | 'comment' | 'updated'
+
+export interface RequestEvent {
+  id: string
+  type: RequestEventType
+  from_status: RequestStatus | null
+  to_status: RequestStatus | null
+  actor: UserRef | null
+  comment: string | null
+  details: Record<string, unknown>
+  created_at: string
+}
+
+export interface BoardColumn {
+  status: RequestStatus
+  total: number
+  items: RequestSummary[]
+}
+
+export interface RequestBoard {
+  columns: BoardColumn[]
+}
+
+export interface DueEstimate {
+  priority: RequestPriority
+  hours: number | null
+}

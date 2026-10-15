@@ -11,7 +11,7 @@ import { AlertsPage } from '@/pages/AlertsPage'
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
-import { RequestsPage } from '@/pages/RequestsPage'
+import { RequestsPage } from '@/pages/requests/RequestsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 
 export const routes: RouteObject[] = [
