@@ -17,6 +17,7 @@ from app.repositories.user import UserRepository
 from app.services.areas import AreaService
 from app.services.auth import AuthService
 from app.services.health import DatabaseProbe, HealthService
+from app.services.requests import RequestService
 from app.services.sla_policies import SlaPolicyService
 from app.services.users import UserService
 
@@ -128,6 +129,13 @@ def get_sla_policy_service(session: SessionDep) -> SlaPolicyService:
 
 
 SlaPolicyServiceDep = Annotated[SlaPolicyService, Depends(get_sla_policy_service)]
+
+
+def get_request_service(session: SessionDep) -> RequestService:
+    return RequestService(session)
+
+
+RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:

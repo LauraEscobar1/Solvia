@@ -66,6 +66,12 @@ class InsightScope(StrEnum):
     GLOBAL = "global"
 
 
+class SlaStatus(StrEnum):
+    ON_TRACK = "on_track"
+    AT_RISK = "at_risk"
+    OVERDUE = "overdue"
+
+
 SLA_STAGES: tuple[RequestStatus, ...] = (
     RequestStatus.RECEIVED,
     RequestStatus.ASSIGNED,

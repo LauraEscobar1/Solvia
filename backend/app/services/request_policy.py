@@ -1,10 +1,9 @@
-import uuid
-from dataclasses import dataclass
 from enum import StrEnum
 
 from app.models.enums import CLOSED_STATUSES, RequestStatus, UserRole
 from app.models.request import ServiceRequest
 from app.models.user import User
+from app.repositories.request import RequestScope
 
 
 class Capability(StrEnum):
@@ -28,14 +27,6 @@ FIELD_CAPABILITIES: dict[str, Capability] = {
 ASSIGNABLE_ROLES = frozenset({UserRole.ASSIGNEE, UserRole.SUPERVISOR})
 
 SUPERVISOR_CAPABILITIES = frozenset(Capability)
-
-
-@dataclass(frozen=True, slots=True)
-class RequestScope:
-    everything: bool
-    user_id: uuid.UUID
-    area_id: uuid.UUID | None
-    include_assigned: bool
 
 
 class RequestPolicy:

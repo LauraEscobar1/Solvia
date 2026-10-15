@@ -1,19 +1,18 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import StrEnum
 
-from app.models.enums import CLOSED_STATUSES, SLA_STAGES, RequestPriority, RequestStatus
+from app.models.enums import (
+    CLOSED_STATUSES,
+    SLA_STAGES,
+    RequestPriority,
+    RequestStatus,
+    SlaStatus,
+)
 from app.models.request import ServiceRequest
 from app.models.sla_policy import SlaPolicy
 
 AT_RISK_RATIO = 0.75
-
-
-class SlaStatus(StrEnum):
-    ON_TRACK = "on_track"
-    AT_RISK = "at_risk"
-    OVERDUE = "overdue"
 
 
 @dataclass(frozen=True, slots=True)
