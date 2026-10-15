@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import DateTime, MetaData, func, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NAMING_CONVENTION = {
@@ -15,7 +17,12 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
-    type_annotation_map = {datetime: DateTime(timezone=True)}  # noqa: RUF012
+    type_annotation_map = {  # noqa: RUF012
+        datetime: DateTime(timezone=True),
+        dict[str, Any]: JSONB,
+        list[Any]: JSONB,
+    }
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012
 
 
 class UUIDMixin:
@@ -26,6 +33,9 @@ class UUIDMixin:
     )
 
 
-class TimestampMixin:
+class CreatedAtMixin:
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class TimestampMixin(CreatedAtMixin):
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

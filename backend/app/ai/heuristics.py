@@ -1,5 +1,5 @@
 from app.ai.base import RequestMetrics, RiskLevel
-from app.models.enums import RequestStatus
+from app.models.enums import CLOSED_STATUSES
 
 _RISK_THRESHOLDS: tuple[tuple[float, RiskLevel], ...] = (
     (0.9, RiskLevel.CRITICAL),
@@ -9,7 +9,7 @@ _RISK_THRESHOLDS: tuple[tuple[float, RiskLevel], ...] = (
 
 
 def heuristic_risk_score(metrics: RequestMetrics) -> float:
-    if metrics.status is RequestStatus.COMPLETED:
+    if metrics.status in CLOSED_STATUSES:
         return 0.0
     return round(min(metrics.hours_open / metrics.sla_hours, 1.0), 4)
 
