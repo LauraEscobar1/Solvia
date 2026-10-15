@@ -5,8 +5,9 @@ from typing import Literal, Self
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-DEFAULT_JWT_SECRET = "change-me"  # noqa: S105
+DEFAULT_JWT_SECRET = "change-me-solvia-development-only-secret"  # noqa: S105
 MIN_JWT_SECRET_LENGTH = 32
+WEAK_JWT_SECRETS = frozenset({DEFAULT_JWT_SECRET, "change-me"})
 
 
 class Environment(StrEnum):
@@ -45,8 +46,11 @@ class Settings(BaseSettings):
     ]
 
     jwt_secret: SecretStr = SecretStr(DEFAULT_JWT_SECRET)
-    jwt_algorithm: str = "HS256"
-    jwt_access_token_minutes: int = Field(default=60, gt=0)
+    jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"
+    jwt_access_token_minutes: int = Field(default=30, gt=0)
+    refresh_token_days: int = Field(default=30, gt=0)
+    login_rate_limit_attempts: int = Field(default=5, gt=0)
+    login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 
     ai_provider: AIProviderName = AIProviderName.NONE
     deepseek_api_key: SecretStr | None = None
@@ -66,7 +70,7 @@ class Settings(BaseSettings):
     def _validate_consistency(self) -> Self:
         if self.environment is Environment.PRODUCTION:
             secret = self.jwt_secret.get_secret_value()
-            if secret == DEFAULT_JWT_SECRET or len(secret) < MIN_JWT_SECRET_LENGTH:
+            if secret in WEAK_JWT_SECRETS or len(secret) < MIN_JWT_SECRET_LENGTH:
                 msg = (
                     "JWT_SECRET debe definirse con un valor propio de al menos "
                     f"{MIN_JWT_SECRET_LENGTH} caracteres en producción"

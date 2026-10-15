@@ -6,11 +6,14 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.20",
     "asyncpg>=0.32",
+    "email-validator>=2.3.0",
     "fastapi>=0.143",
     "httpx2>=2.13",
     "openai>=3.31",
+    "pwdlib[argon2]>=0.3.1",
     "pydantic>=2.14",
     "pydantic-settings>=2.16",
+    "pyjwt>=2.15.1",
     "sqlalchemy[asyncio]>=2.1",
     "structlog>=26.1",
     "uvicorn[standard]>=0.54",
@@ -43,6 +46,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "PLR2004", "ARG001"]
+"app/core/errors.py" = ["S105"]
+"app/schemas/auth.py" = ["S105"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]

@@ -9,7 +9,12 @@
   },
   "auth": {
     "unauthorized": "Tu sesión no es válida. Vuelve a iniciar sesión.",
-    "forbidden": "No tienes permiso para realizar esta acción."
+    "forbidden": "No tienes permiso para realizar esta acción.",
+    "invalid_credentials": "Email o contraseña incorrectos.",
+    "too_many_attempts": "Demasiados intentos. Vuelve a intentarlo en {{retry_after}} segundos.",
+    "invalid_refresh_token": "Tu sesión ha expirado. Vuelve a iniciar sesión.",
+    "refresh_token_reused": "Por seguridad se cerraron todas tus sesiones. Vuelve a iniciar sesión.",
+    "invalid_current_password": "La contraseña actual no es correcta."
   },
   "database": {
     "unavailable": "La base de datos no está disponible."

@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v1 import health
+from app.api.v1 import auth, health
 from app.schemas.errors import ErrorResponse
 
 _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
@@ -12,3 +12,4 @@ _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 
 api_router = APIRouter(prefix="/api/v1", responses=_ERROR_RESPONSES)
 api_router.include_router(health.router)
+api_router.include_router(auth.router)

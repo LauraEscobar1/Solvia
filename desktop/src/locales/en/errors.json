@@ -9,7 +9,12 @@
   },
   "auth": {
     "unauthorized": "Your session is not valid. Please sign in again.",
-    "forbidden": "You do not have permission to perform this action."
+    "forbidden": "You do not have permission to perform this action.",
+    "invalid_credentials": "Incorrect email or password.",
+    "too_many_attempts": "Too many attempts. Try again in {{retry_after}} seconds.",
+    "invalid_refresh_token": "Your session has expired. Please sign in again.",
+    "refresh_token_reused": "For security, all your sessions were closed. Please sign in again.",
+    "invalid_current_password": "The current password is incorrect."
   },
   "database": {
     "unavailable": "The database is unavailable."

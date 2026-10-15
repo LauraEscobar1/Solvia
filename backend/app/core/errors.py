@@ -21,6 +21,11 @@ class ErrorCode(StrEnum):
     HTTP_ERROR = "common.http_error"
     UNAUTHORIZED = "auth.unauthorized"
     FORBIDDEN = "auth.forbidden"
+    AUTH_INVALID_CREDENTIALS = "auth.invalid_credentials"
+    AUTH_TOO_MANY_ATTEMPTS = "auth.too_many_attempts"
+    AUTH_INVALID_REFRESH_TOKEN = "auth.invalid_refresh_token"
+    AUTH_REFRESH_TOKEN_REUSED = "auth.refresh_token_reused"
+    AUTH_INVALID_CURRENT_PASSWORD = "auth.invalid_current_password"
     DATABASE_UNAVAILABLE = "database.unavailable"
     AI_PROVIDER_UNAVAILABLE = "ai.provider_unavailable"
     AI_INVALID_RESPONSE = "ai.invalid_response"
@@ -34,11 +39,13 @@ class AppError(Exception):
         *,
         status_code: int = status.HTTP_400_BAD_REQUEST,
         params: Mapping[str, JsonValue] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(code.value)
         self.code = code
         self.status_code = status_code
         self.params: dict[str, JsonValue] = dict(params or {})
+        self.headers: dict[str, str] = dict(headers or {})
 
 
 class NotFoundError(AppError):
@@ -49,6 +56,40 @@ class NotFoundError(AppError):
         params: Mapping[str, JsonValue] | None = None,
     ) -> None:
         super().__init__(code, status_code=status.HTTP_404_NOT_FOUND, params=params)
+
+
+class UnauthorizedError(AppError):
+    def __init__(self, code: ErrorCode = ErrorCode.UNAUTHORIZED) -> None:
+        super().__init__(
+            code,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class ForbiddenError(AppError):
+    def __init__(self, code: ErrorCode = ErrorCode.FORBIDDEN) -> None:
+        super().__init__(code, status_code=status.HTTP_403_FORBIDDEN)
+
+
+class ConflictError(AppError):
+    def __init__(self, code: ErrorCode, *, params: Mapping[str, JsonValue] | None = None) -> None:
+        super().__init__(code, status_code=status.HTTP_409_CONFLICT, params=params)
+
+
+class UnprocessableError(AppError):
+    def __init__(self, code: ErrorCode, *, params: Mapping[str, JsonValue] | None = None) -> None:
+        super().__init__(code, status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, params=params)
+
+
+class TooManyRequestsError(AppError):
+    def __init__(self, code: ErrorCode, *, retry_after: int) -> None:
+        super().__init__(
+            code,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            params={"retry_after": retry_after},
+            headers={"Retry-After": str(retry_after)},
+        )
 
 
 _HTTP_STATUS_CODES: dict[int, ErrorCode] = {
@@ -76,7 +117,7 @@ def error_response(
 async def _handle_app_error(_request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, AppError):
         raise exc
-    return error_response(exc.code, exc.status_code, exc.params)
+    return error_response(exc.code, exc.status_code, exc.params, exc.headers)
 
 
 async def _handle_http_exception(_request: Request, exc: Exception) -> JSONResponse:
