@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-flash"
     deepseek_timeout_seconds: float = Field(default=30.0, gt=0)
     deepseek_max_tokens: int = Field(default=1024, gt=0)
+    deepseek_model_deep: str = "deepseek-v4-pro"
+    deepseek_reasoning_effort: Literal["low", "high", "max"] = "high"
+    deepseek_deep_timeout_seconds: float = Field(default=120.0, gt=0)
+    deepseek_deep_max_tokens: int = Field(default=16000, gt=0)
+    ai_send_request_text: bool = False
 
     @field_validator(
         "deepseek_api_key",

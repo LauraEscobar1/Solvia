@@ -24,6 +24,10 @@ def build_ai_provider(
                 model=settings.deepseek_model,
                 timeout_seconds=settings.deepseek_timeout_seconds,
                 max_tokens=settings.deepseek_max_tokens,
+                deep_model=settings.deepseek_model_deep,
+                deep_timeout_seconds=settings.deepseek_deep_timeout_seconds,
+                deep_max_tokens=settings.deepseek_deep_max_tokens,
+                reasoning_effort=settings.deepseek_reasoning_effort,
                 http_client=http_client,
             )
         case _:

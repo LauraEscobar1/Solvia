@@ -1,34 +1,70 @@
-from typing import Final
+import asyncio
+import random
+from collections.abc import Awaitable, Callable
+from typing import Any, Final
 
 import httpx2
 import structlog
-from fastapi import status
-from openai import APIError, AsyncOpenAI
+from openai import (
+    APIConnectionError,
+    APIError,
+    APIStatusError,
+    APITimeoutError,
+    AsyncOpenAI,
+    InternalServerError,
+    RateLimitError,
+    omit,
+)
 from openai.types.chat import ChatCompletionMessageParam
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
-from app.ai.base import AnalysisResult, Language, RequestMetrics
-from app.ai.heuristics import heuristic_risk_score, risk_level_for
-from app.ai.prompts import RETRY_INSTRUCTION, build_messages
+from app.ai.base import (
+    AIProviderError,
+    AnalysisKind,
+    Completion,
+    Language,
+    OverviewAnalysis,
+    ProviderFailure,
+    RequestAnalysis,
+)
+from app.ai.prompts import RETRY_INSTRUCTION, overview_messages, request_messages
 from app.core.config import AIProviderName
-from app.core.errors import AppError, ErrorCode
 from app.schemas.health import AIProviderHealth
 
 logger = structlog.get_logger(__name__)
 
 MAX_ATTEMPTS: Final = 2
+TRANSIENT_DELAY_SECONDS: Final = (5.0, 10.0)
 _TEMPERATURE: Final = 0.2
-_THINKING_DISABLED: Final = {"thinking": {"type": "disabled"}}
+
+Sleep = Callable[[float], Awaitable[None]]
 
 
-class DeepSeekAnalysis(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+class _CallSettings(BaseModel):
+    model: str
+    timeout_seconds: float
+    max_tokens: int
+    extra_body: dict[str, Any]
+    temperature: float | None
 
-    risk_score: float = Field(ge=0, le=1)
-    summary: str = Field(min_length=1, max_length=600)
+
+def _failure_for(exc: APIError) -> ProviderFailure:
+    if isinstance(exc, RateLimitError):
+        return ProviderFailure.RATE_LIMITED
+    if isinstance(exc, APITimeoutError):
+        return ProviderFailure.TIMEOUT
+    return ProviderFailure.UNAVAILABLE
+
+
+def _is_transient(exc: APIError) -> bool:
+    return isinstance(
+        exc, RateLimitError | InternalServerError | APITimeoutError | APIConnectionError
+    )
 
 
 class DeepSeekProvider:
+    name = AIProviderName.DEEPSEEK
+
     def __init__(
         self,
         *,
@@ -37,28 +73,90 @@ class DeepSeekProvider:
         model: str,
         timeout_seconds: float,
         max_tokens: int,
+        deep_model: str,
+        deep_timeout_seconds: float,
+        deep_max_tokens: int,
+        reasoning_effort: str,
         http_client: httpx2.AsyncClient | None = None,
+        sleep: Sleep = asyncio.sleep,
     ) -> None:
-        self._model = model
-        self._max_tokens = max_tokens
+        self._request_call = _CallSettings(
+            model=model,
+            timeout_seconds=timeout_seconds,
+            max_tokens=max_tokens,
+            extra_body={"thinking": {"type": "disabled"}},
+            temperature=_TEMPERATURE,
+        )
+        self._overview_call = _CallSettings(
+            model=deep_model,
+            timeout_seconds=deep_timeout_seconds,
+            max_tokens=deep_max_tokens,
+            extra_body={"thinking": {"type": "enabled"}, "reasoning_effort": reasoning_effort},
+            temperature=None,
+        )
+        self._sleep = sleep
         self._client = AsyncOpenAI(
             api_key=api_key.get_secret_value(),
             base_url=base_url,
-            timeout=timeout_seconds,
+            max_retries=0,
             http_client=http_client,
         )
 
-    async def analyze_request(self, metrics: RequestMetrics, language: Language) -> AnalysisResult:
-        messages = build_messages(metrics, language, heuristic_risk_score(metrics))
+    def model_for(self, kind: AnalysisKind) -> str:
+        call = self._request_call if kind is AnalysisKind.REQUEST else self._overview_call
+        return call.model
 
+    async def analyze_request(
+        self,
+        payload: dict[str, Any],
+        language: Language,
+        *,
+        request_text: str | None = None,
+        retry_transient: bool = False,
+    ) -> Completion[RequestAnalysis]:
+        return await self._analyze(
+            AnalysisKind.REQUEST,
+            request_messages(payload, language, request_text),
+            RequestAnalysis,
+            retry_transient=retry_transient,
+        )
+
+    async def analyze_overview(
+        self,
+        payload: dict[str, Any],
+        language: Language,
+        *,
+        retry_transient: bool = False,
+    ) -> Completion[OverviewAnalysis]:
+        return await self._analyze(
+            AnalysisKind.OVERVIEW,
+            overview_messages(payload, language),
+            OverviewAnalysis,
+            retry_transient=retry_transient,
+        )
+
+    async def _analyze[T: BaseModel](
+        self,
+        kind: AnalysisKind,
+        messages: list[ChatCompletionMessageParam],
+        schema: type[T],
+        *,
+        retry_transient: bool,
+    ) -> Completion[T]:
+        call = self._request_call if kind is AnalysisKind.REQUEST else self._overview_call
+        tokens = 0
         for attempt in range(1, MAX_ATTEMPTS + 1):
-            content = await self._complete(messages)
+            content, used = await self._complete(
+                call, messages, kind, retry_transient=retry_transient, tokens_so_far=tokens
+            )
+            tokens += used
             try:
-                parsed = DeepSeekAnalysis.model_validate_json(content or "")
+                result = schema.model_validate_json(content or "")
             except ValidationError as exc:
                 logger.warning(
                     "ai_invalid_response",
-                    provider=AIProviderName.DEEPSEEK,
+                    provider=self.name,
+                    kind=kind,
                     attempt=attempt,
                     error_count=exc.error_count(),
                 )
@@ -66,48 +164,51 @@ class DeepSeekProvider:
                     messages = [*messages, {"role": "assistant", "content": content}]
                 messages = [*messages, {"role": "user", "content": RETRY_INSTRUCTION}]
                 continue
+            return Completion(result=result, model=call.model, tokens_used=tokens)
+        raise AIProviderError(ProviderFailure.INVALID_RESPONSE, tokens_used=tokens)
 
-            score = round(parsed.risk_score, 4)
-            return AnalysisResult(
-                risk_score=score,
-                risk_level=risk_level_for(score),
-                summary=parsed.summary.strip(),
-                provider=AIProviderName.DEEPSEEK,
-            )
-
-        raise AppError(ErrorCode.AI_INVALID_RESPONSE, status_code=status.HTTP_502_BAD_GATEWAY)
-
-    async def _complete(self, messages: list[ChatCompletionMessageParam]) -> str | None:
-        try:
-            response = await self._client.chat.completions.create(
-                model=self._model,
-                messages=messages,
-                response_format={"type": "json_object"},
-                max_tokens=self._max_tokens,
-                temperature=_TEMPERATURE,
-                stream=False,
-                extra_body=_THINKING_DISABLED,
-            )
-        except APIError as exc:
-            logger.warning(
-                "ai_provider_error",
-                provider=AIProviderName.DEEPSEEK,
-                error_type=type(exc).__name__,
-                status=getattr(exc, "status_code", None),
-            )
-            raise AppError(
-                ErrorCode.AI_PROVIDER_UNAVAILABLE,
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            ) from exc
-
-        if not response.choices:
-            return None
-        return response.choices[0].message.content
+    async def _complete(
+        self,
+        call: _CallSettings,
+        messages: list[ChatCompletionMessageParam],
+        kind: AnalysisKind,
+        *,
+        retry_transient: bool,
+        tokens_so_far: int,
+    ) -> tuple[str | None, int]:
+        attempts = 2 if retry_transient else 1
+        for attempt in range(1, attempts + 1):
+            try:
+                response = await self._client.chat.completions.create(
+                    model=call.model,
+                    messages=messages,
+                    response_format={"type": "json_object"},
+                    max_tokens=call.max_tokens,
+                    timeout=call.timeout_seconds,
+                    stream=False,
+                    extra_body=call.extra_body,
+                    temperature=omit if call.temperature is None else call.temperature,
+                )
+            except APIError as exc:
+                logger.warning(
+                    "ai_provider_error",
+                    provider=self.name,
+                    kind=kind,
+                    attempt=attempt,
+                    error_type=type(exc).__name__,
+                    status=exc.status_code if isinstance(exc, APIStatusError) else None,
+                )
+                if attempt < attempts and _is_transient(exc):
+                    await self._sleep(random.uniform(*TRANSIENT_DELAY_SECONDS))  # noqa: S311
+                    continue
+                raise AIProviderError(_failure_for(exc), tokens_used=tokens_so_far) from exc
+            used = response.usage.total_tokens if response.usage else 0
+            content = response.choices[0].message.content if response.choices else None
+            return content, used
+        raise AIProviderError(ProviderFailure.UNAVAILABLE, tokens_used=tokens_so_far)
 
     def health(self) -> AIProviderHealth:
-        return AIProviderHealth(
-            provider=AIProviderName.DEEPSEEK, model=self._model, configured=True
-        )
+        return AIProviderHealth(provider=self.name, model=self._request_call.model, configured=True)
 
     async def aclose(self) -> None:
         await self._client.close()
