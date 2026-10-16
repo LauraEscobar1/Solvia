@@ -73,8 +73,12 @@ class RequestFilters(BaseModel):
     requester_id: uuid.UUID | None = None
     q: SearchText | None = None
     overdue: bool | None = None
+    sla_status: SlaStatus | None = None
+    stalled: bool | None = None
     received_from: date | None = None
     received_to: date | None = None
+    completed_from: date | None = None
+    completed_to: date | None = None
 
 
 class RequestListQuery(RequestFilters):

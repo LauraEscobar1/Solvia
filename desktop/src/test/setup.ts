@@ -12,7 +12,7 @@ beforeEach(async () => {
   document.documentElement.className = ''
   document.documentElement.removeAttribute('style')
   useThemeStore.setState({ preference: 'system' })
-  useSettingsStore.setState({ apiBaseUrl: DEFAULT_API_BASE_URL })
+  useSettingsStore.setState({ apiBaseUrl: DEFAULT_API_BASE_URL, criticalNotifications: false })
   useSessionStore.getState().clear()
   await i18n.changeLanguage('es')
   localStorage.clear()

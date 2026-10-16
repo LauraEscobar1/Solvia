@@ -45,8 +45,12 @@
     "assignee": "Responsable",
     "anyAssignee": "Cualquier responsable",
     "overdue": "Solo vencidas",
+    "dueSoon": "Por vencer",
+    "stalled": "Sin movimiento",
     "receivedFrom": "Recibidas desde",
     "receivedTo": "Recibidas hasta",
+    "completedFrom": "Completadas desde",
+    "completedTo": "Completadas hasta",
     "clear": "Limpiar filtros"
   },
   "empty": "No hay solicitudes con estos filtros.",

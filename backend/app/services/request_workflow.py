@@ -6,6 +6,7 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, Final
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import (
@@ -26,8 +27,11 @@ from app.repositories.request_event import RequestEventRepository
 from app.repositories.sla_policy import SlaPolicyRepository
 from app.repositories.user import UserRepository
 from app.schemas.request import RequestCreate, RequestUpdate
+from app.services.alerts import AlertEvaluator
 from app.services.request_policy import ASSIGNABLE_ROLES, Capability, RequestPolicy
 from app.services.sla import SlaCatalog
+
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +117,7 @@ class RequestWorkflow:
         self._users = UserRepository(session)
         self._areas = AreaRepository(session)
         self._sla = SlaPolicyRepository(session)
+        self._alerts = AlertEvaluator(session, clock)
 
     async def create(self, actor: User, data: RequestCreate) -> ServiceRequest:
         area = await self._areas.get(data.area_id)
@@ -178,6 +183,7 @@ class RequestWorkflow:
             await self._record(
                 request, actor, RequestEventType.UPDATED, details={"changes": changes}
             )
+            await self._reevaluate_alerts(request.id)
             await self._session.commit()
         return request
 
@@ -193,6 +199,7 @@ class RequestWorkflow:
     ) -> ServiceRequest:
         request, policy = await self._load(actor, request_id, version)
         await self._apply_transition(policy, request, to, _clean(comment), assignee_id)
+        await self._reevaluate_alerts(request.id)
         await self._session.commit()
         return request
 
@@ -208,6 +215,7 @@ class RequestWorkflow:
         request, policy = await self._load(actor, request_id, version)
         if request.status is RECEIVED:
             await self._apply_transition(policy, request, ASSIGNED, _clean(comment), assignee_id)
+            await self._reevaluate_alerts(request.id)
             await self._session.commit()
             return request
 
@@ -234,6 +242,7 @@ class RequestWorkflow:
             comment=_clean(comment),
             details=details,
         )
+        await self._reevaluate_alerts(request.id)
         await self._session.commit()
         return request
 
@@ -244,8 +253,16 @@ class RequestWorkflow:
         event = await self._record(
             request, actor, RequestEventType.COMMENT, comment=text, bump_version=False
         )
+        await self._reevaluate_alerts(request.id)
         await self._session.commit()
         return event
+
+    async def _reevaluate_alerts(self, request_id: uuid.UUID) -> None:
+        try:
+            async with self._session.begin_nested():
+                await self._alerts.evaluate_request(request_id)
+        except Exception:
+            logger.exception("alert_reevaluation_failed", request_id=str(request_id))
 
     async def _apply_transition(
         self,

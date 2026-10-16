@@ -32,8 +32,8 @@ function HealthCard({ icon: Icon, title, tone, status, children }: HealthCardPro
   )
 }
 
-export function DashboardPage() {
-  const { t } = useTranslation(['dashboard', 'common'])
+export function SystemStatus() {
+  const { t } = useTranslation(['settings', 'common'])
   const translateError = useTranslateError()
   const { dateTime } = useFormatters()
   const apiBaseUrl = useSettingsStore((state) => state.apiBaseUrl)
@@ -45,12 +45,8 @@ export function DashboardPage() {
   const loadingLabel = t('common:loading')
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('health.title')}</h2>
-          <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={() => void health.refetch()}
@@ -71,7 +67,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <HealthCard
           icon={Server}
           title={t('health.api')}

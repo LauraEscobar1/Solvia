@@ -66,6 +66,11 @@ class InsightScope(StrEnum):
     GLOBAL = "global"
 
 
+class BottleneckReason(StrEnum):
+    COUNT_ABOVE_MEDIAN = "count_above_median"
+    AVG_ABOVE_SLA = "avg_above_sla"
+
+
 class SlaStatus(StrEnum):
     ON_TRACK = "on_track"
     AT_RISK = "at_risk"

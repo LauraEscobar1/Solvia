@@ -183,6 +183,44 @@ async def test_overdue_and_date_range_filters(
 
 
 @pytest.mark.parametrize(
+    ("params", "expected"),
+    [
+        ({"sla_status": "at_risk"}, {"Acceso VPN"}),
+        ({"sla_status": "overdue"}, {"Impresora atascada"}),
+        ({"sla_status": "on_track"}, {"Reembolso de viaje"}),
+        ({"stalled": "true"}, {"Impresora atascada"}),
+        (
+            {"stalled": "false"},
+            {"Acceso VPN", "Reembolso de viaje", "Factura duplicada", "Monitor extra"},
+        ),
+    ],
+)
+async def test_sla_filters_use_the_same_rules_as_the_indicators(
+    db_client: httpx2.AsyncClient,
+    factory: Factory,
+    catalog: Catalog,
+    params: dict[str, str],
+    expected: set[str],
+) -> None:
+    titles = await _titles(db_client, catalog.headers(factory, "admin"), params)
+
+    assert set(titles) == expected
+
+
+async def test_completed_date_filters(
+    db_client: httpx2.AsyncClient, factory: Factory, catalog: Catalog
+) -> None:
+    headers = catalog.headers(factory, "admin")
+    today = utcnow().date()
+
+    since = await _titles(db_client, headers, {"completed_from": str(today - timedelta(days=45))})
+    until = await _titles(db_client, headers, {"completed_to": str(today - timedelta(days=45))})
+
+    assert since == ["Factura duplicada"]
+    assert until == []
+
+
+@pytest.mark.parametrize(
     ("sort", "first"),
     [
         ("due_at", "Factura duplicada"),

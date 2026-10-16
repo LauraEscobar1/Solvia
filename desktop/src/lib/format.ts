@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+
+const DAYS_FROM_HOURS = 48
 
 export function intlLocaleFor(language: string): string {
   const systemLocales = typeof navigator === 'undefined' ? [] : navigator.languages
@@ -57,5 +59,17 @@ export function useFormatters() {
       relative: (value: Date | string | number) => formatRelativeTime(value, locale),
     }),
     [locale],
+  )
+}
+
+export function useDurationFormatter(): (hours: number) => string {
+  const { t } = useTranslation()
+  const { number } = useFormatters()
+  return useCallback(
+    (hours: number) =>
+      hours >= DAYS_FROM_HOURS
+        ? t('duration.days', { value: number(hours / 24, { maximumFractionDigits: 1 }) })
+        : t('duration.hours', { value: number(hours, { maximumFractionDigits: 1 }) }),
+    [number, t],
   )
 }

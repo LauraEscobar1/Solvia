@@ -1,6 +1,7 @@
 from enum import StrEnum
 from functools import lru_cache
 from typing import Literal, Self
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -52,6 +53,11 @@ class Settings(BaseSettings):
     login_rate_limit_attempts: int = Field(default=5, gt=0)
     login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 
+    organization_timezone: str = "America/Bogota"
+    alerts_job_enabled: bool = True
+    alerts_job_interval_minutes: int = Field(default=15, gt=0)
+    bottleneck_min_count: int = Field(default=3, ge=1)
+
     seed_admin_email: str | None = None
     seed_admin_name: str = "Administrador"
     seed_admin_password: SecretStr | None = None
@@ -77,6 +83,16 @@ class Settings(BaseSettings):
             return None
         return value
 
+    @field_validator("organization_timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            msg = f"ORGANIZATION_TIMEZONE no es una zona horaria IANA válida: {value}"
+            raise ValueError(msg) from exc
+        return value
+
     @model_validator(mode="after")
     def _validate_consistency(self) -> Self:
         if self.environment is Environment.PRODUCTION:
@@ -95,6 +111,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
+
+    @property
+    def timezone(self) -> ZoneInfo:
+        return ZoneInfo(self.organization_timezone)
 
 
 @lru_cache

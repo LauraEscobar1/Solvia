@@ -159,3 +159,111 @@ export interface DueEstimate {
   priority: RequestPriority
   hours: number | null
 }
+
+export interface DashboardQuery {
+  area_id?: string
+  date_from?: string
+  date_to?: string
+}
+
+export interface DateRange {
+  date_from: string
+  date_to: string
+  timezone: string
+}
+
+export interface DashboardSummary {
+  open: number
+  due_soon: number
+  overdue: number
+  stalled: number
+  completed_last_7_days: number
+  completed_since: string
+  avg_resolution_hours: number | null
+  range: DateRange
+}
+
+export interface StatusBreakdown {
+  items: { status: RequestStatus; count: number }[]
+  range: DateRange
+}
+
+export interface DashboardRequestItem {
+  id: string
+  code: string
+  title: string
+  area: AreaRef
+  assignee: UserRef | null
+  priority: RequestPriority
+  status: RequestStatus
+  due_at: string | null
+  last_activity_at: string
+  sla_status: SlaStatus | null
+  consumed_pct: number | null
+  idle_hours: number
+  inactivity_hours: number | null
+}
+
+export interface RequestHighlights {
+  items: DashboardRequestItem[]
+}
+
+export type BottleneckReason = 'count_above_median' | 'avg_above_sla'
+
+export interface BottleneckCell {
+  area: AreaRef
+  status: SlaStage
+  count: number
+  avg_hours: number | null
+  median_count: number
+  median_avg_hours: number | null
+  sla_max_hours: number | null
+  is_bottleneck: boolean
+  reasons: BottleneckReason[]
+}
+
+export interface BottleneckMatrix {
+  cells: BottleneckCell[]
+}
+
+export interface TrendPoint {
+  day: string
+  created: number
+  completed: number
+}
+
+export interface TrendSeries {
+  days: TrendPoint[]
+  range: DateRange
+}
+
+export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck'] as const
+export type AlertType = (typeof ALERT_TYPES)[number]
+
+export const ALERT_SEVERITIES = ['warning', 'critical'] as const
+export type AlertSeverity = 'info' | (typeof ALERT_SEVERITIES)[number]
+
+export type AlertState = 'open' | 'resolved'
+
+export interface Alert {
+  id: string
+  type: AlertType
+  severity: AlertSeverity
+  source: 'rule' | 'ai'
+  message_code: string
+  params: Record<string, unknown>
+  area: AreaRef
+  request: { id: string; code: string; title: string; status: RequestStatus } | null
+  is_read: boolean
+  created_at: string
+  resolved_at: string | null
+}
+
+export interface AlertListParams {
+  page: number
+  size: number
+  type: AlertType[]
+  severity: AlertSeverity[]
+  state?: AlertState
+  is_read?: boolean
+}

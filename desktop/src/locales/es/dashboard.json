@@ -1,29 +1,75 @@
 {
-  "subtitle": "Estado de los servicios de Solvia",
-  "health": {
-    "title": "Estado del sistema",
-    "api": "API",
-    "database": "Base de datos",
-    "ai": "Proveedor de IA",
-    "online": "En línea",
-    "offline": "Sin conexión",
-    "ok": "Operativa",
-    "unavailable": "No disponible",
-    "overall": {
-      "ok": "Todo operativo",
-      "degraded": "Servicio degradado"
+  "subtitle": "Solicitudes, SLA y alertas de un vistazo",
+  "updatedAt": "Actualizado a las {{time}}",
+  "refresh": "Actualizar",
+  "range": "Del {{from}} al {{to}} · {{timezone}}",
+  "filters": {
+    "label": "Filtros del panel",
+    "area": "Área",
+    "allAreas": "Todas las áreas",
+    "from": "Desde",
+    "to": "Hasta",
+    "reset": "Últimos 30 días"
+  },
+  "cards": {
+    "label": "Resumen",
+    "open": "Abiertas",
+    "due_soon": "Próximas a vencer",
+    "overdue": "Vencidas",
+    "stalled": "Sin movimiento",
+    "completed": "Completadas · 7 días",
+    "resolution": "Resolución promedio",
+    "noValue": "—",
+    "viewList": "Ver solicitudes: {{label}}"
+  },
+  "byStatus": {
+    "title": "Solicitudes por estado",
+    "description": "Recibidas en el rango, según su estado actual",
+    "count": "Solicitudes"
+  },
+  "trends": {
+    "title": "Creadas y completadas",
+    "description": "Por día, en la zona horaria de la organización",
+    "created": "Creadas",
+    "completed": "Completadas"
+  },
+  "bottlenecks": {
+    "title": "Cuellos de botella",
+    "description": "Carga actual por área y etapa frente a su mediana de 30 días",
+    "area": "Área",
+    "flagged": "Cuello de botella",
+    "critical": "Cuello de botella crítico",
+    "count_one": "{{count}} solicitud",
+    "count_other": "{{count}} solicitudes",
+    "avgHours": "Promedio en la etapa: {{value}}",
+    "median": "Mediana de 30 días: {{count}} · {{hours}}",
+    "slaMax": "Máximo SLA de la etapa: {{value}}",
+    "open": "Ver solicitudes de {{area}} en «{{stage}}»",
+    "reasons": {
+      "count_above_median": "Supera 1,5 veces la mediana",
+      "avg_above_sla": "El promedio supera el máximo SLA"
     },
-    "providers": {
-      "none": "Sin IA (heurístico)",
-      "deepseek": "DeepSeek"
-    },
-    "version": "Versión {{version}}",
-    "environment": {
-      "development": "Desarrollo",
-      "test": "Pruebas",
-      "production": "Producción"
-    },
-    "lastChecked": "Última comprobación: {{time}}",
-    "apiUrl": "API: {{url}}"
+    "empty": "No hay áreas para mostrar."
+  },
+  "atRisk": {
+    "title": "En riesgo",
+    "description": "Vencidas primero, luego por porcentaje de SLA consumido",
+    "consumed": "{{value}} % del SLA",
+    "empty": "No hay solicitudes vencidas ni próximas a vencer."
+  },
+  "stalled": {
+    "title": "Sin movimiento",
+    "description": "Ordenadas por horas sin actividad",
+    "idle": "Sin actividad {{time}}",
+    "empty": "Todas las solicitudes abiertas tienen actividad reciente."
+  },
+  "ai": {
+    "title": "Recomendaciones de IA",
+    "comingSoon": "Disponible próximamente"
+  },
+  "block": {
+    "loading": "Cargando…",
+    "error": "No se pudo cargar este bloque.",
+    "empty": "No hay datos para este rango."
   }
 }

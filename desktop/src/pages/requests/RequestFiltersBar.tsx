@@ -15,6 +15,13 @@ import {
 import { hasActiveFilters, type RequestListParams } from '@/lib/requests/filters'
 import { useSessionStore } from '@/stores/session'
 
+const DATE_FILTERS = [
+  { key: 'received_from', label: 'filters.receivedFrom' },
+  { key: 'received_to', label: 'filters.receivedTo' },
+  { key: 'completed_from', label: 'filters.completedFrom' },
+  { key: 'completed_to', label: 'filters.completedTo' },
+] as const
+
 interface RequestFiltersBarProps {
   params: RequestListParams
   onChange: (changes: Partial<RequestListParams>) => void
@@ -116,6 +123,28 @@ export function RequestFiltersBar({ params, onChange, onClear }: RequestFiltersB
           />
           {t('filters.overdue')}
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-primary size-4"
+            checked={params.sla_status === 'at_risk'}
+            onChange={(event) => {
+              onChange({ sla_status: event.target.checked ? 'at_risk' : undefined })
+            }}
+          />
+          {t('filters.dueSoon')}
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-primary size-4"
+            checked={Boolean(params.stalled)}
+            onChange={(event) => {
+              onChange({ stalled: event.target.checked || undefined })
+            }}
+          />
+          {t('filters.stalled')}
+        </label>
         {hasActiveFilters(params) && (
           <Button variant="ghost" onClick={onClear}>
             <X className="size-4" aria-hidden="true" />
@@ -155,29 +184,20 @@ export function RequestFiltersBar({ params, onChange, onClear }: RequestFiltersB
             />
           ))}
         </fieldset>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground font-medium">{t('filters.receivedFrom')}</span>
-            <input
-              type="date"
-              value={params.received_from ?? ''}
-              onChange={(event) => {
-                onChange({ received_from: event.target.value || undefined })
-              }}
-              className={`${inputClass} w-auto py-1`}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground font-medium">{t('filters.receivedTo')}</span>
-            <input
-              type="date"
-              value={params.received_to ?? ''}
-              onChange={(event) => {
-                onChange({ received_to: event.target.value || undefined })
-              }}
-              className={`${inputClass} w-auto py-1`}
-            />
-          </label>
+        <div className="flex flex-wrap items-center gap-2">
+          {DATE_FILTERS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground font-medium">{t(label)}</span>
+              <input
+                type="date"
+                value={params[key] ?? ''}
+                onChange={(event) => {
+                  onChange({ [key]: event.target.value || undefined })
+                }}
+                className={`${inputClass} w-auto py-1`}
+              />
+            </label>
+          ))}
         </div>
       </div>
     </div>

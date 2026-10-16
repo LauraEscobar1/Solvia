@@ -1,0 +1,50 @@
+{
+  "subtitle": "Avisos de SLA, inactividad y cuellos de botella",
+  "bell": "Alertas sin leer: {{count}}",
+  "filters": {
+    "label": "Filtros de alertas",
+    "state": "Estado",
+    "open": "Abiertas",
+    "resolved": "Resueltas",
+    "anyState": "Todas",
+    "type": "Tipo",
+    "severity": "Severidad",
+    "read": "Lectura",
+    "unread": "No leídas",
+    "readOnly": "Leídas",
+    "anyRead": "Todas"
+  },
+  "types": {
+    "due_soon": "Por vencer",
+    "overdue": "Vencida",
+    "stalled": "Sin movimiento",
+    "bottleneck": "Cuello de botella"
+  },
+  "severity": {
+    "info": "Información",
+    "warning": "Advertencia",
+    "critical": "Crítica"
+  },
+  "alert": {
+    "due_soon": "{{code}} vence {{due}}.",
+    "overdue": "{{code}} venció {{due}}.",
+    "stalled": "{{code}} no tiene actividad desde {{since}} en «{{status}}» (umbral: {{threshold}}).",
+    "bottleneck_one": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitud con {{avg}} de promedio en la etapa.",
+    "bottleneck_other": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitudes con {{avg}} de promedio en la etapa."
+  },
+  "unknownMessage": "Alerta {{code}}",
+  "unread": "Sin leer",
+  "markRead": "Marcar como leída",
+  "markAllRead": "Marcar todas como leídas",
+  "markedAll_one": "{{count}} alerta marcada como leída.",
+  "markedAll_other": "{{count}} alertas marcadas como leídas.",
+  "detectedAt": "Detectada {{time}}",
+  "resolvedAt": "Resuelta {{time}}",
+  "viewRequest": "Ver solicitud",
+  "viewRequests": "Ver solicitudes",
+  "empty": "No hay alertas con estos filtros.",
+  "loading": "Cargando alertas…",
+  "notification": {
+    "title": "Alerta crítica en Solvia"
+  }
+}

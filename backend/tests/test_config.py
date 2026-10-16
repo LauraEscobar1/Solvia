@@ -97,3 +97,35 @@ def test_deepseek_requires_api_key(key: str | None, monkeypatch: pytest.MonkeyPa
 
     with pytest.raises(ValidationError, match="DEEPSEEK_API_KEY"):
         Settings(_env_file=None)
+
+
+def test_organization_timezone_defaults_to_bogota() -> None:
+    settings = make_settings()
+
+    assert settings.organization_timezone == "America/Bogota"
+    assert settings.timezone.key == "America/Bogota"
+
+
+def test_unknown_organization_timezone_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="ORGANIZATION_TIMEZONE"):
+        make_settings(organization_timezone="Marte/Olympus")
+
+
+def test_alerts_job_interval_must_be_positive() -> None:
+    with pytest.raises(ValidationError):
+        make_settings(alerts_job_interval_minutes=0)
+
+
+def test_bottleneck_minimum_count_defaults_to_three_and_reads_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert make_settings().bottleneck_min_count == 3
+
+    monkeypatch.setenv("BOTTLENECK_MIN_COUNT", "5")
+
+    assert make_settings().bottleneck_min_count == 5
+
+
+def test_bottleneck_minimum_count_must_be_positive() -> None:
+    with pytest.raises(ValidationError):
+        make_settings(bottleneck_min_count=0)

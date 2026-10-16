@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
+import { AlertBell } from '@/components/alerts/AlertBell'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ThemeSelector } from '@/components/ThemeSelector'
 import { navItemForPath } from './navigation'
@@ -16,6 +17,7 @@ export function Header() {
         {current ? t(`nav:${current.labelKey}`) : t('appName')}
       </h1>
       <div className="flex items-center gap-3">
+        <AlertBell />
         <LanguageSelector />
         <ThemeSelector />
         <UserMenu />

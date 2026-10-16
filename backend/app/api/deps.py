@@ -14,8 +14,10 @@ from app.db.session import ping_database
 from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.services.alerts import AlertService
 from app.services.areas import AreaService
 from app.services.auth import AuthService
+from app.services.dashboard import DashboardService
 from app.services.health import DatabaseProbe, HealthService
 from app.services.requests import RequestService
 from app.services.sla_policies import SlaPolicyService
@@ -131,11 +133,29 @@ def get_sla_policy_service(session: SessionDep) -> SlaPolicyService:
 SlaPolicyServiceDep = Annotated[SlaPolicyService, Depends(get_sla_policy_service)]
 
 
-def get_request_service(session: SessionDep) -> RequestService:
-    return RequestService(session)
+def get_request_service(session: SessionDep, settings: SettingsDep) -> RequestService:
+    return RequestService(session, settings.timezone)
 
 
 RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]
+
+
+def get_alert_service(session: SessionDep, settings: SettingsDep) -> AlertService:
+    return AlertService(
+        session, settings.timezone, bottleneck_min_count=settings.bottleneck_min_count
+    )
+
+
+AlertServiceDep = Annotated[AlertService, Depends(get_alert_service)]
+
+
+def get_dashboard_service(session: SessionDep, settings: SettingsDep) -> DashboardService:
+    return DashboardService(
+        session, settings.timezone, bottleneck_min_count=settings.bottleneck_min_count
+    )
+
+
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:

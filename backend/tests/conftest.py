@@ -19,7 +19,11 @@ def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
 
 def make_settings(**overrides: Any) -> Settings:
-    values: dict[str, Any] = {"environment": Environment.TEST, **overrides}
+    values: dict[str, Any] = {
+        "environment": Environment.TEST,
+        "alerts_job_enabled": False,
+        **overrides,
+    }
     return Settings(_env_file=None, **values)
 
 

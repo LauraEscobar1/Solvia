@@ -26,5 +26,9 @@
     "activate": "Reactivar",
     "close": "Cerrar",
     "saving": "Guardando…"
+  },
+  "duration": {
+    "hours": "{{value}} h",
+    "days": "{{value}} d"
   }
 }
