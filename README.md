@@ -5,9 +5,9 @@ recorre los estados _recibida → asignada → en proceso → completada_, y una
 detecta retrasos y cuellos de botella.
 
 > **Estado actual:** autenticación, roles y administración; solicitudes de punta a punta (flujo
-> de estados, asignación, comentarios, historial, lista, tablero kanban y detalle); y SLA,
-> alertas automáticas, detección de cuellos de botella y panel de control. El análisis con IA
-> (DeepSeek) llega a continuación y ya tiene su espacio reservado en el panel.
+> de estados, asignación, comentarios, historial, lista, tablero kanban y detalle); SLA,
+> alertas automáticas, detección de cuellos de botella y panel de control; y análisis de riesgo
+> en dos niveles: reglas propias siempre activas y DeepSeek para explicaciones y recomendaciones.
 
 ## Stack
 
@@ -65,8 +65,9 @@ AI_PROVIDER=deepseek
 DEEPSEEK_API_KEY=<tu clave>
 ```
 
-Con `AI_PROVIDER=none` (valor por defecto) se usa un puntaje heurístico sin llamadas externas.
-Si eliges `deepseek` sin clave, la API no arranca y muestra un error explícito.
+Con `AI_PROVIDER=none` (valor por defecto) solo se usa el análisis por reglas, sin llamadas
+externas. Si eliges `deepseek` sin clave, la API no arranca y muestra un error explícito. Las
+demás opciones de la IA se explican en [Inteligencia artificial](#inteligencia-artificial).
 
 ## 2. Levantar el backend
 
@@ -246,7 +247,7 @@ horas calendario) para poder pasar a horario laboral más adelante.
   - Mapa de calor área × etapa, con los cuellos de botella resaltados y el detalle al pasar el
     cursor.
   - Listas «En riesgo» y «Sin movimiento».
-  - Bloque reservado para las recomendaciones de IA.
+  - Recomendaciones de IA (ver [Inteligencia artificial](#inteligencia-artificial)).
   - Filtro de área (admin) y de fechas, y refresco automático cada 60 s.
 - **Campana** en el encabezado con las alertas abiertas sin leer, y página **Alertas** con
   filtros, marcar como leídas y enlace a la solicitud. En un cuello de botella, el enlace lleva
@@ -255,6 +256,98 @@ horas calendario) para poder pasar a horario laboral más adelante.
   **Configuración › Notificaciones** (desactivadas por defecto) y solo funcionan en la app de
   escritorio.
 - El estado del sistema (API, base de datos y proveedor de IA) está en **Configuración**.
+
+## Inteligencia artificial
+
+El análisis tiene dos niveles. El primero siempre funciona; el segundo es opcional y, si falla,
+la app vuelve al primero sin dejar de funcionar.
+
+### Nivel 1: puntaje de riesgo por reglas
+
+Cada solicitud abierta tiene un riesgo de 0 a 100 calculado en SQL (la lista puede ordenarse
+por riesgo), sin costo y sin llamadas externas:
+
+`riesgo = round(100 × Σ peso × factor)`, con cada factor entre 0 y 1:
+
+| Factor | Valor | Peso |
+| --- | --- | --- |
+| Tiempo en la etapa | min(horas en la etapa ÷ referencia, 1,5) ÷ 1,5 | 0,25 |
+| SLA consumido | min(% consumido, 150 %) ÷ 1,5; 0 sin fecha límite | 0,30 |
+| Inactividad | min(horas sin actividad ÷ umbral, 2) ÷ 2 | 0,20 |
+| Prioridad | crítica 1 · alta 0,7 · media 0,4 · baja 0,1 | 0,15 |
+| Carga del responsable | min(abiertas asignadas ÷ 10, 1); sin responsable: 0,5, o 1 si ya superó su referencia | 0,10 |
+
+La referencia es el P90 histórico de 90 días del área × etapa × prioridad (con al menos 10
+casos); si no hay datos suficientes, el de etapa × prioridad, y si tampoco, el máximo SLA de la
+etapa. El job de 15 minutos lo precalcula en `risk_baselines`. Los pesos están en un solo lugar,
+`backend/app/ai/risk_model.py`, y la app muestra cuántos puntos aporta cada factor.
+
+### Nivel 2: DeepSeek
+
+- **Por solicitud:** `deepseek-flash` sin razonamiento y en modo JSON: riesgo, resumen, hasta 3
+  causas y hasta 3 acciones.
+- **Global o por área:** `DEEPSEEK_MODEL_DEEP` (`deepseek-v4-pro`) con razonamiento y modo JSON:
+  resumen, hallazgos y recomendaciones con enlace a una solicitud o a un área y etapa.
+- La respuesta se valida con Pydantic; si no es válida se reintenta una vez y, si vuelve a
+  fallar, se usa el nivel 1. Cualquier código de solicitud o área que el modelo invente o que
+  quede fuera del alcance de quien pide el análisis se descarta.
+- Timeouts, 429 y errores 5xx nunca rompen nada: se usa el nivel 1 y se deja un log sin datos
+  sensibles. En los jobs se reintenta una vez tras esperar entre 5 y 10 segundos; bajo demanda
+  no se reintenta para no hacer esperar a nadie.
+
+**Cuándo corre:**
+
+- Cada día a las 6:00 en la zona de la organización se genera el análisis global en
+  `ORGANIZATION_LANGUAGE`. A esa hora de Bogotá (11:00 UTC) DeepSeek cobra tarifa valle (50 %
+  menos).
+- En la ronda de 15 minutos se analizan las solicitudes con riesgo mayor que 70, como máximo una
+  vez cada 24 horas y `AI_AUTOMATIC_MAX_PER_RUN` por ronda. Nunca dentro de la acción de un
+  usuario.
+- Bajo demanda: «Analizar con IA» en el detalle (quien puede ver la solicitud) y «Regenerar» en
+  el panel (admin, o supervisor para su área).
+- Si DeepSeek da un riesgo de 80 o más y la solicitud no está vencida, se abre una alerta
+  `ai_risk` (warning; critical desde 90), con las mismas reglas de no duplicar y de
+  autorresolución que las demás.
+
+### Qué datos se envían
+
+Solo códigos de solicitud (`SOL-0001`), nombres de área, estados, prioridades y métricas
+(horas, porcentajes, recuentos y el desglose del nivel 1). **Nunca** se envían nombres, emails
+ni identificadores de usuarios. El título y la descripción tampoco se envían salvo que actives
+`AI_SEND_REQUEST_TEXT=true`; en ese caso van delimitados y el prompt indica que son contenido
+del usuario, no instrucciones. Una prueba automática verifica que el payload no lleve datos de
+personas.
+
+### Costos aproximados
+
+Con la semilla demo, en una verificación real:
+
+| Análisis | Modelo | Tokens | Costo aproximado (normal / valle) |
+| --- | --- | --- | --- |
+| Una solicitud | `deepseek-flash` | ~850 | US$0,0005 / 0,0003 |
+| Global | `deepseek-v4-pro` con razonamiento | ~7 300 | US$0,02 / 0,01 |
+
+Con un análisis global diario y unas 10 solicitudes automáticas al día, el gasto queda por
+debajo de US$1 al mes. Precios de referencia en <https://api-docs.deepseek.com/quick_start/pricing>.
+
+### Caché, presupuesto y límites
+
+- Un resultado de IA se reutiliza si la solicitud o el panorama no cambiaron (mismo hash de
+  entrada) y el idioma coincide, durante `AI_CACHE_HOURS` (6 por defecto).
+- `AI_DAILY_TOKEN_BUDGET` (200 000) cuenta los tokens de todos los análisis del día en la zona
+  de la organización; al superarlo, todo usa el nivel 1 hasta el día siguiente y la app lo avisa.
+- Cada usuario puede pedir `AI_USER_HOURLY_LIMIT` (10) análisis por hora (`ai.rate_limited`).
+- **Administración → IA** muestra el proveedor, los modelos, si la clave está configurada (sin
+  mostrarla), el consumo del día frente al presupuesto y la última ejecución diaria.
+- Los usuarios pueden marcar cada recomendación como útil o no útil (`ai_feedback`), para medir
+  la calidad más adelante.
+
+### Cómo apagarla
+
+- `AI_AUTOMATIC_ENABLED=false`: apaga el análisis diario y el automático; el bajo demanda sigue.
+- `AI_PROVIDER=none`: apaga DeepSeek por completo; la app sigue con el nivel 1 y muestra
+  «La IA está desactivada».
+- `AI_DAILY_TOKEN_BUDGET=0`: deja DeepSeek configurado pero sin gasto.
 
 ## API (`/api/v1`)
 
@@ -267,6 +360,7 @@ horas calendario) para poder pasar a horario laboral más adelante.
 | Solicitudes | `GET /requests` · `GET /requests/board` · `GET /requests/due-estimates` · `POST /requests` · `GET /requests/{id}` · `PATCH /requests/{id}` · `POST /requests/{id}/transition` · `POST /requests/{id}/assign` · `POST /requests/{id}/comments` · `GET /requests/{id}/events` |
 | Panel | `GET /dashboard/summary` · `GET /dashboard/by-status` · `GET /dashboard/at-risk` · `GET /dashboard/stalled` · `GET /dashboard/bottlenecks` · `GET /dashboard/trends` · `GET /dashboard/by-area` |
 | Alertas | `GET /alerts` · `GET /alerts/unread-count` · `PATCH /alerts/{id}/read` · `POST /alerts/read-all` · `POST /alerts/evaluate` (admin) |
+| IA | `POST /ai/requests/{id}/analyze` · `GET /ai/requests/{id}/insight` · `POST /ai/overview/analyze` · `GET /ai/overview` · `GET /ai/status` (admin) · `POST /ai/insights/{id}/feedback` |
 | Estado | `GET /health` |
 
 Las listas se paginan con `?page=1&size=20&q=texto` y responden `{items, total, page, size}`
@@ -274,7 +368,8 @@ Las listas se paginan con `?page=1&size=20&q=texto` y responden `{items, total, 
 `area_id`, `assignee_id`, `requester_id`, `overdue=true`, `sla_status`
 (`on_track`, `at_risk` u `overdue`), `stalled=true`, `received_from`, `received_to`,
 `completed_from`, `completed_to` (fechas en la zona de la organización) y `sort` (por ejemplo
-`-due_at`), y siempre aplica el alcance del rol.
+`-due_at` o `-risk_score`), y siempre aplica el alcance del rol. Cada solicitud abierta trae
+su `risk_score` del nivel 1.
 
 El panel acepta `area_id`, `date_from` y `date_to` (por defecto, los últimos 30 días). Las
 métricas de estado actual ignoran el rango y aplican el mismo alcance por rol que la lista. La
@@ -357,7 +452,12 @@ npm run build
 
 Si `postgres-test` no está levantado, las pruebas de base de datos se omiten (en CI fallan,
 porque se define `REQUIRE_TEST_DB=1`). Para usar otra base, define `TEST_DATABASE_URL`. Las
-pruebas de umbrales de SLA congelan el tiempo con `time-machine`.
+pruebas de umbrales de SLA congelan el tiempo con `time-machine`, y las de IA usan un DeepSeek
+simulado, sin red.
+
+La prueba `tests/test_deepseek_live.py` (marcada `live`) hace una llamada real a DeepSeek si hay
+`DEEPSEEK_API_KEY` en tu `.env` y se omite sola si no la hay, como en el CI. Para no gastar
+tokens en cada corrida local: `uv run pytest -m "not live"`.
 
 ### Rendimiento de las consultas del panel
 
@@ -394,34 +494,44 @@ ya aplicada: cada cambio de esquema va en una nueva:
 - `0003`: hace las alertas resolubles (`resolved_at`), les añade el área y la solicitud opcional
   con índices únicos parciales, y crea `alert_reads` en lugar de `alerts.is_read`.
 - `0004`: añade un índice sobre `completed_at`.
+- `0005`: crea `risk_baselines` (P90 por área, etapa y prioridad).
+- `0006`: prepara `ai_insights` como caché (origen, disparador, idioma, hash, contenido, motivo de
+  respaldo, quién lo pidió y tokens) y crea `ai_feedback`.
+- `0007`: añade el tipo de alerta `ai_risk`.
 
 ## Estructura
 
 ```
 backend/
   app/
-    api/v1/        rutas HTTP: auth, areas, users, sla_policies, requests, dashboard, alerts, health
+    api/v1/        rutas HTTP: auth, areas, users, sla_policies, requests, dashboard, alerts, ai,
+                   health
     core/          configuración, logging, errores, seguridad (JWT, argon2), rate limit
     db/            engine, sesión, Base (naming convention, mixins UUID/timestamps)
-    models/        areas, users, requests, request_events, sla_policies, alerts,
-                   ai_insights, refresh_tokens
+    models/        areas, users, requests, request_events, sla_policies, alerts, risk_baselines,
+                   ai_insights, ai_feedback, refresh_tokens
     schemas/       modelos Pydantic de entrada/salida y paginación
-    repositories/  acceso a datos (nunca hacen commit); sla_rules (reglas SLA en SQL),
-                   dashboard y bottleneck (agregaciones)
+    repositories/  acceso a datos (nunca hacen commit); sla_rules y risk_rules (reglas SLA y
+                   puntaje de riesgo en SQL), dashboard y bottleneck (agregaciones)
     services/      reglas de negocio y transacciones; request_workflow (máquina de estados),
                    request_policy (permisos por rol), sla (fechas límite), alerts (evaluación
-                   y lectura), bottlenecks (detección) y dashboard
-    ai/            AIProvider + NullProvider + DeepSeekProvider + factory
+                   y lectura), bottlenecks (detección), dashboard y ai_insights (caché,
+                   presupuesto, límites y respaldo)
+    ai/            risk_model (pesos), analytics (nivel 1), payloads y prompts sin datos de
+                   personas, content (validación de identificadores y respaldo por reglas),
+                   AIProvider + NullProvider + DeepSeekProvider + factory
     scripts/       seed (datos semilla), demo_data (136 solicitudes con historial) y
                    synthetic_load (datos sintéticos y planes de consulta)
-    jobs/          job de alertas con APScheduler
+    jobs/          APScheduler: ronda de 15 minutos (alertas y análisis automático) y análisis
+                   global diario
   alembic/         migraciones (async)
   tests/           pruebas unitarias y tests/db contra PostgreSQL
 desktop/
   src/
     components/    layout, guards de rutas, UI compartida, selectores
-    pages/         login, panel, solicitudes (lista, tablero y detalle), alertas,
-                   administración, configuración
+    pages/         login, panel (con recomendaciones de IA), solicitudes (lista con riesgo,
+                   tablero y detalle con tarjeta de riesgo), alertas, administración (con IA),
+                   configuración
     lib/           cliente de API con refresco automático, sesión, llavero, formato, colores
                    del tema, mensajes y notificaciones de alertas
     stores/        Zustand (sesión en memoria, tema, configuración)
