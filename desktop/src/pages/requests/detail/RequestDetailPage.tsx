@@ -22,6 +22,7 @@ import { useFormatters } from '@/lib/format'
 import { RequestActions } from './RequestActions'
 import { RequestEditForm } from './RequestEditForm'
 import { RequestTimeline } from './RequestTimeline'
+import { RiskCard } from './RiskCard'
 
 const commentSchema = z.object({
   comment: z.string().trim().min(1, 'required').max(5000, 'tooLong'),
@@ -116,6 +117,7 @@ function DetailView({ detail }: { detail: RequestDetail }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex min-w-0 flex-col gap-5">
+          <RiskCard requestId={detail.id} />
           <RequestEditForm detail={detail} update={actions.update} />
           {detail.permissions.can_comment && <CommentBox comment={actions.comment} />}
           <RequestTimeline requestId={detail.id} />

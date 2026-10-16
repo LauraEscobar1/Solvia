@@ -106,6 +106,7 @@ export interface RequestSummary {
   version: number
   sla_status: SlaStatus | null
   is_stalled: boolean
+  risk_score: number | null
 }
 
 export interface AllowedTransition {
@@ -237,7 +238,7 @@ export interface TrendSeries {
   range: DateRange
 }
 
-export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck'] as const
+export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck', 'ai_risk'] as const
 export type AlertType = (typeof ALERT_TYPES)[number]
 
 export const ALERT_SEVERITIES = ['warning', 'critical'] as const
@@ -266,4 +267,130 @@ export interface AlertListParams {
   severity: AlertSeverity[]
   state?: AlertState
   is_read?: boolean
+}
+
+export type UILanguage = 'es' | 'en'
+
+export interface AIMessage {
+  text: string | null
+  code: string | null
+  params: Record<string, unknown>
+}
+
+export const RISK_FACTORS = [
+  'stage_delay',
+  'sla_consumed',
+  'inactivity',
+  'priority',
+  'assignee_load',
+] as const
+export type RiskFactor = (typeof RISK_FACTORS)[number]
+
+export type ReferenceKind = 'p90_area_stage_priority' | 'p90_stage_priority' | 'sla_max'
+
+export interface RiskFactorRead {
+  factor: RiskFactor
+  value: number | string | null
+  reference: number | null
+  reference_kind: ReferenceKind | null
+  normalized: number
+  weight: number
+  points: number
+}
+
+export interface RiskRead {
+  score: number
+  factors: RiskFactorRead[]
+}
+
+export type InsightSource = 'rule' | 'ai'
+export type InsightTrigger = 'manual' | 'automatic' | 'scheduled'
+
+export interface InsightMeta {
+  id: string
+  source: InsightSource
+  trigger: InsightTrigger
+  language: UILanguage
+  provider: string
+  model: string | null
+  tokens_used: number
+  fallback_reason: string | null
+  cached: boolean
+  created_at: string
+  feedback: Record<string, boolean>
+}
+
+export interface RequestInsightContent {
+  risk_score: number
+  summary: AIMessage
+  causes: AIMessage[]
+  actions: { title: AIMessage; detail: AIMessage }[]
+}
+
+export interface RequestInsight extends InsightMeta {
+  content: RequestInsightContent
+}
+
+export interface RequestAnalysis {
+  request_id: string
+  risk: RiskRead | null
+  insight: RequestInsight | null
+  notice: string | null
+}
+
+export type FindingType = 'bottleneck' | 'delay' | 'workload' | 'trend' | 'sla'
+export type RecommendationPriority = 'high' | 'medium' | 'low'
+
+export interface RecommendationTarget {
+  request_id: string | null
+  request_code: string | null
+  area_id: string | null
+  status: RequestStatus | null
+}
+
+export interface OverviewInsightContent {
+  summary: AIMessage
+  findings: {
+    type: FindingType
+    area_id: string | null
+    status: RequestStatus | null
+    evidence: AIMessage
+  }[]
+  recommendations: {
+    title: AIMessage
+    detail: AIMessage
+    priority: RecommendationPriority
+    target: RecommendationTarget | null
+  }[]
+}
+
+export interface OverviewInsight extends InsightMeta {
+  area_id: string | null
+  content: OverviewInsightContent
+}
+
+export interface OverviewAnalysis {
+  area_id: string | null
+  insight: OverviewInsight | null
+  notice: string | null
+}
+
+export interface AIStatus {
+  provider: 'none' | 'deepseek'
+  request_model: string | null
+  overview_model: string | null
+  key_configured: boolean
+  automatic_enabled: boolean
+  send_request_text: boolean
+  tokens_used_today: number
+  daily_token_budget: number
+  budget_exceeded: boolean
+  user_hourly_limit: number
+  last_daily_run: {
+    created_at: string
+    source: InsightSource
+    fallback_reason: string | null
+    tokens_used: number
+    model: string | null
+  } | null
 }

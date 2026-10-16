@@ -76,10 +76,15 @@ def request_content_from_ai(analysis: RequestAnalysis) -> RequestInsightContent:
 
 def _cause(risk: RiskBreakdown, factor: RiskFactor) -> Message:
     item = risk.factor(factor)
-    params: dict[str, JsonValue] = {"value": item.value, "reference": item.reference}
+    key = f"ai.rules.cause.{factor.value}"
     if factor is RiskFactor.PRIORITY:
-        params = {"priority": risk.priority.value}
-    return _code(f"ai.rules.cause.{factor.value}", **params)
+        return _code(key, priority=risk.priority.value)
+    if factor is RiskFactor.SLA_CONSUMED:
+        percent = round(item.value * 100) if isinstance(item.value, float) else None
+        return _code(key, percent=percent)
+    if factor is RiskFactor.ASSIGNEE_LOAD and item.value == UNASSIGNED:
+        return _code("ai.rules.cause.unassigned", status=risk.status.value)
+    return _code(key, value=item.value, reference=item.reference)
 
 
 def _rule_actions(risk: RiskBreakdown) -> list[ActionRead]:

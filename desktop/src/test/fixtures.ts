@@ -102,6 +102,7 @@ export function makeRequest(overrides: Partial<RequestSummary> = {}): RequestSum
     version: 1,
     sla_status: 'on_track',
     is_stalled: false,
+    risk_score: 12,
     ...overrides,
   }
 }

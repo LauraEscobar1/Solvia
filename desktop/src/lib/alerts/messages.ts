@@ -44,6 +44,7 @@ export function useAlertMessage(): (alert: Alert) => string {
         area: alert.area.name,
         count: amount(params.count) ?? 0,
         avg: hours(params.avg_hours),
+        risk: amount(params.risk_score) ?? 0,
       }
       return i18n.t(alert.message_code, {
         ...values,

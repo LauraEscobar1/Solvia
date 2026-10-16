@@ -3,7 +3,8 @@
   "tabs": {
     "areas": "Areas",
     "users": "Users",
-    "sla": "SLA policies"
+    "sla": "SLA policies",
+    "ai": "AI"
   },
   "table": {
     "actions": "Actions",

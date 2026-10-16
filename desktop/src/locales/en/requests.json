@@ -26,7 +26,8 @@
     "priority": "Priority",
     "status": "Status",
     "due_at": "Due date",
-    "last_activity_at": "Last activity"
+    "last_activity_at": "Last activity",
+    "risk_score": "Risk"
   },
   "sortBy": "Sort by {{column}}",
   "unassigned": "Unassigned",

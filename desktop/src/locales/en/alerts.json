@@ -18,7 +18,8 @@
     "due_soon": "Due soon",
     "overdue": "Overdue",
     "stalled": "Stalled",
-    "bottleneck": "Bottleneck"
+    "bottleneck": "Bottleneck",
+    "ai_risk": "AI risk"
   },
   "severity": {
     "info": "Info",
@@ -30,7 +31,8 @@
     "overdue": "{{code}} was due {{due}}.",
     "stalled": "{{code}} has had no activity since {{since}} in “{{status}}” (threshold: {{threshold}}).",
     "bottleneck_one": "Bottleneck in {{area}} · {{status}}: {{count}} request averaging {{avg}} in the stage.",
-    "bottleneck_other": "Bottleneck in {{area}} · {{status}}: {{count}} requests averaging {{avg}} in the stage."
+    "bottleneck_other": "Bottleneck in {{area}} · {{status}}: {{count}} requests averaging {{avg}} in the stage.",
+    "ai_risk": "AI estimates a risk of {{risk}} out of 100 for {{code}}."
   },
   "unknownMessage": "Alert {{code}}",
   "unread": "Unread",

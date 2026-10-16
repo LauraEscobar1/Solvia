@@ -26,7 +26,8 @@
     "priority": "Prioridad",
     "status": "Estado",
     "due_at": "Fecha límite",
-    "last_activity_at": "Última actividad"
+    "last_activity_at": "Última actividad",
+    "risk_score": "Riesgo"
   },
   "sortBy": "Ordenar por {{column}}",
   "unassigned": "Sin asignar",

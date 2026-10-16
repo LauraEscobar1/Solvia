@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, Sparkles } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +9,7 @@ import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
 import type { DashboardQuery, DateRange } from '@/lib/api/types'
 import { useFormatters } from '@/lib/format'
 import { useSessionStore } from '@/stores/session'
+import { AIRecommendations } from './AIRecommendations'
 import { BottleneckHeatmap } from './BottleneckHeatmap'
 import { BlockSkeleton } from './DashboardBlock'
 import { useDashboardQuery } from './dashboardQuery'
@@ -110,21 +111,6 @@ function RangeLabel({ range }: { range: DateRange }) {
   )
 }
 
-function AiRecommendations() {
-  const { t } = useTranslation('dashboard')
-  return (
-    <section className="text-muted-foreground flex items-center gap-3 rounded-xl border border-dashed p-5">
-      <span className="bg-primary-soft text-primary rounded-lg p-2">
-        <Sparkles className="size-4" aria-hidden="true" />
-      </span>
-      <div>
-        <h3 className="text-foreground text-sm font-semibold">{t('ai.title')}</h3>
-        <p className="text-xs">{t('ai.comingSoon')}</p>
-      </div>
-    </section>
-  )
-}
-
 export function DashboardPage() {
   const { t } = useTranslation('dashboard')
   const { dateTime } = useFormatters()
@@ -134,6 +120,7 @@ export function DashboardPage() {
   const summary = useDashboardSummary(query)
   const isAdmin = role === 'admin'
   const showsBottlenecks = role !== undefined && role !== 'requester'
+  const showsAI = role === 'admin' || role === 'supervisor'
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -180,7 +167,7 @@ export function DashboardPage() {
         <StalledList query={query} />
       </div>
 
-      <AiRecommendations />
+      {showsAI && <AIRecommendations areaId={isAdmin ? query.area_id : undefined} canRegenerate />}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Navigate, NavLink, Outlet } from 'react-router'
 
-const TABS = ['areas', 'users', 'sla'] as const
+const TABS = ['areas', 'users', 'sla', 'ai'] as const
 
 export function AdminLayout() {
   const { t } = useTranslation('admin')
