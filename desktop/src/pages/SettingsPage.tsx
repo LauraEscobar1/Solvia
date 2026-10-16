@@ -2,6 +2,7 @@ import { type FormEvent, type ReactNode, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChangePasswordForm } from '@/components/ChangePasswordForm'
 import { LanguageSelector } from '@/components/LanguageSelector'
+import { SystemStatus } from '@/components/SystemStatus'
 import { ThemeSelector } from '@/components/ThemeSelector'
 import { useSessionStore } from '@/stores/session'
 import { DEFAULT_API_BASE_URL, normalizeApiBaseUrl, useSettingsStore } from '@/stores/settings'
@@ -105,6 +106,10 @@ export function SettingsPage() {
             </p>
           )}
         </form>
+      </Section>
+
+      <Section title={t('health.title')} description={t('health.description')}>
+        <SystemStatus />
       </Section>
 
       <Section title={t('appearance.title')} description={t('appearance.description')}>

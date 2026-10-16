@@ -16,5 +16,32 @@
   "security": {
     "title": "Security",
     "description": "Change your account password."
+  },
+  "health": {
+    "title": "System status",
+    "api": "API",
+    "database": "Database",
+    "ai": "AI provider",
+    "online": "Online",
+    "offline": "Offline",
+    "ok": "Operational",
+    "unavailable": "Unavailable",
+    "overall": {
+      "ok": "All systems operational",
+      "degraded": "Degraded service"
+    },
+    "providers": {
+      "none": "No AI (heuristic)",
+      "deepseek": "DeepSeek"
+    },
+    "version": "Version {{version}}",
+    "environment": {
+      "development": "Development",
+      "test": "Test",
+      "production": "Production"
+    },
+    "lastChecked": "Last checked: {{time}}",
+    "apiUrl": "API: {{url}}",
+    "description": "Connection to the API, the database and the AI provider."
   }
 }

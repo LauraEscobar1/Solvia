@@ -45,8 +45,12 @@
     "assignee": "Assignee",
     "anyAssignee": "Any assignee",
     "overdue": "Overdue only",
+    "dueSoon": "Due soon",
+    "stalled": "Stalled",
     "receivedFrom": "Received from",
     "receivedTo": "Received until",
+    "completedFrom": "Completed from",
+    "completedTo": "Completed until",
     "clear": "Clear filters"
   },
   "empty": "No requests match these filters.",

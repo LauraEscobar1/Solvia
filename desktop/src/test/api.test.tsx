@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError, apiRequest } from '@/lib/api/client'
 import type { HealthResponse } from '@/lib/api/health'
-import { DashboardPage } from '@/pages/DashboardPage'
+import { SystemStatus } from '@/components/SystemStatus'
 import { useSettingsStore } from '@/stores/settings'
 import { renderWithProviders } from './render'
 
@@ -63,10 +63,10 @@ describe('cliente de API', () => {
   })
 })
 
-describe('pantalla de inicio (Panel)', () => {
+describe('estado del sistema en Configuración', () => {
   it('muestra el estado de la API, la base de datos y el proveedor de IA', async () => {
     mockFetch(json(HEALTH))
-    renderWithProviders(<DashboardPage />)
+    renderWithProviders(<SystemStatus />)
 
     expect(await screen.findByText('En línea')).toBeInTheDocument()
     expect(screen.getByText('Operativa')).toBeInTheDocument()
@@ -77,7 +77,7 @@ describe('pantalla de inicio (Panel)', () => {
 
   it('muestra la API sin conexión con el error traducido', async () => {
     mockFetch(new TypeError('Failed to fetch'))
-    renderWithProviders(<DashboardPage />)
+    renderWithProviders(<SystemStatus />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se pudo conectar con el servidor.',

@@ -1,29 +1,79 @@
 {
-  "subtitle": "Status of Solvia services",
-  "health": {
-    "title": "System status",
-    "api": "API",
-    "database": "Database",
-    "ai": "AI provider",
-    "online": "Online",
-    "offline": "Offline",
-    "ok": "Operational",
-    "unavailable": "Unavailable",
-    "overall": {
-      "ok": "All systems operational",
-      "degraded": "Degraded service"
+  "subtitle": "Requests, SLA and alerts at a glance",
+  "updatedAt": "Updated at {{time}}",
+  "refresh": "Refresh",
+  "range": "From {{from}} to {{to}} · {{timezone}}",
+  "filters": {
+    "label": "Dashboard filters",
+    "area": "Area",
+    "allAreas": "All areas",
+    "from": "From",
+    "to": "To",
+    "reset": "Last 30 days"
+  },
+  "cards": {
+    "label": "Summary",
+    "open": "Open",
+    "due_soon": "Due soon",
+    "overdue": "Overdue",
+    "stalled": "Stalled",
+    "completed": "Completed · 7 days",
+    "resolution": "Average resolution",
+    "noValue": "—",
+    "viewList": "View requests: {{label}}"
+  },
+  "duration": {
+    "hours": "{{value}} h",
+    "days": "{{value}} d"
+  },
+  "byStatus": {
+    "title": "Requests by status",
+    "description": "Received in the range, by current status",
+    "count": "Requests"
+  },
+  "trends": {
+    "title": "Created and completed",
+    "description": "Per day, in the organization's time zone",
+    "created": "Created",
+    "completed": "Completed"
+  },
+  "bottlenecks": {
+    "title": "Bottlenecks",
+    "description": "Current load per area and stage compared with its 30-day median",
+    "area": "Area",
+    "flagged": "Bottleneck",
+    "critical": "Critical bottleneck",
+    "count_one": "{{count}} request",
+    "count_other": "{{count}} requests",
+    "avgHours": "Average in stage: {{value}}",
+    "median": "30-day median: {{count}} · {{hours}}",
+    "slaMax": "Stage SLA maximum: {{value}}",
+    "open": "View {{area}} requests in “{{stage}}”",
+    "reasons": {
+      "count_above_median": "Above 1.5 times the median",
+      "avg_above_sla": "Average above the SLA maximum"
     },
-    "providers": {
-      "none": "No AI (heuristic)",
-      "deepseek": "DeepSeek"
-    },
-    "version": "Version {{version}}",
-    "environment": {
-      "development": "Development",
-      "test": "Test",
-      "production": "Production"
-    },
-    "lastChecked": "Last checked: {{time}}",
-    "apiUrl": "API: {{url}}"
+    "empty": "There are no areas to show."
+  },
+  "atRisk": {
+    "title": "At risk",
+    "description": "Overdue first, then by share of SLA consumed",
+    "consumed": "{{value}}% of SLA",
+    "empty": "No overdue or due-soon requests."
+  },
+  "stalled": {
+    "title": "Stalled",
+    "description": "Sorted by hours without activity",
+    "idle": "No activity {{time}}",
+    "empty": "Every open request has recent activity."
+  },
+  "ai": {
+    "title": "AI recommendations",
+    "comingSoon": "Coming soon"
+  },
+  "block": {
+    "loading": "Loading…",
+    "error": "This block could not be loaded.",
+    "empty": "There is no data for this range."
   }
 }

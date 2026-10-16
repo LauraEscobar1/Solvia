@@ -1,16 +1,9 @@
 import { AlarmClock, Clock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { StatusBadge, type StatusTone } from '@/components/StatusBadge'
+import { StatusBadge } from '@/components/StatusBadge'
 import type { RequestPriority, RequestStatus, RequestSummary } from '@/lib/api/types'
 import { useFormatters } from '@/lib/format'
-
-const STATUS_TONES: Record<RequestStatus, StatusTone> = {
-  received: 'neutral',
-  assigned: 'warning',
-  in_progress: 'warning',
-  completed: 'success',
-  cancelled: 'neutral',
-}
+import { STATUS_TONES } from '@/lib/requests/tones'
 
 const PRIORITY_CLASSES: Record<RequestPriority, string> = {
   critical: 'bg-danger-soft text-danger',

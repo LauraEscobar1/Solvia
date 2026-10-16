@@ -16,5 +16,32 @@
   "security": {
     "title": "Seguridad",
     "description": "Cambia la contraseña de tu cuenta."
+  },
+  "health": {
+    "title": "Estado del sistema",
+    "api": "API",
+    "database": "Base de datos",
+    "ai": "Proveedor de IA",
+    "online": "En línea",
+    "offline": "Sin conexión",
+    "ok": "Operativa",
+    "unavailable": "No disponible",
+    "overall": {
+      "ok": "Todo operativo",
+      "degraded": "Servicio degradado"
+    },
+    "providers": {
+      "none": "Sin IA (heurístico)",
+      "deepseek": "DeepSeek"
+    },
+    "version": "Versión {{version}}",
+    "environment": {
+      "development": "Desarrollo",
+      "test": "Pruebas",
+      "production": "Producción"
+    },
+    "lastChecked": "Última comprobación: {{time}}",
+    "apiUrl": "API: {{url}}",
+    "description": "Conexión con la API, la base de datos y el proveedor de IA."
   }
 }
