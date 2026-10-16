@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { formatRelativeTime } from '@/lib/format'
 import {
   apiQuery,
+  boardFilters,
   DEFAULT_SORT,
   filtersFromSearch,
   hasActiveFilters,
+  requestsPath,
   searchFromFilters,
 } from '@/lib/requests/filters'
 
@@ -43,6 +45,46 @@ describe('filtros de solicitudes en la URL', () => {
 
     expect(searchFromFilters(params).toString()).toBe('')
     expect(hasActiveFilters(params)).toBe(false)
+  })
+})
+
+describe('filtros SLA y de completadas', () => {
+  it('lee y escribe sla_status, stalled y el rango de completadas', () => {
+    const params = filtersFromSearch(
+      new URLSearchParams(
+        'sla_status=at_risk&stalled=true&completed_from=2026-10-09&completed_to=2026-10-15',
+      ),
+    )
+
+    expect(params).toMatchObject({
+      sla_status: 'at_risk',
+      stalled: true,
+      completed_from: '2026-10-09',
+      completed_to: '2026-10-15',
+    })
+    expect(hasActiveFilters(params)).toBe(true)
+    expect(searchFromFilters(params).toString()).toBe(
+      'sla_status=at_risk&completed_from=2026-10-09&completed_to=2026-10-15&stalled=true',
+    )
+    expect(apiQuery(boardFilters(params))).toContain('stalled=true')
+  })
+
+  it('descarta un sla_status desconocido y fechas mal formadas', () => {
+    const params = filtersFromSearch(
+      new URLSearchParams('sla_status=perdida&completed_from=ayer&stalled=quizas'),
+    )
+
+    expect(params.sla_status).toBeUndefined()
+    expect(params.completed_from).toBeUndefined()
+    expect(params.stalled).toBeUndefined()
+    expect(hasActiveFilters(params)).toBe(false)
+  })
+
+  it('construye la ruta de la lista para los enlaces del panel', () => {
+    expect(requestsPath({})).toBe('/requests')
+    expect(requestsPath({ area_id: 'a-1', status: ['received'] })).toBe(
+      '/requests?status=received&area_id=a-1',
+    )
   })
 })
 

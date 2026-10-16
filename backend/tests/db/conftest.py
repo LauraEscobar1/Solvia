@@ -21,8 +21,14 @@ from app.core.config import Settings
 from app.core.security import create_access_token, hash_password
 from app.core.time import utcnow
 from app.main import create_app
-from app.models import Area, ServiceRequest, SlaPolicy, User
-from app.models.enums import SLA_STAGES, RequestPriority, RequestStatus, UserRole
+from app.models import Area, RequestEvent, ServiceRequest, SlaPolicy, User
+from app.models.enums import (
+    SLA_STAGES,
+    RequestEventType,
+    RequestPriority,
+    RequestStatus,
+    UserRole,
+)
 from tests.conftest import make_settings
 
 DEFAULT_TEST_DATABASE_URL = "postgresql+asyncpg://solvia:solvia@localhost:5433/solvia_test"
@@ -152,8 +158,11 @@ class Factory:
         received_at: datetime | None = None,
         due_at: datetime | None = None,
         last_activity_at: datetime | None = None,
+        completed_at: datetime | None = None,
     ) -> ServiceRequest:
         received = received_at or utcnow()
+        if completed_at is None and status is RequestStatus.COMPLETED:
+            completed_at = received
         request = ServiceRequest(
             title=title,
             description="Detalle",
@@ -165,11 +174,32 @@ class Factory:
             received_at=received,
             due_at=due_at,
             last_activity_at=last_activity_at or received,
-            completed_at=received if status is RequestStatus.COMPLETED else None,
+            completed_at=completed_at,
         )
         self.session.add(request)
         await self.session.commit()
         return request
+
+    async def stage_change(
+        self,
+        request: ServiceRequest,
+        *,
+        to_status: RequestStatus,
+        at: datetime,
+        from_status: RequestStatus | None = None,
+    ) -> RequestEvent:
+        event = RequestEvent(
+            request_id=request.id,
+            type=RequestEventType.CREATED
+            if from_status is None
+            else RequestEventType.STATUS_CHANGED,
+            from_status=from_status,
+            to_status=to_status,
+            created_at=at,
+        )
+        self.session.add(event)
+        await self.session.commit()
+        return event
 
     async def sla_matrix(self, hours: dict[RequestPriority, tuple[int, int, int]]) -> None:
         for priority, stage_hours in hours.items():
