@@ -5,6 +5,7 @@ from app.models.area import Area
 from app.models.refresh_token import RefreshToken
 from app.models.request import ServiceRequest
 from app.models.request_event import RequestEvent
+from app.models.risk_baseline import RiskBaseline
 from app.models.sla_policy import SlaPolicy
 from app.models.user import User
 
@@ -16,6 +17,7 @@ __all__ = [
     "Base",
     "RefreshToken",
     "RequestEvent",
+    "RiskBaseline",
     "ServiceRequest",
     "SlaPolicy",
     "User",

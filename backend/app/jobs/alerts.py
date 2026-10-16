@@ -6,6 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.ai.analytics import RiskAnalytics
 from app.core.time import Clock, utcnow
 from app.services.alerts import AlertEvaluator, EvaluationReport
 
@@ -29,6 +30,11 @@ class AlertJob:
         self._clock = clock
 
     async def run(self) -> EvaluationReport | None:
+        try:
+            async with self._session_factory() as session:
+                await RiskAnalytics(session, self._clock).refresh_baselines()
+        except Exception:
+            logger.exception("risk_baselines_failed")
         try:
             async with self._session_factory() as session:
                 return await AlertEvaluator(session, self._clock).evaluate_all(

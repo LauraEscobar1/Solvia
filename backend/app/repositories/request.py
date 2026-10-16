@@ -1,6 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import ColumnElement, Row, Select, func, not_, or_, select
@@ -12,6 +13,7 @@ from app.models.enums import RequestPriority, RequestStatus, SlaStatus
 from app.models.request import ServiceRequest
 from app.models.user import User
 from app.repositories.base import BaseRepository, contains_text
+from app.repositories.risk_rules import RiskRules
 from app.repositories.sla_rules import Expression, SlaRules
 from app.schemas.request import RequestFilters
 
@@ -37,6 +39,7 @@ class RequestWithSla:
     request: ServiceRequest
     sla_status: SlaStatus | None
     is_stalled: bool
+    risk_score: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,10 +57,11 @@ class RequestSlaState:
     inactivity_threshold: int | None
 
 
-def _with_sla(row: Row[ServiceRequest, str | None, bool]) -> RequestWithSla:
-    request, sla_status, is_stalled = row
+def _with_sla(row: Row[ServiceRequest, str | None, bool, int | None]) -> RequestWithSla:
+    request, sla_status, is_stalled, risk_score = row
     return RequestWithSla(
         request=request,
+        risk_score=risk_score,
         sla_status=SlaStatus(sla_status) if sla_status is not None else None,
         is_stalled=bool(is_stalled),
     )
@@ -142,7 +146,7 @@ class RequestRepository(BaseRepository[ServiceRequest]):
         total = await self._session.scalar(
             select(func.count()).select_from(ServiceRequest).where(*conditions)
         )
-        statement = self._sorted(self._with_indicators(rules).where(*conditions), sort)
+        statement = self._sorted(self._with_indicators(rules).where(*conditions), sort, rules)
         rows = await self._session.execute(statement.limit(size).offset((page - 1) * size))
         return [_with_sla(row) for row in rows], total or 0
 
@@ -207,9 +211,12 @@ class RequestRepository(BaseRepository[ServiceRequest]):
         return [RequestSlaState(**row._asdict()) for row in rows]
 
     @staticmethod
-    def _with_indicators(rules: SlaRules) -> Select[ServiceRequest, str | None, bool]:
+    def _with_indicators(rules: SlaRules) -> Select[ServiceRequest, str | None, bool, int | None]:
         return select(
-            ServiceRequest, rules.sla_status.label("sla_status"), rules.is_stalled
+            ServiceRequest,
+            rules.sla_status.label("sla_status"),
+            rules.is_stalled,
+            RiskRules(rules).score.label("risk_score"),
         ).options(*REQUEST_RELATIONS)
 
     @staticmethod
@@ -245,12 +252,14 @@ class RequestRepository(BaseRepository[ServiceRequest]):
         ]
 
     @staticmethod
-    def _sorted[*Ts](statement: Select[*Ts], sort: str) -> Select[*Ts]:
+    def _sorted[*Ts](statement: Select[*Ts], sort: str, rules: SlaRules) -> Select[*Ts]:
         descending = sort.startswith("-")
         field = sort.lstrip("-")
-        if field == "area":
+        if field == "risk_score":
+            column: ColumnElement[Any] = RiskRules(rules).score
+        elif field == "area":
             statement = statement.join(Area, Area.id == ServiceRequest.area_id)
-            column: ColumnElement[object] = func.lower(Area.name)
+            column = func.lower(Area.name)
         elif field == "assignee":
             statement = statement.outerjoin(_assignee, _assignee.id == ServiceRequest.assignee_id)
             column = func.lower(_assignee.full_name)

@@ -62,7 +62,9 @@ class CommentInput(BaseModel):
     comment: CommentText
 
 
-SORT_PATTERN = r"^-?(code|title|area|assignee|priority|status|due_at|last_activity_at|received_at)$"
+SORT_PATTERN = (
+    r"^-?(code|title|area|assignee|priority|status|due_at|last_activity_at|received_at|risk_score)$"
+)
 
 
 class RequestFilters(BaseModel):
@@ -108,6 +110,7 @@ class RequestSummary(BaseModel):
     version: int
     sla_status: SlaStatus | None
     is_stalled: bool
+    risk_score: int | None
 
 
 class AllowedTransitionRead(BaseModel):
