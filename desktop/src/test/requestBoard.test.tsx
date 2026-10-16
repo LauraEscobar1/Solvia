@@ -28,6 +28,7 @@ function card(overrides: Partial<BoardCard>): BoardCard {
     due_at: null,
     last_activity_at: '2026-10-12T10:00:00Z',
     completed_at: null,
+    risk_score: 30,
     version: 3,
     sla_status: 'on_track',
     is_stalled: false,

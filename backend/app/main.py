@@ -12,7 +12,10 @@ from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
-from app.jobs.alerts import AlertJob, start_alert_scheduler
+from app.jobs.ai import AIJobs
+from app.jobs.alerts import AlertJob
+from app.jobs.scheduler import start_scheduler
+from app.services.ai_insights import AIConfig
 
 logger = structlog.get_logger(__name__)
 
@@ -27,13 +30,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.container = container
         scheduler = None
         if settings.alerts_job_enabled:
-            scheduler = start_alert_scheduler(
+            scheduler = start_scheduler(
                 AlertJob(
                     container.session_factory,
                     settings.timezone,
                     bottleneck_min_count=settings.bottleneck_min_count,
                 ),
                 settings.alerts_job_interval_minutes,
+                ai_jobs=AIJobs(
+                    container.engine,
+                    container.session_factory,
+                    container.ai_provider,
+                    AIConfig.from_settings(settings),
+                ),
+                timezone=settings.timezone,
             )
         logger.info(
             "app_started",
@@ -41,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             environment=settings.environment,
             ai_provider=settings.ai_provider,
             alerts_job_enabled=settings.alerts_job_enabled,
+            ai_automatic_enabled=settings.ai_automatic_enabled,
         )
         try:
             yield

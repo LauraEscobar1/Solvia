@@ -4,6 +4,7 @@ import { RequireAdmin } from '@/components/auth/RequireRole'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { RedirectHome } from '@/components/layout/RedirectHome'
 import { AdminIndex, AdminLayout } from '@/pages/admin/AdminLayout'
+import { AIStatusPage } from '@/pages/admin/AIStatusPage'
 import { AreasPage } from '@/pages/admin/AreasPage'
 import { SlaPage } from '@/pages/admin/SlaPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
@@ -41,6 +42,7 @@ export const routes: RouteObject[] = [
                   { path: 'areas', Component: AreasPage },
                   { path: 'users', Component: UsersPage },
                   { path: 'sla', Component: SlaPage },
+                  { path: 'ai', Component: AIStatusPage },
                 ],
               },
             ],

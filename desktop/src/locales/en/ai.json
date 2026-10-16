@@ -1,0 +1,159 @@
+{
+  "label": "AI-generated: check before acting",
+  "source": {
+    "ai": "AI",
+    "rule": "Rules"
+  },
+  "analyzedAt": "Analysis {{time}}",
+  "cached": "Cached result",
+  "analyzing": "Analyzing…",
+  "risk": {
+    "title": "Risk",
+    "outOf": "out of 100",
+    "levels": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "factorsTitle": "Why it has this score",
+    "points": "{{points}} pts",
+    "closed": "The request is closed: its risk is not calculated.",
+    "analyze": "Analyze with AI",
+    "reanalyze": "Analyze again",
+    "aiScore": "Risk estimated by AI: {{score}} out of 100",
+    "causes": "Causes",
+    "actions": "Suggested actions",
+    "noInsight": "There is no analysis of this request yet."
+  },
+  "factors": {
+    "stage_delay": "Time in stage",
+    "sla_consumed": "SLA consumed",
+    "inactivity": "Inactivity",
+    "priority": "Priority",
+    "assignee_load": "Assignee workload"
+  },
+  "factorDetail": {
+    "stage_delay": "{{value}} in the stage versus {{reference}} ({{kind}})",
+    "sla_consumed": "{{value}} of the deadline",
+    "noDueDate": "No due date",
+    "inactivity": "{{value}} without activity (threshold {{reference}})",
+    "priority": "{{priority}} priority",
+    "assignee_load": "{{value}} open requests assigned",
+    "unassigned": "Unassigned"
+  },
+  "referenceKind": {
+    "p90_area_stage_priority": "area P90",
+    "p90_stage_priority": "stage P90",
+    "sla_max": "SLA maximum"
+  },
+  "overview": {
+    "title": "AI recommendations",
+    "empty": "There is no analysis yet.",
+    "regenerate": "Regenerate",
+    "findings": "Findings",
+    "recommendations": "Recommendations",
+    "noRecommendations": "No recommendations.",
+    "viewRequest": "View {{code}}",
+    "viewList": "View requests",
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "findingTypes": {
+      "bottleneck": "Bottleneck",
+      "delay": "Delay",
+      "workload": "Workload",
+      "trend": "Trend",
+      "sla": "SLA"
+    }
+  },
+  "feedback": {
+    "label": "Was this useful?",
+    "useful": "Useful",
+    "notUseful": "Not useful"
+  },
+  "rules": {
+    "request": {
+      "summary": "{{code}} has a risk of {{score}} out of 100; the main factor is {{factor}}."
+    },
+    "cause": {
+      "stage_delay": "It has spent {{value}} h in the current stage; the usual is {{reference}} h.",
+      "sla_consumed": "It has used {{percent}}% of its SLA deadline.",
+      "inactivity": "It has had no activity for {{value}} h; the threshold is {{reference}} h.",
+      "priority": "It has {{priority}} priority.",
+      "assignee_load": "Its assignee has {{value}} open requests.",
+      "unassigned": "It has no assignee in “{{status}}”."
+    },
+    "action": {
+      "assign": {
+        "title": "Assign someone",
+        "detail": "Assign {{code}} to someone in the area so it can move forward."
+      },
+      "rebalance": {
+        "title": "Rebalance the workload",
+        "detail": "The assignee of {{code}} has a lot of open work; consider reassigning it."
+      },
+      "unblock_stage": {
+        "title": "Unblock the stage",
+        "detail": "{{code}} has spent longer than usual in “{{status}}”; check what is blocking it."
+      },
+      "renegotiate_due": {
+        "title": "Agree on a new date",
+        "detail": "{{code}} is already overdue; tell the requester and agree on a realistic deadline."
+      },
+      "prioritize": {
+        "title": "Prioritize today",
+        "detail": "{{code}} is close to its deadline; move it up the queue."
+      },
+      "follow_up": {
+        "title": "Follow up",
+        "detail": "{{code}} has had no activity for a while; ask for an update."
+      }
+    },
+    "overview": {
+      "summary": "There are {{open}} open requests: {{overdue}} overdue, {{due_soon}} due soon and {{stalled}} stalled. Bottlenecks detected: {{bottlenecks}}."
+    },
+    "finding": {
+      "bottleneck": "{{area}} · {{status}}: {{count}} requests versus a median of {{median}}; {{avg_hours}} h on average in the stage (SLA maximum {{sla_max_hours}} h).",
+      "overdue": "There are {{count}} overdue open requests.",
+      "stalled": "There are {{count}} stalled requests."
+    },
+    "recommendation": {
+      "bottleneck": {
+        "title": "Relieve {{area}} · {{status}}",
+        "detail": "Spread the load or add people to “{{status}}” in {{area}}: {{count}} requests are piling up."
+      },
+      "request": {
+        "title": "Review {{code}}",
+        "detail": "{{code}} has a risk of {{score}}; the main factor is {{factor}}."
+      }
+    }
+  },
+  "admin": {
+    "title": "Artificial intelligence",
+    "description": "Provider status and daily token usage.",
+    "provider": "Provider",
+    "providers": {
+      "none": "Off (rules only)",
+      "deepseek": "DeepSeek"
+    },
+    "requestModel": "Per-request model",
+    "overviewModel": "Overview model",
+    "keyConfigured": "Key configured",
+    "automatic": "Automatic analyses",
+    "sendText": "Send title and description",
+    "yes": "Yes",
+    "no": "No",
+    "enabled": "On",
+    "disabled": "Off",
+    "usage": "Today's usage",
+    "usageValue": "{{used}} of {{budget}} tokens",
+    "budgetExceeded": "Budget used up: the rules-based analysis is used until tomorrow.",
+    "userLimit": "Per-user limit",
+    "userLimitValue": "{{count}} analyses per hour",
+    "lastDaily": "Last daily analysis",
+    "lastDailyValue": "{{time}} · {{source}} · {{tokens}} tokens",
+    "never": "It has not run yet"
+  }
+}

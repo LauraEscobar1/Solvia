@@ -7,6 +7,8 @@ from app.models.enums import (
     AlertSource,
     AlertType,
     InsightScope,
+    InsightSource,
+    InsightTrigger,
     RequestEventType,
     RequestPriority,
     RequestStatus,
@@ -35,3 +37,5 @@ ALERT_TYPE = pg_enum(AlertType, "alert_type")
 ALERT_SEVERITY = pg_enum(AlertSeverity, "alert_severity")
 ALERT_SOURCE = pg_enum(AlertSource, "alert_source")
 INSIGHT_SCOPE = pg_enum(InsightScope, "insight_scope")
+INSIGHT_SOURCE = pg_enum(InsightSource, "insight_source")
+INSIGHT_TRIGGER = pg_enum(InsightTrigger, "insight_trigger")

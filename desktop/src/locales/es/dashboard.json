@@ -63,10 +63,6 @@
     "idle": "Sin actividad {{time}}",
     "empty": "Todas las solicitudes abiertas tienen actividad reciente."
   },
-  "ai": {
-    "title": "Recomendaciones de IA",
-    "comingSoon": "Disponible próximamente"
-  },
   "block": {
     "loading": "Cargando…",
     "error": "No se pudo cargar este bloque.",

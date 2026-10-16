@@ -15,7 +15,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.time import utcnow
-from app.jobs.alerts import ALERTS_JOB_ID, AlertJob, start_alert_scheduler
+from app.jobs.alerts import AlertJob
+from app.jobs.scheduler import ALERTS_JOB_ID, start_scheduler
 from app.models import Alert, Area, ServiceRequest, User
 from app.models.enums import (
     AlertSeverity,
@@ -499,7 +500,7 @@ async def test_job_logs_each_run_with_counts(
 
 async def test_scheduler_runs_the_job_every_interval(db_app: FastAPI) -> None:
     job = AlertJob(db_app.state.container.session_factory, TZ, bottleneck_min_count=MIN_COUNT)
-    scheduler = start_alert_scheduler(job, 15)
+    scheduler = start_scheduler(job, 15, ai_jobs=None, timezone=TZ)
     try:
         scheduled = scheduler.get_job(ALERTS_JOB_ID)
         assert scheduled is not None

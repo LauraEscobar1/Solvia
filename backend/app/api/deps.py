@@ -14,6 +14,7 @@ from app.db.session import ping_database
 from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.services.ai_insights import AIConfig, AIInsightService
 from app.services.alerts import AlertService
 from app.services.areas import AreaService
 from app.services.auth import AuthService
@@ -156,6 +157,15 @@ def get_dashboard_service(session: SessionDep, settings: SettingsDep) -> Dashboa
 
 
 DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
+
+
+def get_ai_insight_service(
+    session: SessionDep, settings: SettingsDep, ai_provider: AIProviderDep
+) -> AIInsightService:
+    return AIInsightService(session, ai_provider, AIConfig.from_settings(settings))
+
+
+AIInsightServiceDep = Annotated[AIInsightService, Depends(get_ai_insight_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:

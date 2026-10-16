@@ -65,6 +65,7 @@ def _summary_fields(row: RequestWithSla) -> dict[str, object]:
         "version": request.version,
         "sla_status": row.sla_status,
         "is_stalled": row.is_stalled,
+        "risk_score": row.risk_score,
     }
 
 

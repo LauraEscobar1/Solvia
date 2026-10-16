@@ -16,6 +16,7 @@ export const SORT_FIELDS = [
   'due_at',
   'last_activity_at',
   'received_at',
+  'risk_score',
 ] as const
 export type SortField = (typeof SORT_FIELDS)[number]
 

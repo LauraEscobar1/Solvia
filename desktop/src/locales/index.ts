@@ -1,4 +1,5 @@
 import enAdmin from './en/admin.json'
+import enAi from './en/ai.json'
 import enAlerts from './en/alerts.json'
 import enAuth from './en/auth.json'
 import enCommon from './en/common.json'
@@ -9,6 +10,7 @@ import enRequests from './en/requests.json'
 import enSettings from './en/settings.json'
 import enValidation from './en/validation.json'
 import esAdmin from './es/admin.json'
+import esAi from './es/ai.json'
 import esAlerts from './es/alerts.json'
 import esAuth from './es/auth.json'
 import esCommon from './es/common.json'
@@ -34,6 +36,7 @@ export const NAMESPACES = [
   'validation',
   'requests',
   'alerts',
+  'ai',
 ] as const
 export type Namespace = (typeof NAMESPACES)[number]
 
@@ -49,6 +52,7 @@ export const resources = {
     validation: esValidation,
     requests: esRequests,
     alerts: esAlerts,
+    ai: esAi,
   },
   en: {
     common: enCommon,
@@ -61,6 +65,7 @@ export const resources = {
     validation: enValidation,
     requests: enRequests,
     alerts: enAlerts,
+    ai: enAi,
   },
 } as const satisfies Record<Language, Record<Namespace, object>>
 

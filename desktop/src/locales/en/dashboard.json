@@ -63,10 +63,6 @@
     "idle": "No activity {{time}}",
     "empty": "Every open request has recent activity."
   },
-  "ai": {
-    "title": "AI recommendations",
-    "comingSoon": "Coming soon"
-  },
   "block": {
     "loading": "Loading…",
     "error": "This block could not be loaded.",

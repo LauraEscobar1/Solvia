@@ -2,7 +2,7 @@ import time
 import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -10,11 +10,13 @@ import structlog
 from pydantic import JsonValue
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.risk_model import AI_ALERT_CRITICAL_THRESHOLD, AI_ALERT_THRESHOLD
 from app.core.errors import ErrorCode, NotFoundError
 from app.core.time import Clock, utcnow
 from app.models.alert import Alert
 from app.models.enums import AlertSeverity, AlertSource, AlertType, RequestPriority
 from app.models.user import User
+from app.repositories.ai_insight import AIInsightRepository, AIRisk
 from app.repositories.alert import AlertAudience, AlertRepository, AlertView
 from app.repositories.request import RequestRepository, RequestSlaState
 from app.repositories.sla_rules import SlaRules
@@ -33,6 +35,7 @@ from app.services.request_policy import RequestPolicy
 logger = structlog.get_logger(__name__)
 
 URGENT_PRIORITIES = frozenset({RequestPriority.HIGH, RequestPriority.CRITICAL})
+AI_RISK_WINDOW = timedelta(hours=24)
 
 type AlertKey = tuple[AlertType, uuid.UUID, str | None]
 
@@ -59,6 +62,7 @@ class AlertDraft:
     area_id: uuid.UUID
     request_id: uuid.UUID | None
     params: dict[str, JsonValue]
+    source: AlertSource = AlertSource.RULE
 
     @property
     def key(self) -> AlertKey:
@@ -73,6 +77,24 @@ class EvaluationReport:
     bottlenecks: int = 0
     skipped: bool = False
     duration_ms: int = 0
+
+
+def ai_risk_draft(state: RequestSlaState, risk: AIRisk | None) -> AlertDraft | None:
+    if risk is None or state.is_overdue or risk.risk_score < AI_ALERT_THRESHOLD:
+        return None
+    severity = (
+        AlertSeverity.CRITICAL
+        if risk.risk_score >= AI_ALERT_CRITICAL_THRESHOLD
+        else AlertSeverity.WARNING
+    )
+    return AlertDraft(
+        AlertType.AI_RISK,
+        severity,
+        state.area_id,
+        state.id,
+        {"code": state.code, "risk_score": risk.risk_score, "insight_id": str(risk.insight_id)},
+        AlertSource.AI,
+    )
 
 
 def request_alert_drafts(state: RequestSlaState) -> list[AlertDraft]:
@@ -122,6 +144,7 @@ class AlertEvaluator:
         self._clock = clock
         self._alerts = AlertRepository(session)
         self._requests = RequestRepository(session)
+        self._insights = AIInsightRepository(session)
 
     async def evaluate_all(
         self, timezone: ZoneInfo, *, bottleneck_min_count: int
@@ -142,7 +165,7 @@ class AlertEvaluator:
         report = EvaluationReport()
         now = self._clock()
         states = await self._requests.sla_states(SlaRules(now), request_id=request_id)
-        drafts = [draft for state in states for draft in request_alert_drafts(state)]
+        drafts = await self._request_drafts(states, now)
         existing = await self._alerts.open_for_request(request_id)
         await self._apply(report, drafts, existing, now)
         return report
@@ -152,7 +175,7 @@ class AlertEvaluator:
     ) -> None:
         now = self._clock()
         states = await self._requests.sla_states(SlaRules(now))
-        drafts = [draft for state in states for draft in request_alert_drafts(state)]
+        drafts = await self._request_drafts(states, now)
         detector = BottleneckDetector(
             self._session, min_count=bottleneck_min_count, clock=lambda: now
         )
@@ -163,6 +186,19 @@ class AlertEvaluator:
         existing = await self._alerts.open_for_requests([state.id for state in states])
         existing += await self._alerts.open_bottlenecks()
         await self._apply(report, drafts, existing, now)
+
+    async def _request_drafts(
+        self, states: Sequence[RequestSlaState], now: datetime
+    ) -> list[AlertDraft]:
+        risks = await self._insights.latest_ai_risks(
+            [state.id for state in states], now - AI_RISK_WINDOW
+        )
+        drafts = [draft for state in states for draft in request_alert_drafts(state)]
+        for state in states:
+            draft = ai_risk_draft(state, risks.get(state.id))
+            if draft is not None:
+                drafts.append(draft)
+        return drafts
 
     async def _apply(
         self,
@@ -183,7 +219,7 @@ class AlertEvaluator:
                     {
                         "type": draft.type,
                         "severity": draft.severity,
-                        "source": AlertSource.RULE,
+                        "source": draft.source,
                         "area_id": draft.area_id,
                         "request_id": draft.request_id,
                         "message_code": message_code(draft.type),

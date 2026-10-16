@@ -41,6 +41,7 @@ function makeDetail(overrides: Partial<RequestDetail> = {}): RequestDetail {
     version: 4,
     sla_status: 'on_track',
     is_stalled: false,
+    risk_score: 45,
     created_at: '2026-10-10T10:00:00Z',
     updated_at: '2026-10-12T10:00:00Z',
     allowed_transitions: [

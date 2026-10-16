@@ -1,4 +1,12 @@
-import { AlarmClock, Check, Clock, ExternalLink, type LucideIcon, TriangleAlert } from 'lucide-react'
+import {
+  AlarmClock,
+  Check,
+  Clock,
+  ExternalLink,
+  type LucideIcon,
+  Sparkles,
+  TriangleAlert,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { StatusBadge } from '@/components/StatusBadge'
@@ -14,6 +22,7 @@ const TYPE_ICONS: Record<AlertType, LucideIcon> = {
   overdue: TriangleAlert,
   stalled: Clock,
   bottleneck: TriangleAlert,
+  ai_risk: Sparkles,
 }
 
 function alertLink(alert: Alert): string {

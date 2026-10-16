@@ -1,0 +1,159 @@
+{
+  "label": "Generado por IA: verifica antes de actuar",
+  "source": {
+    "ai": "IA",
+    "rule": "Reglas"
+  },
+  "analyzedAt": "Análisis {{time}}",
+  "cached": "Resultado en caché",
+  "analyzing": "Analizando…",
+  "risk": {
+    "title": "Riesgo",
+    "outOf": "de 100",
+    "levels": {
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Bajo"
+    },
+    "factorsTitle": "Por qué tiene este puntaje",
+    "points": "{{points}} pts",
+    "closed": "La solicitud está cerrada: no se calcula su riesgo.",
+    "analyze": "Analizar con IA",
+    "reanalyze": "Volver a analizar",
+    "aiScore": "Riesgo estimado por la IA: {{score}} de 100",
+    "causes": "Causas",
+    "actions": "Acciones sugeridas",
+    "noInsight": "Aún no hay un análisis de esta solicitud."
+  },
+  "factors": {
+    "stage_delay": "Tiempo en la etapa",
+    "sla_consumed": "SLA consumido",
+    "inactivity": "Inactividad",
+    "priority": "Prioridad",
+    "assignee_load": "Carga del responsable"
+  },
+  "factorDetail": {
+    "stage_delay": "{{value}} en la etapa frente a {{reference}} ({{kind}})",
+    "sla_consumed": "{{value}} del plazo",
+    "noDueDate": "Sin fecha límite",
+    "inactivity": "{{value}} sin actividad (umbral {{reference}})",
+    "priority": "Prioridad {{priority}}",
+    "assignee_load": "{{value}} solicitudes abiertas asignadas",
+    "unassigned": "Sin responsable"
+  },
+  "referenceKind": {
+    "p90_area_stage_priority": "P90 del área",
+    "p90_stage_priority": "P90 de la etapa",
+    "sla_max": "máximo SLA"
+  },
+  "overview": {
+    "title": "Recomendaciones de IA",
+    "empty": "Todavía no hay un análisis.",
+    "regenerate": "Regenerar",
+    "findings": "Hallazgos",
+    "recommendations": "Recomendaciones",
+    "noRecommendations": "No hay recomendaciones.",
+    "viewRequest": "Ver {{code}}",
+    "viewList": "Ver solicitudes",
+    "priority": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    },
+    "findingTypes": {
+      "bottleneck": "Cuello de botella",
+      "delay": "Retraso",
+      "workload": "Carga",
+      "trend": "Tendencia",
+      "sla": "SLA"
+    }
+  },
+  "feedback": {
+    "label": "¿Te fue útil?",
+    "useful": "Útil",
+    "notUseful": "No útil"
+  },
+  "rules": {
+    "request": {
+      "summary": "{{code}} tiene un riesgo de {{score}} sobre 100; el factor principal es {{factor}}."
+    },
+    "cause": {
+      "stage_delay": "Lleva {{value}} h en la etapa actual; lo habitual es {{reference}} h.",
+      "sla_consumed": "Ha consumido el {{percent}} % de su plazo SLA.",
+      "inactivity": "Lleva {{value}} h sin actividad; el umbral es {{reference}} h.",
+      "priority": "Tiene prioridad {{priority}}.",
+      "assignee_load": "Su responsable tiene {{value}} solicitudes abiertas.",
+      "unassigned": "No tiene responsable en «{{status}}»."
+    },
+    "action": {
+      "assign": {
+        "title": "Asignar un responsable",
+        "detail": "Asigna {{code}} a alguien del área para que avance."
+      },
+      "rebalance": {
+        "title": "Repartir la carga",
+        "detail": "El responsable de {{code}} tiene mucho trabajo abierto; considera reasignarla."
+      },
+      "unblock_stage": {
+        "title": "Destrabar la etapa",
+        "detail": "{{code}} lleva más de lo habitual en «{{status}}»; revisa qué la bloquea."
+      },
+      "renegotiate_due": {
+        "title": "Acordar una nueva fecha",
+        "detail": "{{code}} ya venció; informa al solicitante y acuerda un plazo realista."
+      },
+      "prioritize": {
+        "title": "Priorizar hoy",
+        "detail": "{{code}} está cerca de vencer; dale prioridad en la cola."
+      },
+      "follow_up": {
+        "title": "Hacer seguimiento",
+        "detail": "{{code}} lleva tiempo sin actividad; pide una actualización."
+      }
+    },
+    "overview": {
+      "summary": "Hay {{open}} solicitudes abiertas: {{overdue}} vencidas, {{due_soon}} por vencer y {{stalled}} sin movimiento. Cuellos de botella detectados: {{bottlenecks}}."
+    },
+    "finding": {
+      "bottleneck": "{{area}} · {{status}}: {{count}} solicitudes frente a una mediana de {{median}}; {{avg_hours}} h de promedio en la etapa (máximo SLA {{sla_max_hours}} h).",
+      "overdue": "Hay {{count}} solicitudes abiertas vencidas.",
+      "stalled": "Hay {{count}} solicitudes sin movimiento."
+    },
+    "recommendation": {
+      "bottleneck": {
+        "title": "Aliviar {{area}} · {{status}}",
+        "detail": "Reparte la carga o suma personas a «{{status}}» en {{area}}: hay {{count}} solicitudes acumuladas."
+      },
+      "request": {
+        "title": "Revisar {{code}}",
+        "detail": "{{code}} tiene un riesgo de {{score}}; el factor principal es {{factor}}."
+      }
+    }
+  },
+  "admin": {
+    "title": "Inteligencia artificial",
+    "description": "Estado del proveedor y consumo diario de tokens.",
+    "provider": "Proveedor",
+    "providers": {
+      "none": "Desactivada (solo reglas)",
+      "deepseek": "DeepSeek"
+    },
+    "requestModel": "Modelo por solicitud",
+    "overviewModel": "Modelo del análisis global",
+    "keyConfigured": "Clave configurada",
+    "automatic": "Análisis automáticos",
+    "sendText": "Envío de título y descripción",
+    "yes": "Sí",
+    "no": "No",
+    "enabled": "Activados",
+    "disabled": "Desactivados",
+    "usage": "Consumo de hoy",
+    "usageValue": "{{used}} de {{budget}} tokens",
+    "budgetExceeded": "Presupuesto agotado: se usa el análisis por reglas hasta mañana.",
+    "userLimit": "Límite por usuario",
+    "userLimitValue": "{{count}} análisis por hora",
+    "lastDaily": "Último análisis diario",
+    "lastDailyValue": "{{time}} · {{source}} · {{tokens}} tokens",
+    "never": "Todavía no se ha ejecutado"
+  }
+}

@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.models.enums import UILanguage
+
 DEFAULT_JWT_SECRET = "change-me-solvia-development-only-secret"  # noqa: S105
 MIN_JWT_SECRET_LENGTH = 32
 WEAK_JWT_SECRETS = frozenset({DEFAULT_JWT_SECRET, "change-me"})
@@ -69,6 +71,17 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-flash"
     deepseek_timeout_seconds: float = Field(default=30.0, gt=0)
     deepseek_max_tokens: int = Field(default=1024, gt=0)
+    deepseek_model_deep: str = "deepseek-v4-pro"
+    deepseek_reasoning_effort: Literal["low", "high", "max"] = "high"
+    deepseek_deep_timeout_seconds: float = Field(default=120.0, gt=0)
+    deepseek_deep_max_tokens: int = Field(default=16000, gt=0)
+    ai_send_request_text: bool = False
+    ai_daily_token_budget: int = Field(default=200_000, ge=0)
+    ai_user_hourly_limit: int = Field(default=10, gt=0)
+    ai_automatic_enabled: bool = True
+    ai_automatic_max_per_run: int = Field(default=10, ge=0)
+    ai_cache_hours: int = Field(default=6, gt=0)
+    organization_language: UILanguage = UILanguage.ES
 
     @field_validator(
         "deepseek_api_key",

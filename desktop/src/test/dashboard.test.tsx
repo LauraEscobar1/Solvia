@@ -268,7 +268,7 @@ describe('panel de control', () => {
     expect(
       await screen.findByText('Todas las solicitudes abiertas tienen actividad reciente.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Disponible próximamente')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Recomendaciones de IA' })).toBeInTheDocument()
   })
 
   it('muestra el error de un bloque sin romper el resto', async () => {

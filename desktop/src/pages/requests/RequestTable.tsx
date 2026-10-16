@@ -7,6 +7,7 @@ import {
   RequestStatusBadge,
   SlaFlags,
 } from '@/components/requests/RequestBadges'
+import { RiskBadge } from '@/components/ai/AIParts'
 import { Table, TableMessage, Td, Th } from '@/components/ui/Table'
 import type { RequestSummary } from '@/lib/api/types'
 import { useFormatters } from '@/lib/format'
@@ -20,10 +21,20 @@ const COLUMNS: SortField[] = [
   'priority',
   'status',
   'due_at',
+  'risk_score',
   'last_activity_at',
 ]
 
-type ColumnKey = 'code' | 'title' | 'area' | 'assignee' | 'priority' | 'status' | 'due_at' | 'last_activity_at'
+type ColumnKey =
+  | 'code'
+  | 'title'
+  | 'area'
+  | 'assignee'
+  | 'priority'
+  | 'status'
+  | 'due_at'
+  | 'risk_score'
+  | 'last_activity_at'
 
 interface RequestTableProps {
   items: RequestSummary[] | undefined
@@ -117,6 +128,9 @@ export function RequestTable({ items, loading, error, sort, onSort }: RequestTab
             </Td>
             <Td>
               <DueDate request={request} />
+            </Td>
+            <Td>
+              <RiskBadge score={request.risk_score} />
             </Td>
             <Td className="text-muted-foreground whitespace-nowrap">
               <time dateTime={request.last_activity_at} title={dateTime(request.last_activity_at)}>

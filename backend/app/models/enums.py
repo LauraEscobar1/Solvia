@@ -47,6 +47,7 @@ class AlertType(StrEnum):
     OVERDUE = "overdue"
     STALLED = "stalled"
     BOTTLENECK = "bottleneck"
+    AI_RISK = "ai_risk"
 
 
 class AlertSeverity(StrEnum):
@@ -64,6 +65,17 @@ class InsightScope(StrEnum):
     REQUEST = "request"
     AREA = "area"
     GLOBAL = "global"
+
+
+class InsightSource(StrEnum):
+    RULE = "rule"
+    AI = "ai"
+
+
+class InsightTrigger(StrEnum):
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+    SCHEDULED = "scheduled"
 
 
 class BottleneckReason(StrEnum):

@@ -6,29 +6,28 @@ import httpx2
 import pytest
 from pydantic import SecretStr
 
-from app.ai.base import RequestMetrics, RiskLevel
+from app.ai.base import AIProviderError, AnalysisKind, ProviderFailure
 from app.ai.deepseek_provider import MAX_ATTEMPTS, DeepSeekProvider
 from app.ai.factory import build_ai_provider
 from app.ai.null_provider import NullProvider
 from app.ai.prompts import RETRY_INSTRUCTION
 from app.core.config import AIProviderName
-from app.core.errors import AppError, ErrorCode
-from app.models.enums import RequestStatus
 from tests.conftest import make_settings
 
 FAKE_KEY = "sk-test-not-a-real-key"
-
-METRICS = RequestMetrics(
-    status=RequestStatus.IN_PROGRESS,
-    hours_open=36,
-    hours_in_status=30,
-    sla_hours=40,
-    reassignment_count=2,
-    assignee_open_requests=12,
+PAYLOAD: dict[str, Any] = {"request": {"code": "SOL-0001", "status": "received"}}
+VALID_REQUEST = json.dumps(
+    {
+        "risk_score": 82,
+        "summary": "Lleva días sin responsable.",
+        "causes": ["Sin responsable"],
+        "actions": [{"title": "Asignar", "detail": "Asignar hoy a alguien del área."}],
+    }
 )
+VALID_OVERVIEW = json.dumps({"summary": "Todo en orden.", "findings": [], "recommendations": []})
 
 
-def _completion(content: str | None) -> dict[str, Any]:
+def _completion(content: str | None, total_tokens: int = 70) -> dict[str, Any]:
     return {
         "id": "chatcmpl-test",
         "object": "chat.completion",
@@ -41,7 +40,7 @@ def _completion(content: str | None) -> dict[str, Any]:
                 "message": {"role": "assistant", "content": content},
             }
         ],
-        "usage": {"prompt_tokens": 50, "completion_tokens": 20, "total_tokens": 70},
+        "usage": {"prompt_tokens": 50, "completion_tokens": 20, "total_tokens": total_tokens},
     }
 
 
@@ -59,8 +58,8 @@ class FakeDeepSeek:
         return body
 
     @staticmethod
-    def reply(content: str | None) -> httpx2.Response:
-        return httpx2.Response(200, json=_completion(content))
+    def reply(content: str | None, total_tokens: int = 70) -> httpx2.Response:
+        return httpx2.Response(200, json=_completion(content, total_tokens))
 
 
 def _deepseek_provider(handler: Callable[[httpx2.Request], httpx2.Response]) -> DeepSeekProvider:
@@ -79,6 +78,14 @@ async def test_factory_returns_null_provider_by_default() -> None:
 
     assert isinstance(provider, NullProvider)
     assert provider.health().provider is AIProviderName.NONE
+    assert provider.model_for(AnalysisKind.REQUEST) is None
+
+
+async def test_null_provider_reports_ai_as_disabled() -> None:
+    with pytest.raises(AIProviderError) as exc_info:
+        await NullProvider().analyze_request(PAYLOAD, "es")
+
+    assert exc_info.value.reason is ProviderFailure.DISABLED
 
 
 async def test_factory_returns_deepseek_provider_when_configured() -> None:
@@ -87,45 +94,23 @@ async def test_factory_returns_deepseek_provider_when_configured() -> None:
     health = provider.health()
     assert health.provider is AIProviderName.DEEPSEEK
     assert health.model == "deepseek-flash"
-    assert health.configured is True
+    assert provider.model_for(AnalysisKind.OVERVIEW) == "deepseek-v4-pro"
     await provider.aclose()
 
 
-async def test_null_provider_returns_heuristic_score() -> None:
-    result = await NullProvider().analyze_request(METRICS, "es")
-
-    assert result.risk_score == pytest.approx(0.9)
-    assert result.risk_level is RiskLevel.CRITICAL
-    assert result.summary is None
-    assert result.provider is AIProviderName.NONE
-
-
-async def test_null_provider_scores_completed_requests_as_no_risk() -> None:
-    completed = METRICS.model_copy(update={"status": RequestStatus.COMPLETED})
-
-    result = await NullProvider().analyze_request(completed, "en")
-
-    assert result.risk_score == 0
-    assert result.risk_level is RiskLevel.LOW
-
-
-async def test_deepseek_sends_expected_request_and_parses_response() -> None:
-    fake = FakeDeepSeek(
-        FakeDeepSeek.reply('{"risk_score": 0.75, "summary": "Lleva 30 h sin avanzar."}')
-    )
+async def test_request_analysis_uses_flash_without_reasoning_in_json_mode() -> None:
+    fake = FakeDeepSeek(FakeDeepSeek.reply(VALID_REQUEST))
     provider = _deepseek_provider(fake)
 
-    result = await provider.analyze_request(METRICS, "es")
+    completion = await provider.analyze_request(PAYLOAD, "es")
     await provider.aclose()
 
-    assert result.risk_score == 0.75
-    assert result.risk_level is RiskLevel.HIGH
-    assert result.summary == "Lleva 30 h sin avanzar."
-    assert result.provider is AIProviderName.DEEPSEEK
-
+    assert completion.result.risk_score == 82
+    assert completion.result.actions[0].title == "Asignar"
+    assert completion.model == "deepseek-flash"
+    assert completion.tokens_used == 70
     request = fake.requests[0]
     assert str(request.url) == "https://api.deepseek.com/chat/completions"
-    assert request.headers["authorization"] == f"Bearer {FAKE_KEY}"
     body = fake.body(0)
     assert body["model"] == "deepseek-flash"
     assert body["response_format"] == {"type": "json_object"}
@@ -134,18 +119,33 @@ async def test_deepseek_sends_expected_request_and_parses_response() -> None:
     assert "Spanish" in body["messages"][0]["content"]
 
 
-async def test_deepseek_retries_once_when_response_is_invalid() -> None:
+async def test_overview_uses_deep_model_with_reasoning() -> None:
+    fake = FakeDeepSeek(FakeDeepSeek.reply(VALID_OVERVIEW))
+    provider = _deepseek_provider(fake)
+
+    completion = await provider.analyze_overview({"scope": "global"}, "en")
+    await provider.aclose()
+
+    body = fake.body(0)
+    assert completion.result.summary == "Todo en orden."
+    assert body["model"] == "deepseek-v4-pro"
+    assert body["thinking"] == {"type": "enabled"}
+    assert body["reasoning_effort"] == "high"
+    assert "temperature" not in body
+    assert "English" in body["messages"][0]["content"]
+
+
+async def test_invalid_response_is_retried_once_and_tokens_add_up() -> None:
     fake = FakeDeepSeek(
-        FakeDeepSeek.reply("esto no es json"),
-        FakeDeepSeek.reply('{"risk_score": 0.3, "summary": "Within SLA."}'),
+        FakeDeepSeek.reply("esto no es json", total_tokens=40),
+        FakeDeepSeek.reply(VALID_REQUEST, total_tokens=90),
     )
     provider = _deepseek_provider(fake)
 
-    result = await provider.analyze_request(METRICS, "en")
+    completion = await provider.analyze_request(PAYLOAD, "en")
     await provider.aclose()
 
-    assert result.risk_score == 0.3
-    assert result.risk_level is RiskLevel.LOW
+    assert completion.tokens_used == 130
     assert len(fake.requests) == 2
     assert fake.body(1)["messages"][-1] == {"role": "user", "content": RETRY_INSTRUCTION}
 
@@ -155,29 +155,40 @@ async def test_deepseek_retries_once_when_response_is_invalid() -> None:
     [
         None,
         "",
-        '{"risk_score": 1.7, "summary": "fuera de rango"}',
+        '{"risk_score": 170, "summary": "fuera de rango"}',
         '{"summary": "sin puntaje"}',
     ],
 )
-async def test_deepseek_fails_after_second_invalid_response(invalid_content: str | None) -> None:
+async def test_second_invalid_response_raises_with_the_tokens_used(
+    invalid_content: str | None,
+) -> None:
     fake = FakeDeepSeek(*(FakeDeepSeek.reply(invalid_content) for _ in range(MAX_ATTEMPTS)))
     provider = _deepseek_provider(fake)
 
-    with pytest.raises(AppError) as exc_info:
-        await provider.analyze_request(METRICS, "es")
+    with pytest.raises(AIProviderError) as exc_info:
+        await provider.analyze_request(PAYLOAD, "es")
     await provider.aclose()
 
-    assert exc_info.value.code is ErrorCode.AI_INVALID_RESPONSE
+    assert exc_info.value.reason is ProviderFailure.INVALID_RESPONSE
+    assert exc_info.value.tokens_used == 70 * MAX_ATTEMPTS
     assert len(fake.requests) == MAX_ATTEMPTS
 
 
-async def test_deepseek_api_error_maps_to_provider_unavailable() -> None:
-    fake = FakeDeepSeek(httpx2.Response(401, json={"error": {"message": "invalid key"}}))
+@pytest.mark.parametrize(
+    ("status", "reason"),
+    [
+        (401, ProviderFailure.UNAVAILABLE),
+        (429, ProviderFailure.RATE_LIMITED),
+        (503, ProviderFailure.UNAVAILABLE),
+    ],
+)
+async def test_api_errors_are_not_retried_on_demand(status: int, reason: ProviderFailure) -> None:
+    fake = FakeDeepSeek(httpx2.Response(status, json={"error": {"message": "x"}}))
     provider = _deepseek_provider(fake)
 
-    with pytest.raises(AppError) as exc_info:
-        await provider.analyze_request(METRICS, "es")
+    with pytest.raises(AIProviderError) as exc_info:
+        await provider.analyze_request(PAYLOAD, "es")
     await provider.aclose()
 
-    assert exc_info.value.code is ErrorCode.AI_PROVIDER_UNAVAILABLE
-    assert exc_info.value.status_code == 503
+    assert exc_info.value.reason is reason
+    assert len(fake.requests) == 1

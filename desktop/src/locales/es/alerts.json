@@ -18,7 +18,8 @@
     "due_soon": "Por vencer",
     "overdue": "Vencida",
     "stalled": "Sin movimiento",
-    "bottleneck": "Cuello de botella"
+    "bottleneck": "Cuello de botella",
+    "ai_risk": "Riesgo según IA"
   },
   "severity": {
     "info": "Información",
@@ -30,7 +31,8 @@
     "overdue": "{{code}} venció {{due}}.",
     "stalled": "{{code}} no tiene actividad desde {{since}} en «{{status}}» (umbral: {{threshold}}).",
     "bottleneck_one": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitud con {{avg}} de promedio en la etapa.",
-    "bottleneck_other": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitudes con {{avg}} de promedio en la etapa."
+    "bottleneck_other": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitudes con {{avg}} de promedio en la etapa.",
+    "ai_risk": "La IA estima un riesgo de {{risk}} sobre 100 para {{code}}."
   },
   "unknownMessage": "Alerta {{code}}",
   "unread": "Sin leer",
