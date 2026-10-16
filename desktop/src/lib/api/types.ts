@@ -141,10 +141,14 @@ export interface RequestEvent {
   created_at: string
 }
 
+export interface BoardCard extends RequestSummary {
+  allowed_transitions: AllowedTransition[]
+}
+
 export interface BoardColumn {
   status: RequestStatus
   total: number
-  items: RequestSummary[]
+  items: BoardCard[]
 }
 
 export interface RequestBoard {

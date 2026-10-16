@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { LayoutGrid, Plus, Rows3 } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
@@ -7,14 +7,57 @@ import { Pagination } from '@/components/ui/Pagination'
 import { useTranslateError } from '@/lib/api/errors'
 import { useRequests } from '@/lib/api/requests'
 import {
+  boardFilters,
   DEFAULT_SORT,
   filtersFromSearch,
   type RequestListParams,
   searchFromFilters,
 } from '@/lib/requests/filters'
+import { REQUEST_VIEWS, type RequestView, useRequestsViewStore } from '@/stores/requestsView'
 import { CreateRequestDialog } from './CreateRequestDialog'
+import { RequestBoardView } from './RequestBoardView'
 import { RequestFiltersBar } from './RequestFiltersBar'
 import { RequestTable } from './RequestTable'
+
+const VIEW_ICONS = { table: Rows3, board: LayoutGrid } satisfies Record<RequestView, unknown>
+
+function ViewToggle() {
+  const { t } = useTranslation('requests')
+  const view = useRequestsViewStore((state) => state.view)
+  const setView = useRequestsViewStore((state) => state.setView)
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t('views.label')}
+      className="bg-surface-muted flex items-center gap-0.5 rounded-lg border p-0.5"
+    >
+      {REQUEST_VIEWS.map((option) => {
+        const Icon = VIEW_ICONS[option]
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={view === option}
+            onClick={() => {
+              setView(option)
+            }}
+            className={[
+              'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm transition-colors',
+              view === option
+                ? 'bg-surface text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            {t(`views.${option}`)}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 function TableView({
   params,
@@ -54,6 +97,7 @@ function TableView({
 export function RequestsPage() {
   const { t } = useTranslation('requests')
   const [search, setSearch] = useSearchParams()
+  const view = useRequestsViewStore((state) => state.view)
   const [creating, setCreating] = useState(false)
   const params = useMemo(() => filtersFromSearch(search), [search])
 
@@ -73,7 +117,8 @@ export function RequestsPage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <ViewToggle />
         <Button
           variant="primary"
           onClick={() => {
@@ -87,7 +132,11 @@ export function RequestsPage() {
 
       <RequestFiltersBar params={params} onChange={update} onClear={clear} />
 
-      <TableView params={params} onChange={update} />
+      {view === 'table' ? (
+        <TableView params={params} onChange={update} />
+      ) : (
+        <RequestBoardView filters={boardFilters(params)} />
+      )}
 
       {creating && (
         <CreateRequestDialog

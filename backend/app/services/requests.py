@@ -15,6 +15,7 @@ from app.schemas.common import Page
 from app.schemas.request import (
     AllowedTransitionRead,
     AssignInput,
+    BoardCard,
     BoardColumn,
     CommentInput,
     DueEstimate,
@@ -93,7 +94,8 @@ class RequestService:
         )
 
     async def board(self, actor: User, filters: RequestFilters) -> RequestBoard:
-        scope = RequestPolicy(actor).scope()
+        policy = RequestPolicy(actor)
+        scope = policy.scope()
         now = self._clock()
         statuses = filters.status or list(DEFAULT_BOARD_STATUSES)
         column_filters = filters.model_copy(update={"status": []})
@@ -108,7 +110,7 @@ class RequestService:
                 BoardColumn(
                     status=status,
                     total=totals.get(status, 0),
-                    items=[self._summary(request, catalog) for request in items],
+                    items=[self._card(policy, request, catalog) for request in items],
                 )
             )
         return RequestBoard(columns=columns)
@@ -119,14 +121,7 @@ class RequestService:
         if request is None or not policy.can(Capability.VIEW, request):
             raise NotFoundError(ErrorCode.REQUEST_NOT_FOUND)
         catalog = await self._catalog()
-        transitions = [
-            AllowedTransitionRead(
-                to=transition.to,
-                requires_comment=transition.requires_comment,
-                requires_assignee=transition.requires_assignee,
-            )
-            for transition in allowed_transitions(policy, request)
-        ]
+        transitions = self._transitions(policy, request)
         permissions = RequestPermissions(
             editable_fields=sorted(policy.editable_fields(request)),
             can_assign=request.status not in CLOSED_STATUSES
@@ -220,3 +215,24 @@ class RequestService:
 
     def _summary(self, request: ServiceRequest, catalog: SlaCatalog) -> RequestSummary:
         return RequestSummary.model_validate(_summary_fields(request, catalog, self._clock))
+
+    def _card(
+        self, policy: RequestPolicy, request: ServiceRequest, catalog: SlaCatalog
+    ) -> BoardCard:
+        return BoardCard.model_validate(
+            {
+                **_summary_fields(request, catalog, self._clock),
+                "allowed_transitions": self._transitions(policy, request),
+            }
+        )
+
+    @staticmethod
+    def _transitions(policy: RequestPolicy, request: ServiceRequest) -> list[AllowedTransitionRead]:
+        return [
+            AllowedTransitionRead(
+                to=transition.to,
+                requires_comment=transition.requires_comment,
+                requires_assignee=transition.requires_assignee,
+            )
+            for transition in allowed_transitions(policy, request)
+        ]

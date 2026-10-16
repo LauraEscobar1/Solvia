@@ -63,5 +63,40 @@
     "noEstimate": "There is no SLA policy for this priority: the request will have no due date.",
     "submit": "Create request",
     "created": "Request {{code}} created."
+  },
+  "actions": {
+    "assign": "Assign",
+    "return": "Return",
+    "start": "Start",
+    "complete": "Complete",
+    "stepBack": "Step back",
+    "cancel": "Cancel request",
+    "reopen": "Reopen"
+  },
+  "board": {
+    "showCancelled": "Show cancelled",
+    "showing": "Showing {{count}} of {{total}}",
+    "empty": "No requests",
+    "moveTo": "Move {{code}} to…",
+    "move": "Move to…",
+    "notAllowed": "You cannot move {{code}} to “{{status}}”.",
+    "column": "{{status}} column"
+  },
+  "transitionDialog": {
+    "title": "{{action}} · {{code}}",
+    "assignee": "Assignee",
+    "selectAssignee": "Select an assignee",
+    "otherArea": "{{name}} (other area)",
+    "commentRequired": "Comment (required)",
+    "commentOptional": "Comment (optional)",
+    "confirm": "Confirm"
+  },
+  "dnd": {
+    "instructions": "To move a request, press space or enter, use the arrow keys to choose a column and press space or enter again to drop it. Press escape to cancel.",
+    "start": "Moving {{code}}.",
+    "over": "{{code}} is over the {{status}} column.",
+    "outside": "{{code}} is not over a column.",
+    "end": "{{code}} dropped in the {{status}} column.",
+    "cancel": "Moving {{code}} was cancelled."
   }
 }

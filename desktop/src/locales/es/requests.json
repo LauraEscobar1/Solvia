@@ -63,5 +63,40 @@
     "noEstimate": "No hay política SLA para esta prioridad: la solicitud no tendrá fecha límite.",
     "submit": "Crear solicitud",
     "created": "Solicitud {{code}} creada."
+  },
+  "actions": {
+    "assign": "Asignar",
+    "return": "Devolver",
+    "start": "Iniciar",
+    "complete": "Completar",
+    "stepBack": "Retroceder",
+    "cancel": "Cancelar solicitud",
+    "reopen": "Reabrir"
+  },
+  "board": {
+    "showCancelled": "Mostrar canceladas",
+    "showing": "Mostrando {{count}} de {{total}}",
+    "empty": "Sin solicitudes",
+    "moveTo": "Mover {{code}} a…",
+    "move": "Mover a…",
+    "notAllowed": "No puedes mover {{code}} a «{{status}}».",
+    "column": "Columna {{status}}"
+  },
+  "transitionDialog": {
+    "title": "{{action}} · {{code}}",
+    "assignee": "Responsable",
+    "selectAssignee": "Selecciona un responsable",
+    "otherArea": "{{name}} (otra área)",
+    "commentRequired": "Comentario (obligatorio)",
+    "commentOptional": "Comentario (opcional)",
+    "confirm": "Confirmar"
+  },
+  "dnd": {
+    "instructions": "Para mover una solicitud, pulsa espacio o intro, usa las flechas para elegir la columna y vuelve a pulsar espacio o intro para soltarla. Pulsa escape para cancelar.",
+    "start": "Moviendo {{code}}.",
+    "over": "{{code}} está sobre la columna {{status}}.",
+    "outside": "{{code}} no está sobre ninguna columna.",
+    "end": "{{code}} soltada en la columna {{status}}.",
+    "cancel": "Movimiento de {{code}} cancelado."
   }
 }

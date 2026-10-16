@@ -139,10 +139,14 @@ class RequestEventRead(BaseModel):
     created_at: datetime
 
 
+class BoardCard(RequestSummary):
+    allowed_transitions: list[AllowedTransitionRead]
+
+
 class BoardColumn(BaseModel):
     status: RequestStatus
     total: int
-    items: list[RequestSummary]
+    items: list[BoardCard]
 
 
 class RequestBoard(BaseModel):

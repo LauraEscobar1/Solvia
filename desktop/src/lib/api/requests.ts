@@ -9,6 +9,7 @@ import {
 import { apiQuery, type RequestFilters, type RequestListParams } from '@/lib/requests/filters'
 import { apiRequest } from './client'
 import type {
+  BoardCard,
   DueEstimate,
   Page,
   RequestBoard,
@@ -138,5 +139,48 @@ export function useCreateRequest() {
     mutationFn: (data: NewRequestInput) =>
       apiRequest<RequestDetail>('/api/v1/requests', { method: 'POST', body: data }),
     onSuccess: () => invalidateRequest(queryClient),
+  })
+}
+
+export function moveCard(board: RequestBoard, cardId: string, to: RequestStatus): RequestBoard {
+  const card = board.columns.flatMap((column) => column.items).find((item) => item.id === cardId)
+  if (!card) return board
+  const moved: BoardCard = { ...card, status: to, allowed_transitions: [] }
+  return {
+    columns: board.columns.map((column) => {
+      if (column.status === card.status) {
+        return {
+          ...column,
+          total: Math.max(0, column.total - 1),
+          items: column.items.filter((item) => item.id !== cardId),
+        }
+      }
+      if (column.status === to) {
+        return { ...column, total: column.total + 1, items: [moved, ...column.items] }
+      }
+      return column
+    }),
+  }
+}
+
+export function useBoardMove(filters: RequestFilters) {
+  const queryClient = useQueryClient()
+  const queryKey = requestKeys.board(filters)
+  return useMutation({
+    mutationFn: ({ card, input }: { card: BoardCard; input: TransitionInput }) =>
+      apiRequest<RequestDetail>(`/api/v1/requests/${card.id}/transition`, {
+        method: 'POST',
+        body: input,
+      }),
+    onMutate: async ({ card, input }) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<RequestBoard>(queryKey)
+      if (previous) queryClient.setQueryData(queryKey, moveCard(previous, card.id, input.to))
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
+    },
+    onSettled: (_data, _error, { card }) => invalidateRequest(queryClient, card.id),
   })
 }
