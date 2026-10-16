@@ -1,8 +1,9 @@
 import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,9 +22,6 @@ from app.models.enums import (
 from app.repositories.sla_policy import SlaPolicyRepository
 from app.repositories.user import UserRepository
 from app.services.sla import SlaCatalog
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 RANDOM_SEED = 20261015
 SUPPORT, HR, FINANCE = "Soporte TI", "Recursos Humanos", "Finanzas"
@@ -118,9 +116,6 @@ PRIORITY_WEIGHTS = {
     RequestPriority.LOW: 2.5,
 }
 AREA_WEIGHTS = {SUPPORT: 5.0, HR: 3.0, FINANCE: 3.0}
-STAGE_FACTORS = (0.2, 0.4, 0.6, 0.8, 1.1, 1.6, 2.4)
-MIN_CLOSED_AGE_HOURS = 24
-MAX_CLOSED_AGE_HOURS = 38 * 24
 RETURN_PROBABILITY = 0.25
 STEP_BACK_PROBABILITY = 0.15
 COMMENT_PROBABILITY = 0.35
@@ -134,7 +129,21 @@ SLA_RATIOS = {
 }
 STALLED_IDLE_FACTORS = (1.3, 2.5)
 ACTIVE_IDLE_FACTORS = (0.05, 0.6)
+CLOSED_LIFETIME_FACTORS = (0.5, 1.6)
+STAGE_TIME_FACTORS = (0.4, 1.2)
+COMMENT_TIME_SHARE = 0.3
+CLOSED_AGE_HOURS = (2, 30 * 24)
+DEFAULT_TOTAL_HOURS = 7 * 24
 ACTION_WINDOW = (0.05, 0.9)
+
+type _Pick = tuple[RequestStatus, str, RequestPriority]
+
+
+@dataclass(frozen=True, slots=True)
+class _Step:
+    leaves: RequestStatus
+    apply: Callable[[], None]
+    moves: bool = True
 
 
 @dataclass(slots=True)
@@ -145,13 +154,13 @@ class DemoReport:
     skipped: bool = False
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class _Draft:
     target: RequestStatus
     area_name: str
     priority: RequestPriority
     received_at: datetime
-    last_activity_at: datetime | None = None
+    last_activity_at: datetime
 
 
 @dataclass(slots=True)
@@ -167,16 +176,14 @@ class _DemoBuilder:
         *,
         session: AsyncSession,
         rng: random.Random,
-        now: datetime,
         catalog: SlaCatalog,
-        stage_hours: dict[RequestPriority, dict[RequestStatus, int]],
+        stage_hours: dict[tuple[RequestPriority, RequestStatus], int],
         people: dict[str, User],
         areas: dict[str, Area],
         admin: User,
     ) -> None:
         self._session = session
         self._rng = rng
-        self._now = now
         self._catalog = catalog
         self._stage_hours = stage_hours
         self._people = people
@@ -214,112 +221,75 @@ class _DemoBuilder:
         )
         assignee = self._people[rng.choice(AREA_ASSIGNEES[draft.area_name])]
         supervisor = self._people.get(AREA_SUPERVISORS.get(draft.area_name, ""), self._admin)
-
-        if draft.last_activity_at is not None:
-            self._walk_open(timeline, draft, assignee, supervisor, requester)
-        elif draft.target is RequestStatus.CANCELLED:
-            cutoff = rng.choice(SLA_STAGES)
-            self._walk(timeline, cutoff, assignee, supervisor, requester)
-            self._advance(timeline, request.status)
-            self._event(
-                timeline,
-                supervisor,
-                RequestEventType.STATUS_CHANGED,
-                from_status=request.status,
-                to_status=RequestStatus.CANCELLED,
-                comment=rng.choice(CANCEL_REASONS),
-            )
-            request.status = RequestStatus.CANCELLED
-        else:
-            self._walk(timeline, draft.target, assignee, supervisor, requester)
+        steps = self._steps(timeline, draft.target, assignee, supervisor, requester)
+        weights = [self._weight(draft.priority, step) for step in steps]
+        span = draft.last_activity_at - draft.received_at
+        elapsed = 0.0
+        for step, weight in zip(steps, weights, strict=True):
+            elapsed += weight
+            timeline.cursor = draft.received_at + span * (elapsed / sum(weights))
+            step.apply()
 
         request.last_activity_at = timeline.cursor
         request.updated_at = timeline.cursor
         return timeline.events
 
-    def _walk_open(
-        self,
-        timeline: _Timeline,
-        draft: _Draft,
-        assignee: User,
-        supervisor: User,
-        requester: User,
-    ) -> None:
-        rng = self._rng
-        target = draft.target
-        actions: list[Callable[[], None]] = []
-        if target is RequestStatus.RECEIVED:
-            if rng.random() < RETURN_PROBABILITY:
-                actions.append(partial(self._assign, timeline, supervisor, assignee))
-                actions.append(partial(self._return, timeline, assignee))
-            if not actions or rng.random() < COMMENT_PROBABILITY:
-                actions.append(partial(self._comment, timeline, requester, REQUESTER_COMMENTS))
-        else:
-            actions.append(partial(self._assign, timeline, supervisor, assignee))
-            if target is RequestStatus.IN_PROGRESS:
-                actions.append(partial(self._change, timeline, assignee, RequestStatus.IN_PROGRESS))
-                if rng.random() < STEP_BACK_PROBABILITY:
-                    reason = rng.choice(STEP_BACK_REASONS)
-                    actions.append(
-                        partial(self._change, timeline, assignee, RequestStatus.ASSIGNED, reason)
-                    )
-                    actions.append(
-                        partial(self._change, timeline, assignee, RequestStatus.IN_PROGRESS)
-                    )
-            if rng.random() < COMMENT_PROBABILITY:
-                author, texts = (
-                    (assignee, ASSIGNEE_COMMENTS)
-                    if target is RequestStatus.IN_PROGRESS
-                    else (requester, REQUESTER_COMMENTS)
-                )
-                actions.append(partial(self._comment, timeline, author, texts))
+    def _weight(self, priority: RequestPriority, step: _Step) -> float:
+        hours = self._stage_hours.get((priority, step.leaves), 24)
+        share = 1.0 if step.moves else COMMENT_TIME_SHARE
+        return hours * share * self._rng.uniform(*STAGE_TIME_FACTORS)
 
-        start = timeline.cursor
-        span = (draft.last_activity_at or start) - start
-        moments = sorted(rng.uniform(*ACTION_WINDOW) for _ in actions[:-1])
-        for action, fraction in zip(actions, [*moments, 1.0], strict=True):
-            timeline.cursor = start + span * fraction
-            action()
-
-    def _walk(
+    def _steps(
         self,
         timeline: _Timeline,
         target: RequestStatus,
         assignee: User,
         supervisor: User,
         requester: User,
-    ) -> None:
+    ) -> list[_Step]:
         rng = self._rng
-        request = timeline.request
-        if target is RequestStatus.RECEIVED:
+        received, assigned, in_progress = SLA_STAGES
+        if target is RequestStatus.CANCELLED:
+            stage = rng.choice(SLA_STAGES)
+            reason = rng.choice(CANCEL_REASONS)
+            return [
+                *self._steps(timeline, stage, assignee, supervisor, requester),
+                _Step(
+                    stage,
+                    partial(self._change, timeline, supervisor, RequestStatus.CANCELLED, reason),
+                ),
+            ]
+
+        def comment(stage: RequestStatus, author: User, texts: tuple[str, ...]) -> _Step:
+            return _Step(stage, partial(self._comment, timeline, author, texts), moves=False)
+
+        steps: list[_Step] = []
+        if target is received:
             if rng.random() < RETURN_PROBABILITY:
-                self._advance(timeline, RequestStatus.RECEIVED)
-                self._assign(timeline, supervisor, assignee)
-                self._advance(timeline, RequestStatus.ASSIGNED)
-                self._return(timeline, assignee)
-            self._maybe_comment(timeline, requester, REQUESTER_COMMENTS)
-            return
+                steps.append(_Step(received, partial(self._assign, timeline, supervisor, assignee)))
+                steps.append(_Step(assigned, partial(self._return, timeline, assignee)))
+            if not steps or rng.random() < COMMENT_PROBABILITY:
+                steps.append(comment(received, requester, REQUESTER_COMMENTS))
+            return steps
 
-        self._advance(timeline, RequestStatus.RECEIVED)
-        self._assign(timeline, supervisor, assignee)
-        self._maybe_comment(timeline, requester, REQUESTER_COMMENTS)
-        if target is RequestStatus.ASSIGNED:
-            return
+        steps.append(_Step(received, partial(self._assign, timeline, supervisor, assignee)))
+        if rng.random() < COMMENT_PROBABILITY:
+            steps.append(comment(assigned, requester, REQUESTER_COMMENTS))
+        if target is assigned:
+            return steps
 
-        self._advance(timeline, RequestStatus.ASSIGNED)
-        self._change(timeline, assignee, RequestStatus.IN_PROGRESS)
-        self._maybe_comment(timeline, assignee, ASSIGNEE_COMMENTS)
+        steps.append(_Step(assigned, partial(self._change, timeline, assignee, in_progress)))
         if rng.random() < STEP_BACK_PROBABILITY:
-            self._advance(timeline, RequestStatus.IN_PROGRESS)
-            self._change(timeline, assignee, RequestStatus.ASSIGNED, rng.choice(STEP_BACK_REASONS))
-            self._advance(timeline, RequestStatus.ASSIGNED)
-            self._change(timeline, assignee, RequestStatus.IN_PROGRESS)
-        if target is RequestStatus.IN_PROGRESS:
-            return
-
-        self._advance(timeline, RequestStatus.IN_PROGRESS)
-        self._change(timeline, assignee, RequestStatus.COMPLETED)
-        request.completed_at = timeline.cursor
+            reason = rng.choice(STEP_BACK_REASONS)
+            steps += [
+                _Step(in_progress, partial(self._change, timeline, assignee, assigned, reason)),
+                _Step(assigned, partial(self._change, timeline, assignee, in_progress)),
+            ]
+        if rng.random() < COMMENT_PROBABILITY:
+            steps.append(comment(in_progress, assignee, ASSIGNEE_COMMENTS))
+        if target is RequestStatus.COMPLETED:
+            steps.append(_Step(in_progress, partial(self._complete, timeline, assignee)))
+        return steps
 
     def _assign(self, timeline: _Timeline, supervisor: User, assignee: User) -> None:
         request = timeline.request
@@ -379,6 +349,10 @@ class _DemoBuilder:
         )
         request.status = target
 
+    def _complete(self, timeline: _Timeline, assignee: User) -> None:
+        self._change(timeline, assignee, RequestStatus.COMPLETED)
+        timeline.request.completed_at = timeline.cursor
+
     def _comment(self, timeline: _Timeline, actor: User, texts: tuple[str, ...]) -> None:
         self._event(
             timeline,
@@ -387,17 +361,6 @@ class _DemoBuilder:
             comment=self._rng.choice(texts),
             bump=False,
         )
-
-    def _maybe_comment(self, timeline: _Timeline, actor: User, texts: tuple[str, ...]) -> None:
-        if self._rng.random() < COMMENT_PROBABILITY:
-            self._advance(timeline, timeline.request.status, fraction=0.3)
-            self._comment(timeline, actor, texts)
-
-    def _advance(self, timeline: _Timeline, stage: RequestStatus, fraction: float = 1.0) -> None:
-        hours = self._stage_hours[timeline.request.priority].get(stage, 24)
-        step = timedelta(hours=hours * self._rng.choice(STAGE_FACTORS) * fraction)
-        latest = self._now - timedelta(minutes=self._rng.randint(5, 120))
-        timeline.cursor = max(timeline.cursor, min(timeline.cursor + step, latest))
 
     def _event(
         self,
@@ -431,10 +394,6 @@ def _weighted[T](rng: random.Random, weights: dict[T, float]) -> T:
     return rng.choices(list(weights), weights=list(weights.values()))[0]
 
 
-def _hours_between(start: datetime, end: datetime) -> float:
-    return (end - start).total_seconds() / 3600
-
-
 def _plan_drafts(
     rng: random.Random,
     now: datetime,
@@ -443,34 +402,43 @@ def _plan_drafts(
 ) -> list[_Draft]:
     plan = list(STATUS_PLAN)
     rng.shuffle(plan)
-    drafts = [
-        _Draft(
-            target=target,
-            area_name=_weighted(rng, AREA_WEIGHTS),
-            priority=_weighted(rng, PRIORITY_WEIGHTS),
-            received_at=now
-            - timedelta(hours=rng.uniform(MIN_CLOSED_AGE_HOURS, MAX_CLOSED_AGE_HOURS)),
-        )
-        for target in plan
+    picks = [
+        (target, _weighted(rng, AREA_WEIGHTS), _weighted(rng, PRIORITY_WEIGHTS)) for target in plan
     ]
-    _place_open_requests(
-        rng,
-        now,
-        catalog,
-        inactivity,
-        [draft for draft in drafts if draft.target not in CLOSED_STATUSES],
-    )
+    open_picks = [pick for pick in picks if pick[0] not in CLOSED_STATUSES]
+    closed_picks = [pick for pick in picks if pick[0] in CLOSED_STATUSES]
+    drafts = [
+        *_open_drafts(rng, now, catalog, inactivity, open_picks),
+        *_closed_drafts(rng, now, catalog, closed_picks),
+    ]
     return sorted(drafts, key=lambda draft: draft.received_at)
 
 
-def _place_open_requests(
+def _total_hours(catalog: SlaCatalog, priority: RequestPriority) -> int:
+    hours = catalog.total_hours(priority)
+    return DEFAULT_TOTAL_HOURS if hours is None else hours
+
+
+def _closed_drafts(
+    rng: random.Random, now: datetime, catalog: SlaCatalog, picks: list[_Pick]
+) -> list[_Draft]:
+    drafts = []
+    for target, area_name, priority in picks:
+        lifetime = _total_hours(catalog, priority) * rng.uniform(*CLOSED_LIFETIME_FACTORS)
+        closed_at = now - timedelta(hours=rng.uniform(*CLOSED_AGE_HOURS))
+        received_at = closed_at - timedelta(hours=lifetime)
+        drafts.append(_Draft(target, area_name, priority, received_at, closed_at))
+    return drafts
+
+
+def _open_drafts(
     rng: random.Random,
     now: datetime,
     catalog: SlaCatalog,
     inactivity: dict[tuple[RequestPriority, RequestStatus], int],
-    drafts: list[_Draft],
-) -> None:
-    total = len(drafts)
+    picks: list[_Pick],
+) -> list[_Draft]:
+    total = len(picks)
     overdue = round(total * OVERDUE_SHARE)
     due_soon = round(total * DUE_SOON_SHARE)
     buckets = (
@@ -479,29 +447,37 @@ def _place_open_requests(
         + [SlaStatus.ON_TRACK] * (total - overdue - due_soon)
     )
     rng.shuffle(buckets)
-    for draft, bucket in zip(drafts, buckets, strict=True):
-        hours = catalog.total_hours(draft.priority)
-        if hours is not None:
-            draft.received_at = now - timedelta(hours=hours * rng.uniform(*SLA_RATIOS[bucket]))
-
-    def threshold(draft: _Draft) -> int:
-        return inactivity.get((draft.priority, draft.target), 24)
+    ages = [
+        _total_hours(catalog, priority) * rng.uniform(*SLA_RATIOS[bucket])
+        for (_target, _area, priority), bucket in zip(picks, buckets, strict=True)
+    ]
+    thresholds = [inactivity.get((priority, target), 24) for target, _area, priority in picks]
 
     low, high = STALLED_IDLE_FACTORS
     feasible = [
         index
-        for index, draft in enumerate(drafts)
-        if _hours_between(draft.received_at, now) * ACTION_WINDOW[1] > threshold(draft) * low
+        for index, (age, threshold) in enumerate(zip(ages, thresholds, strict=True))
+        if age * ACTION_WINDOW[1] > threshold * low
     ]
     stalled = set(rng.sample(feasible, min(len(feasible), round(total * STALLED_SHARE))))
-    for index, draft in enumerate(drafts):
-        age = _hours_between(draft.received_at, now)
-        hours = threshold(draft)
+    drafts = []
+    for index, ((target, area_name, priority), age, threshold) in enumerate(
+        zip(picks, ages, thresholds, strict=True)
+    ):
         if index in stalled:
-            idle = hours * rng.uniform(low, min(high, age * ACTION_WINDOW[1] / hours))
+            idle = threshold * rng.uniform(low, min(high, age * ACTION_WINDOW[1] / threshold))
         else:
-            idle = min(hours * rng.uniform(*ACTIVE_IDLE_FACTORS), age / 2)
-        draft.last_activity_at = now - timedelta(hours=idle)
+            idle = min(threshold * rng.uniform(*ACTIVE_IDLE_FACTORS), age / 2)
+        drafts.append(
+            _Draft(
+                target,
+                area_name,
+                priority,
+                now - timedelta(hours=age),
+                now - timedelta(hours=idle),
+            )
+        )
+    return drafts
 
 
 async def _ensure_people(
@@ -550,18 +526,14 @@ async def create_demo_requests(
         return report
 
     policies = await SlaPolicyRepository(session).list_ordered()
-    stage_hours: dict[RequestPriority, dict[RequestStatus, int]] = {}
-    inactivity: dict[tuple[RequestPriority, RequestStatus], int] = {}
-    for policy in policies:
-        stage_hours.setdefault(policy.priority, {})[policy.status] = policy.max_hours
-        inactivity[(policy.priority, policy.status)] = policy.inactivity_hours
+    inactivity = {(policy.priority, policy.status): policy.inactivity_hours for policy in policies}
+    stage_hours = {(policy.priority, policy.status): policy.max_hours for policy in policies}
 
     rng = random.Random(RANDOM_SEED)  # noqa: S311
     catalog = SlaCatalog(policies)
     builder = _DemoBuilder(
         session=session,
         rng=rng,
-        now=now,
         catalog=catalog,
         stage_hours=stage_hours,
         people=people,

@@ -33,6 +33,9 @@
     "invalid_assignee": "El responsable debe estar activo y pertenecer al área de la solicitud.",
     "invalid_area": "El área seleccionada no existe o está desactivada."
   },
+  "alert": {
+    "not_found": "La alerta no existe."
+  },
   "area": {
     "not_found": "El área no existe.",
     "name_taken": "Ya existe un área con ese nombre.",

@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.v1 import alerts, areas, auth, health, requests, sla_policies, users
+from app.api.v1 import alerts, areas, auth, dashboard, health, requests, sla_policies, users
 from app.schemas.errors import ErrorResponse
 
 _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
@@ -18,3 +18,4 @@ api_router.include_router(users.router)
 api_router.include_router(sla_policies.router)
 api_router.include_router(requests.router)
 api_router.include_router(alerts.router)
+api_router.include_router(dashboard.router)

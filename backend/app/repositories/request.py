@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import ColumnElement, Row, Select, func, not_, or_, select
@@ -12,7 +12,7 @@ from app.models.enums import RequestPriority, RequestStatus, SlaStatus
 from app.models.request import ServiceRequest
 from app.models.user import User
 from app.repositories.base import BaseRepository, contains_text
-from app.repositories.sla_rules import SlaRules
+from app.repositories.sla_rules import Expression, SlaRules
 from app.schemas.request import RequestFilters
 
 REQUEST_RELATIONS = (
@@ -61,6 +61,36 @@ def _with_sla(row: Row[ServiceRequest, str | None, bool]) -> RequestWithSla:
         sla_status=SlaStatus(sla_status) if sla_status is not None else None,
         is_stalled=bool(is_stalled),
     )
+
+
+def _flag(condition: ColumnElement[bool], *, wanted: bool | None) -> list[ColumnElement[bool]]:
+    if wanted is None:
+        return []
+    return [condition if wanted else not_(condition)]
+
+
+def _sla_conditions(filters: RequestFilters, rules: SlaRules) -> list[ColumnElement[bool]]:
+    conditions = [
+        *_flag(rules.is_overdue, wanted=filters.overdue),
+        *_flag(rules.is_stalled, wanted=filters.stalled),
+    ]
+    if filters.sla_status is not None:
+        conditions.append(rules.status_is(filters.sla_status))
+    return conditions
+
+
+def _day_range(
+    column: Expression[datetime | None],
+    first: date | None,
+    last: date | None,
+    timezone: ZoneInfo,
+) -> list[ColumnElement[bool]]:
+    conditions: list[ColumnElement[bool]] = []
+    if first is not None:
+        conditions.append(column >= day_start(first, timezone))
+    if last is not None:
+        conditions.append(column < day_end(last, timezone))
+    return conditions
 
 
 def scope_condition(scope: RequestScope) -> ColumnElement[bool] | None:
@@ -203,16 +233,16 @@ class RequestRepository(BaseRepository[ServiceRequest]):
             conditions.append(ServiceRequest.requester_id == filters.requester_id)
         if filters.q:
             conditions.append(contains_text([ServiceRequest.code, ServiceRequest.title], filters.q))
-        if filters.overdue is not None:
-            overdue = rules.is_overdue
-            conditions.append(overdue if filters.overdue else not_(overdue))
-        if filters.received_from is not None:
-            conditions.append(
-                ServiceRequest.received_at >= day_start(filters.received_from, timezone)
-            )
-        if filters.received_to is not None:
-            conditions.append(ServiceRequest.received_at < day_end(filters.received_to, timezone))
-        return conditions
+        return [
+            *conditions,
+            *_sla_conditions(filters, rules),
+            *_day_range(
+                ServiceRequest.received_at, filters.received_from, filters.received_to, timezone
+            ),
+            *_day_range(
+                ServiceRequest.completed_at, filters.completed_from, filters.completed_to, timezone
+            ),
+        ]
 
     @staticmethod
     def _sorted[*Ts](statement: Select[*Ts], sort: str) -> Select[*Ts]:

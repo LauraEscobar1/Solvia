@@ -2,22 +2,16 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import timedelta
-from enum import StrEnum
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.time import Clock, day_start, local_date, utcnow
-from app.models.enums import SLA_STAGES, AlertSeverity, RequestStatus
+from app.models.enums import SLA_STAGES, AlertSeverity, BottleneckReason, RequestStatus
 from app.repositories.bottleneck import BottleneckRepository, StageHistory, StageLoad
 
 HISTORY_DAYS = 30
 COUNT_FACTOR = 1.5
-
-
-class BottleneckReason(StrEnum):
-    COUNT_ABOVE_MEDIAN = "count_above_median"
-    AVG_ABOVE_SLA = "avg_above_sla"
 
 
 @dataclass(frozen=True, slots=True)

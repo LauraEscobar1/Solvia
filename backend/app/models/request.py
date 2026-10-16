@@ -25,6 +25,11 @@ class ServiceRequest(UUIDMixin, TimestampMixin, Base):
         Index("ix_requests_assignee_id", "assignee_id"),
         Index("ix_requests_received_at", "received_at"),
         Index("ix_requests_due_at_open", "due_at", postgresql_where=text(OPEN_STATUS_SQL)),
+        Index(
+            "ix_requests_completed_at",
+            "completed_at",
+            postgresql_where=text("completed_at IS NOT NULL"),
+        ),
     )
 
     code: Mapped[str] = mapped_column(

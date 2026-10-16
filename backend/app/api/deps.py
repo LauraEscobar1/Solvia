@@ -17,6 +17,7 @@ from app.repositories.user import UserRepository
 from app.services.alerts import AlertService
 from app.services.areas import AreaService
 from app.services.auth import AuthService
+from app.services.dashboard import DashboardService
 from app.services.health import DatabaseProbe, HealthService
 from app.services.requests import RequestService
 from app.services.sla_policies import SlaPolicyService
@@ -144,6 +145,13 @@ def get_alert_service(session: SessionDep, settings: SettingsDep) -> AlertServic
 
 
 AlertServiceDep = Annotated[AlertService, Depends(get_alert_service)]
+
+
+def get_dashboard_service(session: SessionDep, settings: SettingsDep) -> DashboardService:
+    return DashboardService(session, settings.timezone)
+
+
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:

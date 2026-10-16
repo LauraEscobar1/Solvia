@@ -33,6 +33,9 @@
     "invalid_assignee": "The assignee must be active and belong to the request's area.",
     "invalid_area": "The selected area does not exist or is deactivated."
   },
+  "alert": {
+    "not_found": "The alert does not exist."
+  },
   "area": {
     "not_found": "The area does not exist.",
     "name_taken": "An area with that name already exists.",

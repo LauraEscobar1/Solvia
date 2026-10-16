@@ -70,23 +70,19 @@ class SlaRules:
 
     @property
     def is_overdue(self) -> ColumnElement[bool]:
-        return _definitely(
-            and_(
-                self.is_open,
-                ServiceRequest.due_at.is_not(None),
-                self._now >= ServiceRequest.due_at,
-            )
+        return and_(
+            self.is_open,
+            ServiceRequest.due_at.is_not(None),
+            self._now >= ServiceRequest.due_at,
         )
 
     @property
     def is_due_soon(self) -> ColumnElement[bool]:
-        return _definitely(
-            and_(
-                self.is_open,
-                ServiceRequest.due_at.is_not(None),
-                self._now < ServiceRequest.due_at,
-                self.consumed_ratio >= DUE_SOON_RATIO,
-            )
+        return and_(
+            self.is_open,
+            ServiceRequest.due_at.is_not(None),
+            self._now < ServiceRequest.due_at,
+            _definitely(self.consumed_ratio >= DUE_SOON_RATIO),
         )
 
     @property
@@ -110,7 +106,7 @@ class SlaRules:
 
     @property
     def is_stalled(self) -> ColumnElement[bool]:
-        return _definitely(and_(self.is_open, self.idle_hours > self.inactivity_threshold))
+        return and_(self.is_open, _definitely(self.idle_hours > self.inactivity_threshold))
 
     def status_is(self, status: SlaStatus) -> ColumnElement[bool]:
         if status is SlaStatus.OVERDUE:

@@ -46,6 +46,7 @@ class ErrorCode(StrEnum):
     REQUEST_ASSIGNEE_REQUIRED = "request.assignee_required"
     REQUEST_INVALID_ASSIGNEE = "request.invalid_assignee"
     REQUEST_INVALID_AREA = "request.invalid_area"
+    ALERT_NOT_FOUND = "alert.not_found"
 
 
 class AppError(Exception):
