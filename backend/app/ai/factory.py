@@ -1,15 +1,19 @@
+import asyncio
 from typing import assert_never
 
 import httpx2
 
 from app.ai.base import AIProvider
-from app.ai.deepseek_provider import DeepSeekProvider
+from app.ai.deepseek_provider import DeepSeekProvider, Sleep
 from app.ai.null_provider import NullProvider
 from app.core.config import AIProviderName, Settings
 
 
 def build_ai_provider(
-    settings: Settings, *, http_client: httpx2.AsyncClient | None = None
+    settings: Settings,
+    *,
+    http_client: httpx2.AsyncClient | None = None,
+    sleep: Sleep = asyncio.sleep,
 ) -> AIProvider:
     match settings.ai_provider:
         case AIProviderName.NONE:
@@ -29,6 +33,7 @@ def build_ai_provider(
                 deep_max_tokens=settings.deepseek_deep_max_tokens,
                 reasoning_effort=settings.deepseek_reasoning_effort,
                 http_client=http_client,
+                sleep=sleep,
             )
         case _:
             assert_never(settings.ai_provider)
