@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     organization_timezone: str = "America/Bogota"
     alerts_job_enabled: bool = True
     alerts_job_interval_minutes: int = Field(default=15, gt=0)
+    bottleneck_min_count: int = Field(default=3, ge=1)
 
     seed_admin_email: str | None = None
     seed_admin_name: str = "Administrador"

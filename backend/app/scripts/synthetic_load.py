@@ -48,6 +48,7 @@ TRUNCATE_ALL = (
     "ai_insights, refresh_tokens RESTART IDENTITY CASCADE"
 )
 TIMEZONE = "America/Bogota"
+BOTTLENECK_MIN_COUNT = 3
 
 
 class SyntheticLoadError(Exception):
@@ -212,8 +213,8 @@ async def explain(session: AsyncSession) -> None:
         msg = "No hay administrador sintético; ejecuta primero la generación"
         raise SyntheticLoadError(msg)
     timezone = ZoneInfo(TIMEZONE)
-    dashboard = DashboardService(session, timezone)
-    alerts = AlertService(session, timezone)
+    dashboard = DashboardService(session, timezone, bottleneck_min_count=BOTTLENECK_MIN_COUNT)
+    alerts = AlertService(session, timezone, bottleneck_min_count=BOTTLENECK_MIN_COUNT)
     requests = RequestService(session, timezone)
     query = DashboardQuery()
     checks: dict[str, Callable[[], Awaitable[object]]] = {
@@ -228,7 +229,7 @@ async def explain(session: AsyncSession) -> None:
         "alerts/unread-count": lambda: alerts.unread_count(actor),
         "requests?stalled=true": lambda: requests.search(actor, RequestListQuery(stalled=True)),
     }
-    await AlertEvaluator(session).evaluate_all(timezone)
+    await AlertEvaluator(session).evaluate_all(timezone, bottleneck_min_count=BOTTLENECK_MIN_COUNT)
     connection = await session.connection()
     for name, check in checks.items():
         captured: list[tuple[str, Any]] = []

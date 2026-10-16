@@ -141,14 +141,18 @@ RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]
 
 
 def get_alert_service(session: SessionDep, settings: SettingsDep) -> AlertService:
-    return AlertService(session, settings.timezone)
+    return AlertService(
+        session, settings.timezone, bottleneck_min_count=settings.bottleneck_min_count
+    )
 
 
 AlertServiceDep = Annotated[AlertService, Depends(get_alert_service)]
 
 
 def get_dashboard_service(session: SessionDep, settings: SettingsDep) -> DashboardService:
-    return DashboardService(session, settings.timezone)
+    return DashboardService(
+        session, settings.timezone, bottleneck_min_count=settings.bottleneck_min_count
+    )
 
 
 DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]

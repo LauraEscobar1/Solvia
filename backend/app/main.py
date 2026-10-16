@@ -28,7 +28,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         scheduler = None
         if settings.alerts_job_enabled:
             scheduler = start_alert_scheduler(
-                AlertJob(container.session_factory, settings.timezone),
+                AlertJob(
+                    container.session_factory,
+                    settings.timezone,
+                    bottleneck_min_count=settings.bottleneck_min_count,
+                ),
                 settings.alerts_job_interval_minutes,
             )
         logger.info(

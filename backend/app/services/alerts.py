@@ -123,11 +123,13 @@ class AlertEvaluator:
         self._alerts = AlertRepository(session)
         self._requests = RequestRepository(session)
 
-    async def evaluate_all(self, timezone: ZoneInfo) -> EvaluationReport:
+    async def evaluate_all(
+        self, timezone: ZoneInfo, *, bottleneck_min_count: int
+    ) -> EvaluationReport:
         started = time.perf_counter()
         report = EvaluationReport()
         if await self._alerts.try_evaluation_lock():
-            await self._evaluate_everything(report, timezone)
+            await self._evaluate_everything(report, timezone, bottleneck_min_count)
             await self._session.commit()
         else:
             report.skipped = True
@@ -145,11 +147,16 @@ class AlertEvaluator:
         await self._apply(report, drafts, existing, now)
         return report
 
-    async def _evaluate_everything(self, report: EvaluationReport, timezone: ZoneInfo) -> None:
+    async def _evaluate_everything(
+        self, report: EvaluationReport, timezone: ZoneInfo, bottleneck_min_count: int
+    ) -> None:
         now = self._clock()
         states = await self._requests.sla_states(SlaRules(now))
         drafts = [draft for state in states for draft in request_alert_drafts(state)]
-        cells = await BottleneckDetector(self._session, lambda: now).cells(timezone)
+        detector = BottleneckDetector(
+            self._session, min_count=bottleneck_min_count, clock=lambda: now
+        )
+        cells = await detector.cells(timezone)
         bottlenecks = [cell for cell in cells if cell.is_bottleneck]
         report.bottlenecks = len(bottlenecks)
         drafts += [bottleneck_alert_draft(cell) for cell in bottlenecks]
@@ -226,9 +233,17 @@ def _alert_read(view: AlertView) -> AlertRead:
 
 
 class AlertService:
-    def __init__(self, session: AsyncSession, timezone: ZoneInfo, clock: Clock = utcnow) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        timezone: ZoneInfo,
+        *,
+        bottleneck_min_count: int,
+        clock: Clock = utcnow,
+    ) -> None:
         self._session = session
         self._timezone = timezone
+        self._bottleneck_min_count = bottleneck_min_count
         self._clock = clock
         self._alerts = AlertRepository(session)
 
@@ -263,7 +278,9 @@ class AlertService:
         return AlertCount(count=marked)
 
     async def evaluate(self) -> AlertEvaluationRead:
-        report = await AlertEvaluator(self._session, self._clock).evaluate_all(self._timezone)
+        report = await AlertEvaluator(self._session, self._clock).evaluate_all(
+            self._timezone, bottleneck_min_count=self._bottleneck_min_count
+        )
         return AlertEvaluationRead.model_validate(asdict(report))
 
     @staticmethod

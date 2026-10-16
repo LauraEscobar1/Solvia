@@ -30,6 +30,7 @@ from app.services.alerts import AlertEvaluator, EvaluationReport, alert_key
 from tests.db.conftest import Factory
 
 TZ = ZoneInfo("America/Bogota")
+MIN_COUNT = 3
 T0 = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
 HIGH_HOURS = (8, 24, 72)
 MEDIUM_HOURS = (24, 48, 120)
@@ -68,7 +69,7 @@ def frozen() -> Iterator[time_machine.Traveller]:
 
 
 async def _evaluate(session: AsyncSession) -> EvaluationReport:
-    return await AlertEvaluator(session).evaluate_all(TZ)
+    return await AlertEvaluator(session).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
 
 
 async def _alerts(
@@ -417,10 +418,10 @@ async def test_advisory_lock_skips_a_run_while_another_one_holds_it(
             text("SELECT pg_advisory_xact_lock(:key)"), {"key": EVALUATION_LOCK_KEY}
         )
         async with session_factory() as other:
-            blocked = await AlertEvaluator(other).evaluate_all(TZ)
+            blocked = await AlertEvaluator(other).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
         await holder.rollback()
     async with session_factory() as other:
-        released = await AlertEvaluator(other).evaluate_all(TZ)
+        released = await AlertEvaluator(other).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
 
     assert blocked.skipped is True
     assert blocked.created == 0
@@ -444,7 +445,7 @@ async def test_simultaneous_runs_do_not_process_twice(
 
     async def run() -> EvaluationReport:
         async with session_factory() as own:
-            return await AlertEvaluator(own).evaluate_all(TZ)
+            return await AlertEvaluator(own).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
 
     reports = await asyncio.gather(run(), run())
 
@@ -461,11 +462,13 @@ async def test_simultaneous_runs_do_not_process_twice(
 async def test_job_logs_failures_and_keeps_running(
     db_app: FastAPI, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    async def failing(self: AlertEvaluator, timezone: ZoneInfo) -> EvaluationReport:
-        raise RuntimeError(timezone.key)
+    async def failing(
+        self: AlertEvaluator, timezone: ZoneInfo, *, bottleneck_min_count: int
+    ) -> EvaluationReport:
+        raise RuntimeError(timezone.key, bottleneck_min_count)
 
     monkeypatch.setattr(AlertEvaluator, "evaluate_all", failing)
-    job = AlertJob(db_app.state.container.session_factory, TZ)
+    job = AlertJob(db_app.state.container.session_factory, TZ, bottleneck_min_count=MIN_COUNT)
 
     assert await job.run() is None
     assert any("alerts_evaluation_failed" in str(record.msg) for record in caplog.records)
@@ -482,7 +485,9 @@ async def test_job_logs_each_run_with_counts(
         due_at=now - timedelta(days=1),
     )
 
-    report = await AlertJob(db_app.state.container.session_factory, TZ).run()
+    report = await AlertJob(
+        db_app.state.container.session_factory, TZ, bottleneck_min_count=MIN_COUNT
+    ).run()
 
     assert report is not None
     assert report.created > 0
@@ -493,7 +498,7 @@ async def test_job_logs_each_run_with_counts(
 
 
 async def test_scheduler_runs_the_job_every_interval(db_app: FastAPI) -> None:
-    job = AlertJob(db_app.state.container.session_factory, TZ)
+    job = AlertJob(db_app.state.container.session_factory, TZ, bottleneck_min_count=MIN_COUNT)
     scheduler = start_alert_scheduler(job, 15)
     try:
         scheduled = scheduler.get_job(ALERTS_JOB_ID)

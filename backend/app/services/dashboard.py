@@ -52,9 +52,17 @@ def _round(value: float | None) -> float | None:
 
 
 class DashboardService:
-    def __init__(self, session: AsyncSession, timezone: ZoneInfo, clock: Clock = utcnow) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        timezone: ZoneInfo,
+        *,
+        bottleneck_min_count: int,
+        clock: Clock = utcnow,
+    ) -> None:
         self._session = session
         self._timezone = timezone
+        self._bottleneck_min_count = bottleneck_min_count
         self._clock = clock
         self._repository = DashboardRepository(session)
 
@@ -98,7 +106,10 @@ class DashboardService:
         area_ids = self._bottleneck_areas(actor, query.area_id)
         if area_ids is not None and not area_ids:
             return BottleneckMatrix(cells=[])
-        cells = await BottleneckDetector(self._session, self._clock).cells(self._timezone, area_ids)
+        detector = BottleneckDetector(
+            self._session, min_count=self._bottleneck_min_count, clock=self._clock
+        )
+        cells = await detector.cells(self._timezone, area_ids)
         return BottleneckMatrix(
             cells=[
                 BottleneckCellRead(

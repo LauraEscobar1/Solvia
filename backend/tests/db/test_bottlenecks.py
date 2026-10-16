@@ -26,6 +26,7 @@ TZ = ZoneInfo("America/Bogota")
 NOW = datetime(2026, 10, 15, 20, 0, tzinfo=UTC)
 MEDIUM_HOURS = (24, 48, 120)
 RECEIVED_MAX = 24
+MIN_COUNT = 3
 
 
 @dataclass
@@ -88,14 +89,22 @@ def _cell(cells: list[BottleneckCell], area: Area, status: RequestStatus) -> Bot
     return next(cell for cell in cells if cell.area_id == area.id and cell.status is status)
 
 
+COUNT = (BottleneckReason.COUNT_ABOVE_MEDIAN,)
+AVG = (BottleneckReason.AVG_ABOVE_SLA,)
+
+
 @pytest.mark.parametrize(
-    ("count", "median", "avg_hours", "sla_max", "expected"),
+    ("count", "median", "avg_hours", "sla_max", "min_count", "expected"),
     [
-        (3, 2.0, 10.0, 24.0, ()),
-        (4, 2.0, 10.0, 24.0, (BottleneckReason.COUNT_ABOVE_MEDIAN,)),
-        (1, 1.0, 24.0, 24.0, ()),
-        (1, 1.0, 24.1, 24.0, (BottleneckReason.AVG_ABOVE_SLA,)),
-        (0, 0.0, None, None, ()),
+        (3, 2.0, 10.0, 24.0, 3, ()),
+        (4, 2.0, 10.0, 24.0, 3, COUNT),
+        (1, 0.0, 10.0, 24.0, 3, ()),
+        (2, 0.0, 10.0, 24.0, 3, ()),
+        (3, 0.0, 10.0, 24.0, 3, COUNT),
+        (1, 0.0, 10.0, 24.0, 1, COUNT),
+        (1, 1.0, 24.0, 24.0, 3, ()),
+        (1, 1.0, 24.1, 24.0, 3, AVG),
+        (0, 0.0, None, None, 3, ()),
     ],
 )
 def test_bottleneck_thresholds(
@@ -103,15 +112,16 @@ def test_bottleneck_thresholds(
     median: float,
     avg_hours: float | None,
     sla_max: float | None,
+    min_count: int,
     expected: tuple[BottleneckReason, ...],
 ) -> None:
-    assert bottleneck_reasons(count, median, avg_hours, sla_max) == expected
+    assert bottleneck_reasons(count, median, avg_hours, sla_max, min_count=min_count) == expected
 
 
 async def test_detects_bottlenecks_from_controlled_history(
     session: AsyncSession, areas: Areas
 ) -> None:
-    cells = await BottleneckDetector(session).cells(TZ)
+    cells = await BottleneckDetector(session, min_count=MIN_COUNT).cells(TZ)
 
     support = _cell(cells, areas.support, RequestStatus.RECEIVED)
     finance = _cell(cells, areas.finance, RequestStatus.RECEIVED)
@@ -131,6 +141,32 @@ async def test_detects_bottlenecks_from_controlled_history(
     assert purchasing.median_avg_hours is not None
     assert not _cell(cells, areas.support, RequestStatus.ASSIGNED).is_bottleneck
     assert len(cells) == 9
+
+
+async def test_a_single_request_without_history_is_not_a_bottleneck_by_count(
+    session: AsyncSession, factory: Factory, areas: Areas
+) -> None:
+    legal = await factory.area("Legal")
+    await _waiting(factory, legal, areas.requester, hours=2)
+
+    guarded = await BottleneckDetector(session, min_count=MIN_COUNT).cells(TZ)
+    unguarded = await BottleneckDetector(session, min_count=1).cells(TZ)
+
+    cell = _cell(guarded, legal, RequestStatus.RECEIVED)
+    assert (cell.count, cell.median_count) == (1, 0.0)
+    assert cell.reasons == ()
+    assert not cell.is_bottleneck
+    assert _cell(unguarded, legal, RequestStatus.RECEIVED).reasons == COUNT
+
+    report = await AlertEvaluator(session).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
+
+    legal_alerts = list(
+        await session.scalars(
+            select(Alert).where(Alert.type == AlertType.BOTTLENECK, Alert.area_id == legal.id)
+        )
+    )
+    assert report.bottlenecks == 3
+    assert legal_alerts == []
 
 
 async def test_time_in_stage_ignores_reassignments_within_the_stage(
@@ -158,7 +194,7 @@ async def test_time_in_stage_ignores_reassignments_within_the_stage(
     )
     await session.commit()
 
-    cells = await BottleneckDetector(session).cells(TZ)
+    cells = await BottleneckDetector(session, min_count=MIN_COUNT).cells(TZ)
 
     assert _cell(cells, areas.support, RequestStatus.ASSIGNED).avg_hours == pytest.approx(30.0)
 
@@ -166,8 +202,8 @@ async def test_time_in_stage_ignores_reassignments_within_the_stage(
 async def test_bottleneck_alerts_are_created_once_and_resolved(
     session: AsyncSession, areas: Areas
 ) -> None:
-    first = await AlertEvaluator(session).evaluate_all(TZ)
-    again = await AlertEvaluator(session).evaluate_all(TZ)
+    first = await AlertEvaluator(session).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
+    again = await AlertEvaluator(session).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
 
     alerts = list(
         await session.scalars(
@@ -200,7 +236,7 @@ async def test_bottleneck_alerts_are_created_once_and_resolved(
         .values(status=RequestStatus.CANCELLED)
     )
     await session.commit()
-    after = await AlertEvaluator(session).evaluate_all(TZ)
+    after = await AlertEvaluator(session).evaluate_all(TZ, bottleneck_min_count=MIN_COUNT)
 
     await session.refresh(purchasing)
     assert after.bottlenecks == 2

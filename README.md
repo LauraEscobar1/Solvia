@@ -46,14 +46,15 @@ SEED_DEMO_PASSWORD=<mínimo 12 caracteres>
 
 Si tu `.env` viene de una versión anterior, copia también las variables nuevas de
 `.env.example` (`REFRESH_TOKEN_DAYS`, `LOGIN_RATE_LIMIT_*`, `SEED_*`, `ORGANIZATION_TIMEZONE`,
-`ALERTS_JOB_*`) y cambia `JWT_SECRET`: un secreto de menos de 32 caracteres hace que PyJWT
-muestre avisos.
+`ALERTS_JOB_*`, `BOTTLENECK_MIN_COUNT`) y cambia `JWT_SECRET`: un secreto de menos de 32
+caracteres hace que PyJWT muestre avisos.
 
 | Variable | Por defecto | Uso |
 | --- | --- | --- |
 | `ORGANIZATION_TIMEZONE` | `America/Bogota` | Zona IANA con la que se agrupan los días del panel y se leen los filtros por fecha; la base de datos guarda siempre UTC |
 | `ALERTS_JOB_ENABLED` | `true` | Activa el job de alertas dentro de la API |
 | `ALERTS_JOB_INTERVAL_MINUTES` | `15` | Cada cuánto evalúa el job |
+| `BOTTLENECK_MIN_COUNT` | `3` | Cantidad mínima de solicitudes en un área y etapa para marcar un cuello de botella por cantidad |
 
 ### Activar DeepSeek (opcional)
 
@@ -217,7 +218,7 @@ horas calendario) para poder pasar a horario laboral más adelante.
 | `due_soon` | Consumido ≥ 75 % del tiempo entre la recepción y `due_at`, sin vencer | warning | Baja del 75 %, pasa a vencida o se cierra |
 | `overdue` | `ahora ≥ due_at` | critical | `due_at` vuelve al futuro o se cierra |
 | `stalled` | Inactividad mayor que el umbral de su prioridad y etapa | warning; critical si la prioridad es alta o crítica | Hay actividad o se cierra |
-| `bottleneck` | Área × etapa con cantidad > 1,5 × su mediana de 30 días, o promedio de horas en la etapa mayor que el promedio de los máximos SLA de sus solicitudes | warning; critical si se cumplen las dos | La condición deja de cumplirse |
+| `bottleneck` | Área × etapa con al menos `BOTTLENECK_MIN_COUNT` solicitudes (3 por defecto) y más de 1,5 × su mediana de 30 días, o con un promedio de horas en la etapa mayor que el promedio de los máximos SLA de sus solicitudes (este criterio no tiene mínimo) | warning; critical si se cumplen las dos | La condición deja de cumplirse |
 
 - **Una alerta abierta por objetivo:** índices únicos parciales por `(request_id, type)` y,
   para cuellos de botella, por `(area_id, etapa)` mientras `resolved_at` es nulo.
@@ -318,8 +319,8 @@ indicadores: rojo vencida, ámbar por vencer y reloj sin movimiento.
 2. **Admin**: el panel muestra 36 abiertas, de ellas 4 próximas a vencer, 5 vencidas y 7 sin
    movimiento. Pulsa cada tarjeta: la lista se abre con el filtro correspondiente y con el
    mismo total. En el mapa de calor, *Soporte TI · Recibida* aparece como cuello de botella
-   crítico y algunas otras celdas como advertencia (varían un poco según la hora, porque las
-   medianas usan una foto al cierre de cada día). Pasa el cursor para ver la cantidad, la
+   crítico y alguna otra celda puede aparecer como advertencia (varía un poco según la hora,
+   porque las medianas usan una foto al cierre de cada día). Pasa el cursor para ver la cantidad, la
    mediana de 30 días y el máximo SLA, y pulsa la celda para ver esas solicitudes. Filtra por
    área o cambia el rango de fechas: todos los bloques se actualizan.
 3. **Supervisor** (`supervisor@example.com`): ve solo Soporte TI en el panel y en la matriz, y

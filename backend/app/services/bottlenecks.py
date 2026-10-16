@@ -41,9 +41,11 @@ def bottleneck_reasons(
     median_count: float,
     avg_hours: float | None,
     sla_max_hours: float | None,
+    *,
+    min_count: int,
 ) -> tuple[BottleneckReason, ...]:
     reasons: list[BottleneckReason] = []
-    if count > COUNT_FACTOR * median_count:
+    if count >= min_count and count > COUNT_FACTOR * median_count:
         reasons.append(BottleneckReason.COUNT_ABOVE_MEDIAN)
     if avg_hours is not None and sla_max_hours is not None and avg_hours > sla_max_hours:
         reasons.append(BottleneckReason.AVG_ABOVE_SLA)
@@ -51,8 +53,9 @@ def bottleneck_reasons(
 
 
 class BottleneckDetector:
-    def __init__(self, session: AsyncSession, clock: Clock = utcnow) -> None:
+    def __init__(self, session: AsyncSession, *, min_count: int, clock: Clock = utcnow) -> None:
         self._clock = clock
+        self._min_count = min_count
         self._repository = BottleneckRepository(session)
 
     async def cells(
@@ -85,8 +88,8 @@ class BottleneckDetector:
             for status in SLA_STAGES
         ]
 
-    @staticmethod
     def _cell(
+        self,
         area_id: uuid.UUID,
         area_name: str,
         status: RequestStatus,
@@ -106,5 +109,7 @@ class BottleneckDetector:
             median_count=median_count,
             median_avg_hours=history.median_avg_hours if history else None,
             sla_max_hours=sla_max_hours,
-            reasons=bottleneck_reasons(count, median_count, avg_hours, sla_max_hours),
+            reasons=bottleneck_reasons(
+                count, median_count, avg_hours, sla_max_hours, min_count=self._min_count
+            ),
         )
