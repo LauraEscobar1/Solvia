@@ -15,3 +15,9 @@ description = "Contraseñas ficticias de las pruebas automatizadas"
 condition = "AND"
 paths = ['''^backend/tests/''', '''^desktop/src/test/''']
 regexes = ['''^contrasena-[a-z0-9-]+$''']
+
+[[allowlists]]
+description = "Nombres de zona horaria IANA en las pruebas"
+condition = "AND"
+paths = ['''^backend/tests/''', '''^desktop/src/test/''']
+regexes = ['''^(Africa|America|Antarctica|Asia|Atlantic|Australia|Europe|Indian|Pacific|Etc)/[A-Za-z_+-]+(/[A-Za-z_+-]+)?$''']
