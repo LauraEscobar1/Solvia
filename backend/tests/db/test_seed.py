@@ -159,8 +159,8 @@ async def test_demo_seed_creates_requests_with_a_consistent_history(
     again = await seed(session, settings, demo=True)
 
     assert report.demo is not None
-    assert report.demo.requests_created == 60
-    assert report.demo.events_created > 60
+    assert report.demo.requests_created == 136
+    assert report.demo.events_created > 136
     assert again.demo is not None
     assert again.demo.skipped is True
     statuses = dict(
@@ -174,8 +174,8 @@ async def test_demo_seed_creates_requests_with_a_consistent_history(
         RequestStatus.RECEIVED: 10,
         RequestStatus.ASSIGNED: 10,
         RequestStatus.IN_PROGRESS: 16,
-        RequestStatus.COMPLETED: 19,
-        RequestStatus.CANCELLED: 5,
+        RequestStatus.COMPLETED: 85,
+        RequestStatus.CANCELLED: 15,
     }
     for request in await session.scalars(select(ServiceRequest)):
         events = list(

@@ -1,4 +1,3 @@
-import math
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -109,8 +108,8 @@ STATUS_PLAN = (
     [RequestStatus.RECEIVED] * 10
     + [RequestStatus.ASSIGNED] * 10
     + [RequestStatus.IN_PROGRESS] * 16
-    + [RequestStatus.COMPLETED] * 19
-    + [RequestStatus.CANCELLED] * 5
+    + [RequestStatus.COMPLETED] * 85
+    + [RequestStatus.CANCELLED] * 15
 )
 PRIORITY_WEIGHTS = {
     RequestPriority.CRITICAL: 1.0,
@@ -120,9 +119,8 @@ PRIORITY_WEIGHTS = {
 }
 AREA_WEIGHTS = {SUPPORT: 5.0, HR: 3.0, FINANCE: 3.0}
 STAGE_FACTORS = (0.2, 0.4, 0.6, 0.8, 1.1, 1.6, 2.4)
-MIN_AGE_HOURS = 2
-MAX_AGE_HOURS = 30 * 24
-AGE_SKEW = 2.2
+MIN_CLOSED_AGE_HOURS = 24
+MAX_CLOSED_AGE_HOURS = 38 * 24
 RETURN_PROBABILITY = 0.25
 STEP_BACK_PROBABILITY = 0.15
 COMMENT_PROBABILITY = 0.35
@@ -429,10 +427,6 @@ class _DemoBuilder:
         self._session.add(event)
 
 
-def _age_hours(rng: random.Random) -> float:
-    return MIN_AGE_HOURS + (MAX_AGE_HOURS - MIN_AGE_HOURS) * math.pow(rng.random(), AGE_SKEW)
-
-
 def _weighted[T](rng: random.Random, weights: dict[T, float]) -> T:
     return rng.choices(list(weights), weights=list(weights.values()))[0]
 
@@ -454,7 +448,8 @@ def _plan_drafts(
             target=target,
             area_name=_weighted(rng, AREA_WEIGHTS),
             priority=_weighted(rng, PRIORITY_WEIGHTS),
-            received_at=now - timedelta(hours=_age_hours(rng)),
+            received_at=now
+            - timedelta(hours=rng.uniform(MIN_CLOSED_AGE_HOURS, MAX_CLOSED_AGE_HOURS)),
         )
         for target in plan
     ]

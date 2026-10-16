@@ -6,7 +6,7 @@ from sqlalchemy import Uuid, any_, bindparam, exists, or_, select
 from sqlalchemy.dialects.postgresql import ARRAY, insert
 
 from app.models.alert import Alert
-from app.models.enums import CLOSED_STATUSES
+from app.models.enums import CLOSED_STATUSES, AlertType
 from app.models.request import ServiceRequest
 from app.repositories.base import BaseRepository
 
@@ -35,6 +35,14 @@ class AlertRepository(BaseRepository[Alert]):
         rows = await self._session.scalars(
             select(Alert)
             .where(Alert.resolved_at.is_(None), Alert.request_id == request_id)
+            .with_for_update(of=Alert)
+        )
+        return list(rows)
+
+    async def open_bottlenecks(self) -> list[Alert]:
+        rows = await self._session.scalars(
+            select(Alert)
+            .where(Alert.resolved_at.is_(None), Alert.type == AlertType.BOTTLENECK)
             .with_for_update(of=Alert)
         )
         return list(rows)

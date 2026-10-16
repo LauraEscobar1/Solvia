@@ -4,6 +4,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import structlog
 from pydantic import JsonValue
@@ -15,6 +16,7 @@ from app.models.enums import AlertSeverity, AlertSource, AlertType, RequestPrior
 from app.repositories.alert import AlertRepository
 from app.repositories.request import RequestRepository, RequestSlaState
 from app.repositories.sla_rules import SlaRules
+from app.services.bottlenecks import BottleneckCell, BottleneckDetector
 
 logger = structlog.get_logger(__name__)
 
@@ -85,6 +87,23 @@ def request_alert_drafts(state: RequestSlaState) -> list[AlertDraft]:
     return drafts
 
 
+def bottleneck_alert_draft(cell: BottleneckCell) -> AlertDraft:
+    avg_hours = None if cell.avg_hours is None else round(cell.avg_hours, 1)
+    return AlertDraft(
+        AlertType.BOTTLENECK,
+        cell.severity,
+        cell.area_id,
+        None,
+        {
+            "area_id": str(cell.area_id),
+            "status": cell.status.value,
+            "count": cell.count,
+            "avg_hours": avg_hours,
+            "reasons": [reason.value for reason in cell.reasons],
+        },
+    )
+
+
 class AlertEvaluator:
     def __init__(self, session: AsyncSession, clock: Clock = utcnow) -> None:
         self._session = session
@@ -92,13 +111,18 @@ class AlertEvaluator:
         self._alerts = AlertRepository(session)
         self._requests = RequestRepository(session)
 
-    async def evaluate_all(self) -> EvaluationReport:
+    async def evaluate_all(self, timezone: ZoneInfo) -> EvaluationReport:
         started = time.perf_counter()
         report = EvaluationReport()
         now = self._clock()
         states = await self._requests.sla_states(SlaRules(now))
         drafts = [draft for state in states for draft in request_alert_drafts(state)]
+        cells = await BottleneckDetector(self._session, lambda: now).cells(timezone)
+        bottlenecks = [cell for cell in cells if cell.is_bottleneck]
+        report.bottlenecks = len(bottlenecks)
+        drafts += [bottleneck_alert_draft(cell) for cell in bottlenecks]
         existing = await self._alerts.open_for_requests([state.id for state in states])
+        existing += await self._alerts.open_bottlenecks()
         await self._apply(report, drafts, existing, now)
         await self._session.commit()
         report.duration_ms = round((time.perf_counter() - started) * 1000)
