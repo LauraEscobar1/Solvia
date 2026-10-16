@@ -36,7 +36,7 @@ PASSWORD = "contrasena-de-prueba-123"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 TRUNCATE_ALL = (
     "TRUNCATE users, areas, requests, request_events, sla_policies, alerts, alert_reads, "
-    "ai_insights, refresh_tokens RESTART IDENTITY CASCADE"
+    "ai_insights, ai_feedback, risk_baselines, refresh_tokens RESTART IDENTITY CASCADE"
 )
 
 

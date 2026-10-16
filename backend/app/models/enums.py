@@ -66,6 +66,17 @@ class InsightScope(StrEnum):
     GLOBAL = "global"
 
 
+class InsightSource(StrEnum):
+    RULE = "rule"
+    AI = "ai"
+
+
+class InsightTrigger(StrEnum):
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+    SCHEDULED = "scheduled"
+
+
 class BottleneckReason(StrEnum):
     COUNT_ABOVE_MEDIAN = "count_above_median"
     AVG_ABOVE_SLA = "avg_above_sla"

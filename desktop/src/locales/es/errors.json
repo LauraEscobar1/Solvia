@@ -20,8 +20,10 @@
     "unavailable": "La base de datos no está disponible."
   },
   "ai": {
-    "provider_unavailable": "El servicio de IA no está disponible en este momento.",
-    "invalid_response": "El servicio de IA devolvió una respuesta no válida."
+    "budget_exceeded": "Se agotó el presupuesto diario de IA. Se muestra el análisis por reglas hasta mañana.",
+    "rate_limited": "Alcanzaste el límite de análisis con IA por hora. Inténtalo de nuevo en {{retry_after}} segundos.",
+    "unavailable": "La IA no está disponible en este momento. Se muestra el análisis por reglas.",
+    "disabled": "La IA está desactivada. Se muestra el análisis por reglas."
   },
   "request": {
     "not_found": "La solicitud no existe.",

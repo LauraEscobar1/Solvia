@@ -20,8 +20,10 @@
     "unavailable": "The database is unavailable."
   },
   "ai": {
-    "provider_unavailable": "The AI service is currently unavailable.",
-    "invalid_response": "The AI service returned an invalid response."
+    "budget_exceeded": "The daily AI budget is used up. The rules-based analysis is shown until tomorrow.",
+    "rate_limited": "You reached the hourly limit of AI analyses. Try again in {{retry_after}} seconds.",
+    "unavailable": "AI is not available right now. The rules-based analysis is shown.",
+    "disabled": "AI is turned off. The rules-based analysis is shown."
   },
   "request": {
     "not_found": "The request does not exist.",
