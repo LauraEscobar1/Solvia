@@ -1,9 +1,6 @@
-from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import structlog
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.ai.analytics import RiskAnalytics
@@ -11,8 +8,6 @@ from app.core.time import Clock, utcnow
 from app.services.alerts import AlertEvaluator, EvaluationReport
 
 logger = structlog.get_logger(__name__)
-
-ALERTS_JOB_ID = "alerts-evaluation"
 
 
 class AlertJob:
@@ -43,17 +38,3 @@ class AlertJob:
         except Exception:
             logger.exception("alerts_evaluation_failed")
             return None
-
-
-def start_alert_scheduler(job: AlertJob, interval_minutes: int) -> AsyncIOScheduler:
-    scheduler = AsyncIOScheduler(timezone=UTC)
-    scheduler.add_job(
-        job.run,
-        IntervalTrigger(minutes=interval_minutes),
-        id=ALERTS_JOB_ID,
-        max_instances=1,
-        coalesce=True,
-        next_run_time=datetime.now(UTC),
-    )
-    scheduler.start()
-    return scheduler

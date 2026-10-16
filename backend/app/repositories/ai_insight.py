@@ -1,13 +1,20 @@
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import ColumnElement, func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import distinct_on, insert
 
 from app.models.ai_insight import AIFeedback, AIInsight
 from app.models.enums import InsightScope, InsightSource, InsightTrigger, UILanguage
 from app.repositories.base import BaseRepository
+
+
+@dataclass(frozen=True, slots=True)
+class AIRisk:
+    insight_id: uuid.UUID
+    risk_score: int
 
 
 def _target(scope: InsightScope, ref_id: uuid.UUID | None) -> list[ColumnElement[bool]]:
@@ -67,6 +74,29 @@ class AIInsightRepository(BaseRepository[AIInsight]):
             )
         )
         return total or 0
+
+    async def latest_ai_risks(
+        self, request_ids: Sequence[uuid.UUID], since: datetime
+    ) -> dict[uuid.UUID, AIRisk]:
+        if not request_ids:
+            return {}
+        rows = await self._session.execute(
+            select(AIInsight.ref_id, AIInsight.id, AIInsight.risk_score)
+            .where(
+                AIInsight.scope == InsightScope.REQUEST,
+                AIInsight.source == InsightSource.AI,
+                AIInsight.ref_id.in_(request_ids),
+                AIInsight.created_at >= since,
+                AIInsight.risk_score.is_not(None),
+            )
+            .order_by(AIInsight.ref_id, AIInsight.created_at.desc(), AIInsight.id.desc())
+            .ext(distinct_on(AIInsight.ref_id))
+        )
+        return {
+            ref_id: AIRisk(insight_id=insight_id, risk_score=score)
+            for ref_id, insight_id, score in rows
+            if ref_id is not None and score is not None
+        }
 
     async def oldest_manual(self, user_id: uuid.UUID, since: datetime) -> datetime | None:
         return await self._session.scalar(

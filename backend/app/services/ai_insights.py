@@ -68,6 +68,7 @@ from app.schemas.ai import (
     RiskFactorRead,
     RiskRead,
 )
+from app.services.alerts import AlertEvaluator
 from app.services.bottlenecks import BottleneckCell, BottleneckDetector
 from app.services.request_policy import Capability, RequestPolicy
 
@@ -530,6 +531,12 @@ class AIInsightService:
             )
         )
         await self._session.commit()
+        if (
+            scope is InsightScope.REQUEST
+            and ref_id is not None
+            and outcome.source is InsightSource.AI
+        ):
+            await self._reevaluate_alerts(ref_id)
         logger.info(
             "ai_insight_saved",
             scope=scope,
@@ -539,6 +546,21 @@ class AIInsightService:
             fallback_reason=outcome.fallback_reason,
         )
         return insight
+
+    async def _reevaluate_alerts(self, request_id: uuid.UUID) -> None:
+        try:
+            await AlertEvaluator(self._session, self._clock).evaluate_request(request_id)
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            logger.exception("ai_alert_reevaluation_failed", request_id=str(request_id))
+
+    async def blocked_reason(self) -> str | None:
+        return await self._blocked_reason(self._clock())
+
+    async def ran_today(self, trigger: InsightTrigger) -> bool:
+        last = await self._insights.latest(InsightScope.GLOBAL, None, trigger=trigger)
+        return last is not None and last.created_at >= self._today_start(self._clock())
 
     async def _blocked_reason(self, now: datetime) -> str | None:
         if self._provider.name is AIProviderName.NONE:

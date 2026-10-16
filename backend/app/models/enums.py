@@ -47,6 +47,7 @@ class AlertType(StrEnum):
     OVERDUE = "overdue"
     STALLED = "stalled"
     BOTTLENECK = "bottleneck"
+    AI_RISK = "ai_risk"
 
 
 class AlertSeverity(StrEnum):
