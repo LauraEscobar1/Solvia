@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -7,8 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Environment, Settings
 from app.core.security import verify_password
-from app.models import Area, SlaPolicy, User
-from app.models.enums import RequestPriority, RequestStatus, UserRole
+from app.core.time import utcnow
+from app.models import Area, RequestEvent, ServiceRequest, SlaPolicy, User
+from app.models.enums import (
+    CLOSED_STATUSES,
+    RequestEventType,
+    RequestPriority,
+    RequestStatus,
+    UserRole,
+)
 from app.scripts.seed import SeedError, seed
 from tests.conftest import make_settings
 
@@ -141,3 +149,90 @@ async def test_seed_requires_valid_admin_credentials(
     with pytest.raises(SeedError):
         await seed(session, _seed_settings(db_settings, **overrides))
     assert await _counts(session) == (0, 0, 0)
+
+
+async def test_demo_seed_creates_requests_with_a_consistent_history(
+    session: AsyncSession, db_settings: Settings
+) -> None:
+    settings = _seed_settings(db_settings, seed_demo_password=SecretStr(DEMO_PASSWORD))
+
+    report = await seed(session, settings, demo=True)
+    again = await seed(session, settings, demo=True)
+
+    assert report.demo is not None
+    assert report.demo.requests_created == 60
+    assert report.demo.events_created > 60
+    assert again.demo is not None
+    assert again.demo.skipped is True
+    statuses = dict(
+        (
+            await session.execute(
+                select(ServiceRequest.status, func.count()).group_by(ServiceRequest.status)
+            )
+        ).all()
+    )
+    assert statuses == {
+        RequestStatus.RECEIVED: 10,
+        RequestStatus.ASSIGNED: 10,
+        RequestStatus.IN_PROGRESS: 16,
+        RequestStatus.COMPLETED: 19,
+        RequestStatus.CANCELLED: 5,
+    }
+    for request in await session.scalars(select(ServiceRequest)):
+        events = list(
+            await session.scalars(
+                select(RequestEvent)
+                .where(RequestEvent.request_id == request.id)
+                .order_by(RequestEvent.created_at, RequestEvent.id)
+            )
+        )
+        assert events[0].type is RequestEventType.CREATED
+        assert events[0].created_at == request.received_at
+        assert request.last_activity_at == max(event.created_at for event in events)
+        assert (request.completed_at is not None) is (request.status is RequestStatus.COMPLETED)
+        if request.status is RequestStatus.RECEIVED:
+            assert request.assignee_id is None
+        elif request.status is not RequestStatus.CANCELLED:
+            assert request.assignee_id is not None
+
+
+async def test_demo_seed_mixes_overdue_and_stalled_requests(
+    session: AsyncSession, db_settings: Settings
+) -> None:
+    await seed(
+        session,
+        _seed_settings(db_settings, seed_demo_password=SecretStr(DEMO_PASSWORD)),
+        demo=True,
+    )
+
+    now = utcnow()
+    open_requests = list(
+        await session.scalars(
+            select(ServiceRequest).where(ServiceRequest.status.not_in(CLOSED_STATUSES))
+        )
+    )
+    overdue = [r for r in open_requests if r.due_at is not None and r.due_at < now]
+    stale = [r for r in open_requests if now - r.last_activity_at > timedelta(days=3)]
+    assert 0 < len(overdue) < len(open_requests)
+    assert 0 < len(stale) < len(open_requests)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({}, "SEED_DEMO_PASSWORD"),
+        (
+            {
+                "environment": Environment.PRODUCTION,
+                "jwt_secret": SecretStr("x" * 48),
+                "seed_demo_password": SecretStr(DEMO_PASSWORD),
+            },
+            "producción",
+        ),
+    ],
+)
+async def test_demo_seed_guards(
+    session: AsyncSession, db_settings: Settings, overrides: dict[str, Any], message: str
+) -> None:
+    with pytest.raises(SeedError, match=message):
+        await seed(session, _seed_settings(db_settings, **overrides), demo=True)

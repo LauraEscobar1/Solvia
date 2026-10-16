@@ -100,7 +100,7 @@ class RequestRepository(BaseRepository[ServiceRequest]):
             .where(*self.conditions(scope, filters, now))
             .group_by(ServiceRequest.status)
         )
-        return dict(rows.tuples().all())
+        return dict(rows.all())
 
     @staticmethod
     def conditions(

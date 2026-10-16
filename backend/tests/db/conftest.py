@@ -3,6 +3,7 @@ import os
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -20,8 +21,8 @@ from app.core.config import Settings
 from app.core.security import create_access_token, hash_password
 from app.core.time import utcnow
 from app.main import create_app
-from app.models import Area, User
-from app.models.enums import UserRole
+from app.models import Area, ServiceRequest, SlaPolicy, User
+from app.models.enums import SLA_STAGES, RequestPriority, RequestStatus, UserRole
 from tests.conftest import make_settings
 
 DEFAULT_TEST_DATABASE_URL = "postgresql+asyncpg://solvia:solvia@localhost:5433/solvia_test"
@@ -138,6 +139,50 @@ class Factory:
         self.session.add(user)
         await self.session.commit()
         return user
+
+    async def request(
+        self,
+        *,
+        area: Area,
+        requester: User,
+        status: RequestStatus = RequestStatus.RECEIVED,
+        assignee: User | None = None,
+        priority: RequestPriority = RequestPriority.MEDIUM,
+        title: str = "Solicitud de prueba",
+        received_at: datetime | None = None,
+        due_at: datetime | None = None,
+        last_activity_at: datetime | None = None,
+    ) -> ServiceRequest:
+        received = received_at or utcnow()
+        request = ServiceRequest(
+            title=title,
+            description="Detalle",
+            area_id=area.id,
+            requester_id=requester.id,
+            assignee_id=assignee.id if assignee else None,
+            priority=priority,
+            status=status,
+            received_at=received,
+            due_at=due_at,
+            last_activity_at=last_activity_at or received,
+            completed_at=received if status is RequestStatus.COMPLETED else None,
+        )
+        self.session.add(request)
+        await self.session.commit()
+        return request
+
+    async def sla_matrix(self, hours: dict[RequestPriority, tuple[int, int, int]]) -> None:
+        for priority, stage_hours in hours.items():
+            for stage, max_hours in zip(SLA_STAGES, stage_hours, strict=True):
+                self.session.add(
+                    SlaPolicy(
+                        priority=priority,
+                        status=stage,
+                        max_hours=max_hours,
+                        inactivity_hours=max(1, max_hours // 2),
+                    )
+                )
+        await self.session.commit()
 
     def auth_headers(self, user: User) -> dict[str, str]:
         token, _ = create_access_token(

@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { TokenResponse, User } from '@/lib/api/types'
+import type { RequestSummary, TokenResponse, User } from '@/lib/api/types'
 
 export interface RecordedRequest {
   method: string
@@ -84,3 +84,24 @@ export const HEALTH_OK = {
 }
 
 export const EMPTY_PAGE = { items: [], total: 0, page: 1, size: 10 }
+
+export function makeRequest(overrides: Partial<RequestSummary> = {}): RequestSummary {
+  return {
+    id: 'req-1',
+    code: 'SOL-0001',
+    title: 'Impresora sin papel',
+    area: { id: 'area-1', name: 'Soporte TI' },
+    requester: { id: 'user-2', full_name: 'Carlos' },
+    assignee: null,
+    priority: 'high',
+    status: 'received',
+    received_at: '2026-10-10T10:00:00Z',
+    due_at: '2026-10-14T18:00:00Z',
+    last_activity_at: '2026-10-12T10:00:00Z',
+    completed_at: null,
+    version: 1,
+    sla_status: 'on_track',
+    is_stalled: false,
+    ...overrides,
+  }
+}
