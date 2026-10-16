@@ -16,6 +16,7 @@ from app.models.enums import AlertSeverity, AlertSource, AlertType, RequestPrior
 from app.repositories.alert import AlertRepository
 from app.repositories.request import RequestRepository, RequestSlaState
 from app.repositories.sla_rules import SlaRules
+from app.schemas.alert import AlertEvaluationRead
 from app.services.bottlenecks import BottleneckCell, BottleneckDetector
 
 logger = structlog.get_logger(__name__)
@@ -114,17 +115,12 @@ class AlertEvaluator:
     async def evaluate_all(self, timezone: ZoneInfo) -> EvaluationReport:
         started = time.perf_counter()
         report = EvaluationReport()
-        now = self._clock()
-        states = await self._requests.sla_states(SlaRules(now))
-        drafts = [draft for state in states for draft in request_alert_drafts(state)]
-        cells = await BottleneckDetector(self._session, lambda: now).cells(timezone)
-        bottlenecks = [cell for cell in cells if cell.is_bottleneck]
-        report.bottlenecks = len(bottlenecks)
-        drafts += [bottleneck_alert_draft(cell) for cell in bottlenecks]
-        existing = await self._alerts.open_for_requests([state.id for state in states])
-        existing += await self._alerts.open_bottlenecks()
-        await self._apply(report, drafts, existing, now)
-        await self._session.commit()
+        if await self._alerts.try_evaluation_lock():
+            await self._evaluate_everything(report, timezone)
+            await self._session.commit()
+        else:
+            report.skipped = True
+            await self._session.rollback()
         report.duration_ms = round((time.perf_counter() - started) * 1000)
         logger.info("alerts_evaluated", **asdict(report))
         return report
@@ -137,6 +133,18 @@ class AlertEvaluator:
         existing = await self._alerts.open_for_request(request_id)
         await self._apply(report, drafts, existing, now)
         return report
+
+    async def _evaluate_everything(self, report: EvaluationReport, timezone: ZoneInfo) -> None:
+        now = self._clock()
+        states = await self._requests.sla_states(SlaRules(now))
+        drafts = [draft for state in states for draft in request_alert_drafts(state)]
+        cells = await BottleneckDetector(self._session, lambda: now).cells(timezone)
+        bottlenecks = [cell for cell in cells if cell.is_bottleneck]
+        report.bottlenecks = len(bottlenecks)
+        drafts += [bottleneck_alert_draft(cell) for cell in bottlenecks]
+        existing = await self._alerts.open_for_requests([state.id for state in states])
+        existing += await self._alerts.open_bottlenecks()
+        await self._apply(report, drafts, existing, now)
 
     async def _apply(
         self,
@@ -174,3 +182,14 @@ class AlertEvaluator:
             report.resolved += 1
         await self._session.flush()
         report.created += await self._alerts.create_many(pending)
+
+
+class AlertService:
+    def __init__(self, session: AsyncSession, timezone: ZoneInfo, clock: Clock = utcnow) -> None:
+        self._session = session
+        self._timezone = timezone
+        self._clock = clock
+
+    async def evaluate(self) -> AlertEvaluationRead:
+        report = await AlertEvaluator(self._session, self._clock).evaluate_all(self._timezone)
+        return AlertEvaluationRead.model_validate(asdict(report))

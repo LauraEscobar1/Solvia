@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 
     organization_timezone: str = "America/Bogota"
+    alerts_job_enabled: bool = True
+    alerts_job_interval_minutes: int = Field(default=15, gt=0)
 
     seed_admin_email: str | None = None
     seed_admin_name: str = "Administrador"

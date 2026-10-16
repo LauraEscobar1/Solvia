@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Uuid, any_, bindparam, exists, or_, select
+from sqlalchemy import BigInteger, Uuid, any_, bindparam, exists, func, literal, or_, select
 from sqlalchemy.dialects.postgresql import ARRAY, insert
 
 from app.models.alert import Alert
@@ -10,9 +10,17 @@ from app.models.enums import CLOSED_STATUSES, AlertType
 from app.models.request import ServiceRequest
 from app.repositories.base import BaseRepository
 
+EVALUATION_LOCK_KEY = 5_100_216_301
+
 
 class AlertRepository(BaseRepository[Alert]):
     model = Alert
+
+    async def try_evaluation_lock(self) -> bool:
+        locked = await self._session.scalar(
+            select(func.pg_try_advisory_xact_lock(literal(EVALUATION_LOCK_KEY, BigInteger)))
+        )
+        return bool(locked)
 
     async def open_for_requests(self, request_ids: Sequence[uuid.UUID]) -> list[Alert]:
         evaluated = bindparam("evaluated", list(request_ids), type_=ARRAY(Uuid()))

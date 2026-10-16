@@ -12,6 +12,7 @@ from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+from app.jobs.alerts import AlertJob, start_alert_scheduler
 
 logger = structlog.get_logger(__name__)
 
@@ -24,15 +25,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         container = AppContainer.build(settings)
         app.state.container = container
+        scheduler = None
+        if settings.alerts_job_enabled:
+            scheduler = start_alert_scheduler(
+                AlertJob(container.session_factory, settings.timezone),
+                settings.alerts_job_interval_minutes,
+            )
         logger.info(
             "app_started",
             version=__version__,
             environment=settings.environment,
             ai_provider=settings.ai_provider,
+            alerts_job_enabled=settings.alerts_job_enabled,
         )
         try:
             yield
         finally:
+            if scheduler is not None:
+                scheduler.shutdown(wait=False)
             await container.aclose()
             logger.info("app_stopped")
 

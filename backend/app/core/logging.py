@@ -29,7 +29,7 @@ _SECRET_PATTERNS = (
     re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
 )
 
-_NOISY_LOGGERS = ("openai", "httpx", "httpx2", "httpcore", "asyncio")
+_NOISY_LOGGERS = ("openai", "httpx", "httpx2", "httpcore", "asyncio", "apscheduler")
 
 
 def _is_sensitive_key(key: str) -> bool:

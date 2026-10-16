@@ -14,6 +14,7 @@ from app.db.session import ping_database
 from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.services.alerts import AlertService
 from app.services.areas import AreaService
 from app.services.auth import AuthService
 from app.services.health import DatabaseProbe, HealthService
@@ -136,6 +137,13 @@ def get_request_service(session: SessionDep, settings: SettingsDep) -> RequestSe
 
 
 RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]
+
+
+def get_alert_service(session: SessionDep, settings: SettingsDep) -> AlertService:
+    return AlertService(session, settings.timezone)
+
+
+AlertServiceDep = Annotated[AlertService, Depends(get_alert_service)]
 
 
 def get_database_probe(container: ContainerDep) -> DatabaseProbe:
