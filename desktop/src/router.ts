@@ -11,6 +11,7 @@ import { AlertsPage } from '@/pages/AlertsPage'
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { RequestDetailPage } from '@/pages/requests/detail/RequestDetailPage'
 import { RequestsPage } from '@/pages/requests/RequestsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 
@@ -26,6 +27,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, Component: DashboardPage },
           { path: 'requests', Component: RequestsPage },
+          { path: 'requests/:requestId', Component: RequestDetailPage },
           { path: 'alerts', Component: AlertsPage },
           { path: 'settings', Component: SettingsPage },
           {

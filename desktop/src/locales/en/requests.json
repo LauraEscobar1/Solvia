@@ -98,5 +98,52 @@
     "outside": "{{code}} is not over a column.",
     "end": "{{code}} dropped in the {{status}} column.",
     "cancel": "Moving {{code}} was cancelled."
+  },
+  "detail": {
+    "back": "Back to requests",
+    "notFound": "The request does not exist or you do not have access to it.",
+    "loading": "Loading request…",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "due_at": "Due date",
+      "area": "Area",
+      "requester": "Requester",
+      "assignee": "Assignee",
+      "received_at": "Received",
+      "last_activity_at": "Last activity",
+      "completed_at": "Completed"
+    },
+    "edit": {
+      "title": "Request details",
+      "save": "Save changes",
+      "saved": "Changes saved.",
+      "discard": "Discard changes",
+      "readOnly": "Read only: you can comment to communicate."
+    },
+    "reassign": "Reassign",
+    "reassignTitle": "Reassign · {{code}}",
+    "actions": "Actions",
+    "history": "History",
+    "loadMore": "Show more",
+    "comment": {
+      "label": "New comment",
+      "submit": "Comment"
+    },
+    "transitionGone": "That action is no longer available: the request changed in the meantime."
+  },
+  "events": {
+    "created": "{{actor}} created the request",
+    "status_changed": "{{actor}} changed the status from “{{from}}” to “{{to}}”",
+    "returned": "{{actor}} returned the request",
+    "assigned": "{{actor}} assigned the request to {{assignee}}",
+    "reassigned": "{{actor}} reassigned the request from {{previous}} to {{assignee}}",
+    "areaOverride": "Assigned outside the request's area",
+    "comment": "{{actor}} commented",
+    "updated": "{{actor}} edited the request",
+    "someone": "Someone",
+    "change": "{{field}}: {{from}} → {{to}}",
+    "empty": "(empty)"
   }
 }

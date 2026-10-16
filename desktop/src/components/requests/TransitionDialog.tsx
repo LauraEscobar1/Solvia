@@ -18,6 +18,7 @@ export interface TransitionValues {
 }
 
 interface TransitionDialogProps {
+  title?: string
   code: string
   area: AreaRef
   from: RequestStatus
@@ -29,6 +30,7 @@ interface TransitionDialogProps {
 }
 
 export function TransitionDialog({
+  title,
   code,
   area,
   from,
@@ -66,7 +68,7 @@ export function TransitionDialog({
   })
 
   return (
-    <Modal title={t('transitionDialog.title', { action, code })} onClose={onCancel}>
+    <Modal title={title ?? t('transitionDialog.title', { action, code })} onClose={onCancel}>
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4">
         {transition.requires_assignee && (
           <FormField

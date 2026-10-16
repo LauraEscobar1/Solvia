@@ -1,7 +1,7 @@
 import { LayoutGrid, Plus, Rows3 } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
 import { Pagination } from '@/components/ui/Pagination'
 import { useTranslateError } from '@/lib/api/errors'
@@ -96,6 +96,7 @@ function TableView({
 
 export function RequestsPage() {
   const { t } = useTranslation('requests')
+  const navigate = useNavigate()
   const [search, setSearch] = useSearchParams()
   const view = useRequestsViewStore((state) => state.view)
   const [creating, setCreating] = useState(false)
@@ -143,8 +144,9 @@ export function RequestsPage() {
           onClose={() => {
             setCreating(false)
           }}
-          onCreated={() => {
+          onCreated={(request) => {
             setCreating(false)
+            void navigate(`/requests/${request.id}`)
           }}
         />
       )}

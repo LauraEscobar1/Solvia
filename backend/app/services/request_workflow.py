@@ -219,7 +219,9 @@ class RequestWorkflow:
             return request
         details = {
             "assignee_id": _json(assignee.id),
+            "assignee_name": assignee.full_name,
             "previous_assignee_id": _json(request.assignee_id),
+            "previous_assignee_name": await self._user_name(request.assignee_id),
             "area_override": area_override,
         }
         request.assignee_id = assignee.id
@@ -274,7 +276,9 @@ class RequestWorkflow:
             assignee, area_override = await self._validate_assignee(policy, request, assignee_id)
             details |= {
                 "assignee_id": _json(assignee.id),
+                "assignee_name": assignee.full_name,
                 "previous_assignee_id": _json(request.assignee_id),
+                "previous_assignee_name": await self._user_name(request.assignee_id),
                 "area_override": area_override,
             }
             request.assignee_id = assignee.id
@@ -282,8 +286,10 @@ class RequestWorkflow:
         if rule.clears_assignee:
             details |= {
                 "returned_by": _json(policy.actor.id),
+                "returned_by_name": policy.actor.full_name,
                 "reason": comment,
                 "previous_assignee_id": _json(request.assignee_id),
+                "previous_assignee_name": await self._user_name(request.assignee_id),
             }
             request.assignee_id = None
         if rule.sets_completed_at:
@@ -326,6 +332,12 @@ class RequestWorkflow:
         if area_override and not policy.is_admin:
             raise UnprocessableError(ErrorCode.REQUEST_INVALID_ASSIGNEE)
         return assignee, area_override
+
+    async def _user_name(self, user_id: uuid.UUID | None) -> str | None:
+        if user_id is None:
+            return None
+        user = await self._users.get(user_id)
+        return user.full_name if user else None
 
     async def _record(
         self,

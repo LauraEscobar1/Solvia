@@ -98,5 +98,52 @@
     "outside": "{{code}} no está sobre ninguna columna.",
     "end": "{{code}} soltada en la columna {{status}}.",
     "cancel": "Movimiento de {{code}} cancelado."
+  },
+  "detail": {
+    "back": "Volver a solicitudes",
+    "notFound": "La solicitud no existe o no tienes acceso a ella.",
+    "loading": "Cargando solicitud…",
+    "fields": {
+      "title": "Título",
+      "description": "Descripción",
+      "priority": "Prioridad",
+      "due_at": "Fecha límite",
+      "area": "Área",
+      "requester": "Solicitante",
+      "assignee": "Responsable",
+      "received_at": "Recibida",
+      "last_activity_at": "Última actividad",
+      "completed_at": "Completada"
+    },
+    "edit": {
+      "title": "Datos de la solicitud",
+      "save": "Guardar cambios",
+      "saved": "Cambios guardados.",
+      "discard": "Descartar cambios",
+      "readOnly": "Solo lectura: puedes comentar para comunicarte."
+    },
+    "reassign": "Reasignar",
+    "reassignTitle": "Reasignar · {{code}}",
+    "actions": "Acciones",
+    "history": "Historial",
+    "loadMore": "Ver más",
+    "comment": {
+      "label": "Nuevo comentario",
+      "submit": "Comentar"
+    },
+    "transitionGone": "Esa acción ya no está disponible: la solicitud cambió mientras tanto."
+  },
+  "events": {
+    "created": "{{actor}} creó la solicitud",
+    "status_changed": "{{actor}} cambió el estado de «{{from}}» a «{{to}}»",
+    "returned": "{{actor}} devolvió la solicitud",
+    "assigned": "{{actor}} asignó la solicitud a {{assignee}}",
+    "reassigned": "{{actor}} reasignó la solicitud de {{previous}} a {{assignee}}",
+    "areaOverride": "Asignación fuera del área de la solicitud",
+    "comment": "{{actor}} comentó",
+    "updated": "{{actor}} editó la solicitud",
+    "someone": "Alguien",
+    "change": "{{field}}: {{from}} → {{to}}",
+    "empty": "(vacío)"
   }
 }

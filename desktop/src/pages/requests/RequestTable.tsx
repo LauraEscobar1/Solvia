@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
 import {
   DueDate,
   PriorityBadge,
@@ -94,7 +95,9 @@ export function RequestTable({ items, loading, error, sort, onSort }: RequestTab
             }
           >
             <Td className="font-mono text-xs whitespace-nowrap">
-              {request.code}
+              <Link to={`/requests/${request.id}`} className="text-primary hover:underline">
+                {request.code}
+              </Link>
             </Td>
             <Td>
               <div className="flex items-center gap-2">

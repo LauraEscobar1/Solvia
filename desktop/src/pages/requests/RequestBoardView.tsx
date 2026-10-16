@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
 import { DueDate, PriorityBadge, StalledIcon } from '@/components/requests/RequestBadges'
 import { TransitionDialog, type TransitionValues } from '@/components/requests/TransitionDialog'
 import { selectClass } from '@/components/ui/styles'
@@ -47,7 +48,12 @@ function CardContent({ card }: { card: BoardCard }) {
         <span className="text-muted-foreground font-mono text-xs">{card.code}</span>
         <PriorityBadge priority={card.priority} />
       </div>
-      <p className="line-clamp-2 text-sm font-medium">{card.title}</p>
+      <Link
+        to={`/requests/${card.id}`}
+        className="line-clamp-2 text-sm font-medium hover:underline"
+      >
+        {card.title}
+      </Link>
       <div className="text-muted-foreground flex items-center justify-between gap-2 text-xs">
         <span className="truncate">{card.assignee?.full_name ?? t('unassigned')}</span>
         {card.is_stalled && <StalledIcon />}

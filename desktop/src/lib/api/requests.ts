@@ -184,3 +184,37 @@ export function useBoardMove(filters: RequestFilters) {
     onSettled: (_data, _error, { card }) => invalidateRequest(queryClient, card.id),
   })
 }
+
+export function useRequestActions(id: string) {
+  const queryClient = useQueryClient()
+  const onSuccess = (detail: RequestDetail) => {
+    queryClient.setQueryData(requestKeys.detail(id), detail)
+  }
+  const onSettled = () => invalidateRequest(queryClient, id)
+  const path = `/api/v1/requests/${id}`
+
+  const update = useMutation({
+    mutationFn: (input: RequestUpdateInput) =>
+      apiRequest<RequestDetail>(path, { method: 'PATCH', body: input }),
+    onSuccess,
+    onSettled,
+  })
+  const transition = useMutation({
+    mutationFn: (input: TransitionInput) =>
+      apiRequest<RequestDetail>(`${path}/transition`, { method: 'POST', body: input }),
+    onSuccess,
+    onSettled,
+  })
+  const assign = useMutation({
+    mutationFn: (input: AssignInput) =>
+      apiRequest<RequestDetail>(`${path}/assign`, { method: 'POST', body: input }),
+    onSuccess,
+    onSettled,
+  })
+  const comment = useMutation({
+    mutationFn: (text: string) =>
+      apiRequest<RequestEvent>(`${path}/comments`, { method: 'POST', body: { comment: text } }),
+    onSettled,
+  })
+  return { update, transition, assign, comment }
+}

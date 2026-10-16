@@ -259,7 +259,9 @@ class _DemoBuilder:
             to_status=RequestStatus.ASSIGNED,
             details={
                 "assignee_id": str(assignee.id),
+                "assignee_name": assignee.full_name,
                 "previous_assignee_id": None,
+                "previous_assignee_name": None,
                 "area_override": assignee.area_id != request.area_id,
             },
         )
@@ -279,8 +281,10 @@ class _DemoBuilder:
             comment=reason,
             details={
                 "returned_by": str(assignee.id),
+                "returned_by_name": assignee.full_name,
                 "reason": reason,
                 "previous_assignee_id": str(assignee.id),
+                "previous_assignee_name": assignee.full_name,
             },
         )
         request.status = RequestStatus.RECEIVED
