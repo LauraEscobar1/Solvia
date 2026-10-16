@@ -4,16 +4,17 @@ Aplicación de escritorio para la **gestión inteligente de solicitudes**. Cada 
 recorre los estados _recibida → asignada → en proceso → completada_, y una IA (DeepSeek)
 detecta retrasos y cuellos de botella.
 
-> **Estado: Fase 1.** Modelo de datos completo, autenticación con JWT y refresh tokens
-> rotativos, roles y administración de áreas, usuarios y políticas SLA. Las solicitudes,
-> alertas y análisis de IA tienen sus tablas listas; sus endpoints llegan en las fases 2 a 4.
+> **Estado: Fase 2.** Además de la autenticación, los roles y la administración de la Fase 1,
+> la app gestiona solicitudes de punta a punta: flujo de estados, asignación, comentarios,
+> historial, lista con filtros, tablero kanban y detalle. Las alertas y el análisis con IA
+> llegan en las fases 3 y 4.
 
 ## Stack
 
 | Parte | Tecnologías |
 | --- | --- |
 | `backend/` | Python 3.12 · FastAPI · SQLAlchemy 2 (async, asyncpg) · Alembic · Pydantic 2 · structlog · PyJWT · argon2 (pwdlib) |
-| `desktop/` | Tauri 2 · React 19 · TypeScript · Vite · Tailwind CSS 4 · i18next · TanStack Query · Zustand · React Router · React Hook Form · Zod |
+| `desktop/` | Tauri 2 · React 19 · TypeScript · Vite · Tailwind CSS 4 · i18next · TanStack Query · Zustand · React Router · React Hook Form · Zod · dnd-kit |
 | Infra | PostgreSQL 16 (Docker) · GitHub Actions · gitleaks |
 
 ## Requisitos
@@ -39,7 +40,7 @@ mínimo, define el administrador inicial:
 ```dotenv
 SEED_ADMIN_EMAIL=admin@example.com
 SEED_ADMIN_PASSWORD=<mínimo 12 caracteres>
-# Opcional, solo en desarrollo: usuarios de demo (supervisor y dos responsables)
+# Usuarios de demostración (supervisor, responsables y solicitantes); necesaria para --demo
 SEED_DEMO_PASSWORD=<mínimo 12 caracteres>
 ```
 
@@ -64,9 +65,11 @@ Si eliges `deepseek` sin clave, la API no arranca y muestra un error explícito.
 ### Opción A: todo en Docker
 
 ```bash
-docker compose up -d --build                         # aplica las migraciones al arrancar
-docker compose exec api python -m app.scripts.seed   # admin, áreas y matriz SLA
+docker compose up -d --build                                # aplica las migraciones al arrancar
+docker compose exec api python -m app.scripts.seed --demo   # admin, áreas, SLA y datos de demo
 ```
+
+Sin `--demo` la semilla crea solo el admin, las áreas y la matriz SLA.
 
 - Estado: <http://localhost:8000/api/v1/health>
 - Documentación interactiva: <http://localhost:8000/docs> (desactivada en producción)
@@ -81,13 +84,31 @@ docker compose up -d postgres          # solo la base de datos
 cd backend
 uv sync                                # crea .venv con Python 3.12
 uv run alembic upgrade head
-uv run python -m app.scripts.seed
+uv run python -m app.scripts.seed --demo
 uv run uvicorn app.main:create_app --factory --reload
 ```
 
 La API y la semilla leen el `.env` de la raíz del repositorio. La semilla es idempotente:
 puedes ejecutarla las veces que quieras y solo crea lo que falta, sin sobrescribir
 contraseñas ni políticas SLA editadas.
+
+### Datos de demostración (`--demo`)
+
+Con `--demo` (y `SEED_DEMO_PASSWORD` definida; no se permite en producción) se crean estos
+usuarios, todos con la contraseña de `SEED_DEMO_PASSWORD`:
+
+| Email | Rol | Área |
+| --- | --- | --- |
+| `supervisor@example.com` | supervisor (responsable del área) | Soporte TI |
+| `responsable1@example.com` | assignee | Soporte TI |
+| `responsable2@example.com` | assignee | Recursos Humanos |
+| `responsable3@example.com` | assignee | Finanzas |
+| `solicitante1@example.com` · `solicitante2@example.com` | requester | — |
+
+Además se generan 60 solicitudes repartidas entre áreas, prioridades y estados, con historial
+realista en el pasado (asignaciones, devoluciones, retrocesos, comentarios y cierres). Algunas
+están vencidas y otras llevan días sin movimiento: esos datos alimentarán el panel (Fase 3) y
+la IA (Fase 4). La generación es determinista y no se repite si ya existen.
 
 ### Probar el login con el admin semilla
 
@@ -122,6 +143,8 @@ Para generar el instalador: `npm run tauri build`.
 
 ## Roles y permisos
 
+**Administración**
+
 | Rol | Puede |
 | --- | --- |
 | `admin` | Todo: áreas, usuarios y políticas SLA |
@@ -131,6 +154,43 @@ Para generar el instalador: `npm run tauri build`.
 Reglas adicionales: un admin no puede desactivarse a sí mismo, siempre queda al menos un admin
 activo, y desactivar a un usuario cierra sus sesiones al instante.
 
+**Solicitudes**
+
+| Rol | Ve | Puede |
+| --- | --- | --- |
+| `requester` | Las que creó | Crear, comentar y editar título y descripción mientras está recibida |
+| `assignee` | Las asignadas a él, las de su área y las que creó | Crear, comentar y avanzar o devolver las suyas |
+| `supervisor` | Las de su área y las que creó | Todo lo anterior en su área, más asignar, reasignar, cancelar, reabrir y editar prioridad y fecha límite |
+| `admin` | Todas | Todo; puede asignar fuera del área y queda registrado |
+
+Las reglas viven en `services/request_policy.py` y se prueban aparte.
+
+## Flujo de estados
+
+```mermaid
+stateDiagram-v2
+    [*] --> received: crear
+    received --> assigned: asignar
+    assigned --> received: devolver (comentario)
+    assigned --> in_progress: iniciar
+    in_progress --> completed: completar
+    in_progress --> assigned: retroceder (comentario)
+    received --> cancelled: cancelar (comentario)
+    assigned --> cancelled: cancelar (comentario)
+    in_progress --> cancelled: cancelar (comentario)
+    completed --> in_progress: reabrir (comentario)
+```
+
+- La tabla de transiciones está en un solo lugar: `services/request_workflow.py`. Cualquier
+  otra transición devuelve `409 request.invalid_transition` con `{from, to}`.
+- Cada cambio actualiza la solicitud, crea su evento (con valores anteriores y nuevos en
+  `details`) y actualiza `last_activity_at` en una sola transacción.
+- Concurrencia optimista: cada cambio envía la `version` conocida; si no coincide, la API
+  responde `409 request.version_conflict` y la app recarga conservando lo escrito.
+- `due_at` = recepción + suma de las horas máximas de las tres etapas para su prioridad; se
+  recalcula si cambia la prioridad. Una solicitud es "por vencer" con más del 75 % del plazo
+  consumido y "sin movimiento" si su inactividad supera el umbral SLA de su etapa.
+
 ## API (`/api/v1`)
 
 | Recurso | Endpoints |
@@ -139,16 +199,43 @@ activo, y desactivar a un usuario cierra sus sesiones al instante.
 | Áreas | `GET /areas` · `POST /areas` · `GET /areas/{id}` · `PATCH /areas/{id}` · `POST /areas/{id}/deactivate` · `POST /areas/{id}/activate` |
 | Usuarios | `GET /users` · `POST /users` · `GET /users/{id}` · `PATCH /users/{id}` · `POST /users/{id}/deactivate` · `POST /users/{id}/activate` |
 | SLA | `GET /sla-policies` · `PUT /sla-policies` |
+| Solicitudes | `GET /requests` · `GET /requests/board` · `GET /requests/due-estimates` · `POST /requests` · `GET /requests/{id}` · `PATCH /requests/{id}` · `POST /requests/{id}/transition` · `POST /requests/{id}/assign` · `POST /requests/{id}/comments` · `GET /requests/{id}/events` |
 | Estado | `GET /health` |
 
 Las listas se paginan con `?page=1&size=20&q=texto` y responden `{items, total, page, size}`
-(`size` máximo 100).
+(`size` máximo 100). `GET /requests` admite además `status` y `priority` repetibles,
+`area_id`, `assignee_id`, `requester_id`, `overdue=true`, `received_from`, `received_to` y
+`sort` (por ejemplo `-due_at`), y siempre aplica el alcance del rol.
 
 **Sesiones:** el access token (JWT de 30 minutos con `sub`, `role` y `area_id`) vive solo en
 memoria en el desktop. El refresh token es opaco, se guarda como hash SHA-256, rota en cada uso
 y se revoca al cerrar sesión; si se reutiliza uno ya rotado, se revocan todas las sesiones del
 usuario. El login admite 5 intentos fallidos por minuto por email+IP y nunca revela si el email
 existe.
+
+## Probar el flujo completo con distintos roles
+
+Con la API levantada y la semilla ejecutada con `--demo`, abre la app (`npm run tauri dev`) y
+usa, por ejemplo, dos ventanas o cierra sesión entre pasos:
+
+1. **Solicitante** (`solicitante1@example.com`): en **Solicitudes**, pulsa **Nueva solicitud**,
+   elige *Soporte TI* y prioridad *Alta*; antes de guardar verás la fecha límite estimada.
+   Solo ves tus solicitudes; puedes editar título y descripción mientras esté recibida.
+2. **Supervisor** (`supervisor@example.com`): en el tablero, arrastra la nueva tarjeta de
+   *Recibida* a *Asignada*; se abrirá el diálogo para elegir responsable (solo de su área).
+3. **Responsable** (`responsable1@example.com`): abre la solicitud, pulsa **Iniciar** y luego
+   **Completar**. Prueba **Devolver** en otra asignada: exige un comentario y la deja sin
+   responsable en la bandeja del supervisor.
+4. **Supervisor**: abre la solicitud completada y pulsa **Reabrir** (pide comentario). El
+   responsable no ve ese botón.
+5. **Conflicto de versión**: abre la misma solicitud como supervisor en dos ventanas, cambia la
+   prioridad en una y guarda el título en la otra: verás el aviso de que fue modificada por
+   otra persona, la solicitud se recargará y tu título seguirá escrito.
+6. **Admin** (`SEED_ADMIN_EMAIL`): ve todas las solicitudes y puede asignar a alguien de otra
+   área; el historial lo marca como asignación fuera del área.
+
+En la lista, prueba los filtros combinados (se guardan en la URL), el orden por columna y los
+indicadores: rojo vencida, ámbar por vencer y reloj sin movimiento.
 
 ## Pruebas y calidad
 
@@ -161,7 +248,7 @@ docker compose --profile test up -d postgres-test   # puerto 5433, datos en memo
 cd backend
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
-uv run pytest            # aplica la migración real y prueba auth, permisos, semilla…
+uv run pytest            # aplica las migraciones reales y prueba auth, permisos, flujo…
 
 # Desktop
 cd desktop
@@ -189,30 +276,34 @@ uv run alembic check      # verifica que modelos y migraciones coinciden
 
 Los modelos nuevos deben importarse en `app/models/__init__.py` para que Alembic los detecte.
 Los enums de Postgres, la secuencia `request_code_seq` y la función `next_request_code()`
-(códigos `SOL-0001`) se gestionan a mano en la migración `0001`.
+(códigos `SOL-0001`) se gestionan a mano en la migración `0001`. Nunca se edita una migración
+ya aplicada: cada cambio de esquema va en una nueva (la `0002` añade `version`, `details` e
+índices para los filtros de solicitudes).
 
 ## Estructura
 
 ```
 backend/
   app/
-    api/v1/        rutas HTTP: auth, areas, users, sla_policies, health
+    api/v1/        rutas HTTP: auth, areas, users, sla_policies, requests, health
     core/          configuración, logging, errores, seguridad (JWT, argon2), rate limit
     db/            engine, sesión, Base (naming convention, mixins UUID/timestamps)
     models/        areas, users, requests, request_events, sla_policies, alerts,
                    ai_insights, refresh_tokens
     schemas/       modelos Pydantic de entrada/salida y paginación
     repositories/  acceso a datos (nunca hacen commit)
-    services/      reglas de negocio y transacciones
+    services/      reglas de negocio y transacciones; request_workflow (máquina de estados),
+                   request_policy (permisos por rol) y sla (fechas límite e indicadores)
     ai/            AIProvider + NullProvider + DeepSeekProvider + factory
-    scripts/       seed (datos semilla)
+    scripts/       seed (datos semilla) y demo_data (60 solicitudes con historial)
     jobs/          tareas en segundo plano (fases futuras)
   alembic/         migraciones (async)
   tests/           pruebas unitarias y tests/db contra PostgreSQL
 desktop/
   src/
     components/    layout, guards de rutas, UI compartida, selectores
-    pages/         login, panel, administración (áreas, usuarios, SLA), configuración
+    pages/         login, panel, solicitudes (lista, tablero y detalle), administración,
+                   configuración
     lib/           cliente de API con refresco automático, sesión, llavero, formato
     stores/        Zustand (sesión en memoria, tema, configuración)
     locales/       traducciones es/en por módulo
