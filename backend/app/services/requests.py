@@ -1,4 +1,5 @@
 import uuid
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,9 +8,10 @@ from app.core.time import Clock, utcnow
 from app.models.enums import CLOSED_STATUSES, RequestPriority, RequestStatus
 from app.models.request import ServiceRequest
 from app.models.user import User
-from app.repositories.request import RequestRepository
+from app.repositories.request import RequestRepository, RequestWithSla
 from app.repositories.request_event import RequestEventRepository
 from app.repositories.sla_policy import SlaPolicyRepository
+from app.repositories.sla_rules import SlaRules
 from app.schemas.area import UserRef
 from app.schemas.common import Page
 from app.schemas.request import (
@@ -45,10 +47,8 @@ DEFAULT_BOARD_STATUSES = (
 )
 
 
-def _summary_fields(
-    request: ServiceRequest, catalog: SlaCatalog, clock: Clock
-) -> dict[str, object]:
-    indicators = catalog.indicators(request, clock())
+def _summary_fields(row: RequestWithSla) -> dict[str, object]:
+    request = row.request
     return {
         "id": request.id,
         "code": request.code,
@@ -63,31 +63,32 @@ def _summary_fields(
         "last_activity_at": request.last_activity_at,
         "completed_at": request.completed_at,
         "version": request.version,
-        "sla_status": indicators.status,
-        "is_stalled": indicators.is_stalled,
+        "sla_status": row.sla_status,
+        "is_stalled": row.is_stalled,
     }
 
 
 class RequestService:
-    def __init__(self, session: AsyncSession, clock: Clock = utcnow) -> None:
+    def __init__(self, session: AsyncSession, timezone: ZoneInfo, clock: Clock = utcnow) -> None:
         self._clock = clock
+        self._timezone = timezone
         self._requests = RequestRepository(session)
         self._events = RequestEventRepository(session)
         self._sla = SlaPolicyRepository(session)
         self._workflow = RequestWorkflow(session, clock)
 
     async def search(self, actor: User, query: RequestListQuery) -> Page[RequestSummary]:
-        requests, total = await self._requests.search(
+        rows, total = await self._requests.search(
             RequestPolicy(actor).scope(),
             query,
             sort=query.sort,
             page=query.page,
             size=query.size,
-            now=self._clock(),
+            rules=SlaRules(self._clock()),
+            timezone=self._timezone,
         )
-        catalog = await self._catalog()
         return Page[RequestSummary](
-            items=[self._summary(request, catalog) for request in requests],
+            items=[RequestSummary.model_validate(_summary_fields(row)) for row in rows],
             total=total,
             page=query.page,
             size=query.size,
@@ -96,31 +97,35 @@ class RequestService:
     async def board(self, actor: User, filters: RequestFilters) -> RequestBoard:
         policy = RequestPolicy(actor)
         scope = policy.scope()
-        now = self._clock()
+        rules = SlaRules(self._clock())
         statuses = filters.status or list(DEFAULT_BOARD_STATUSES)
         column_filters = filters.model_copy(update={"status": []})
-        totals = await self._requests.count_by_status(scope, column_filters, now)
-        catalog = await self._catalog()
+        totals = await self._requests.count_by_status(scope, column_filters, rules, self._timezone)
         columns = []
         for status in statuses:
-            items = await self._requests.board_column(
-                scope, column_filters, status, limit=BOARD_COLUMN_LIMIT, now=now
+            rows = await self._requests.board_column(
+                scope,
+                column_filters,
+                status,
+                limit=BOARD_COLUMN_LIMIT,
+                rules=rules,
+                timezone=self._timezone,
             )
             columns.append(
                 BoardColumn(
                     status=status,
                     total=totals.get(status, 0),
-                    items=[self._card(policy, request, catalog) for request in items],
+                    items=[self._card(policy, row) for row in rows],
                 )
             )
         return RequestBoard(columns=columns)
 
     async def get(self, actor: User, request_id: uuid.UUID) -> RequestDetail:
-        request = await self._requests.get_with_relations(request_id)
+        row = await self._requests.get_with_relations(request_id, SlaRules(self._clock()))
         policy = RequestPolicy(actor)
-        if request is None or not policy.can(Capability.VIEW, request):
+        if row is None or not policy.can(Capability.VIEW, row.request):
             raise NotFoundError(ErrorCode.REQUEST_NOT_FOUND)
-        catalog = await self._catalog()
+        request = row.request
         transitions = self._transitions(policy, request)
         permissions = RequestPermissions(
             editable_fields=sorted(policy.editable_fields(request)),
@@ -130,7 +135,7 @@ class RequestService:
         )
         return RequestDetail.model_validate(
             {
-                **_summary_fields(request, catalog, self._clock),
+                **_summary_fields(row),
                 "description": request.description,
                 "created_at": request.created_at,
                 "updated_at": request.updated_at,
@@ -213,16 +218,11 @@ class RequestService:
     async def _catalog(self) -> SlaCatalog:
         return SlaCatalog(await self._sla.list_ordered())
 
-    def _summary(self, request: ServiceRequest, catalog: SlaCatalog) -> RequestSummary:
-        return RequestSummary.model_validate(_summary_fields(request, catalog, self._clock))
-
-    def _card(
-        self, policy: RequestPolicy, request: ServiceRequest, catalog: SlaCatalog
-    ) -> BoardCard:
+    def _card(self, policy: RequestPolicy, row: RequestWithSla) -> BoardCard:
         return BoardCard.model_validate(
             {
-                **_summary_fields(request, catalog, self._clock),
-                "allowed_transitions": self._transitions(policy, request),
+                **_summary_fields(row),
+                "allowed_transitions": self._transitions(policy, row.request),
             }
         )
 

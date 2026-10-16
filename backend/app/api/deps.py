@@ -131,8 +131,8 @@ def get_sla_policy_service(session: SessionDep) -> SlaPolicyService:
 SlaPolicyServiceDep = Annotated[SlaPolicyService, Depends(get_sla_policy_service)]
 
 
-def get_request_service(session: SessionDep) -> RequestService:
-    return RequestService(session)
+def get_request_service(session: SessionDep, settings: SettingsDep) -> RequestService:
+    return RequestService(session, settings.timezone)
 
 
 RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]

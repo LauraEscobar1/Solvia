@@ -2,7 +2,8 @@ import math
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any
+from functools import partial
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,15 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password
 from app.models import Area, RequestEvent, ServiceRequest, User
 from app.models.enums import (
+    CLOSED_STATUSES,
     SLA_STAGES,
     RequestEventType,
     RequestPriority,
     RequestStatus,
+    SlaStatus,
     UserRole,
 )
 from app.repositories.sla_policy import SlaPolicyRepository
 from app.repositories.user import UserRepository
 from app.services.sla import SlaCatalog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 RANDOM_SEED = 20261015
 SUPPORT, HR, FINANCE = "Soporte TI", "Recursos Humanos", "Finanzas"
@@ -120,6 +126,17 @@ AGE_SKEW = 2.2
 RETURN_PROBABILITY = 0.25
 STEP_BACK_PROBABILITY = 0.15
 COMMENT_PROBABILITY = 0.35
+OVERDUE_SHARE = 0.15
+DUE_SOON_SHARE = 0.10
+STALLED_SHARE = 0.20
+SLA_RATIOS = {
+    SlaStatus.OVERDUE: (1.05, 1.6),
+    SlaStatus.AT_RISK: (0.78, 0.95),
+    SlaStatus.ON_TRACK: (0.1, 0.6),
+}
+STALLED_IDLE_FACTORS = (1.3, 2.5)
+ACTIVE_IDLE_FACTORS = (0.05, 0.6)
+ACTION_WINDOW = (0.05, 0.9)
 
 
 @dataclass(slots=True)
@@ -128,6 +145,15 @@ class DemoReport:
     requests_created: int = 0
     events_created: int = 0
     skipped: bool = False
+
+
+@dataclass(slots=True)
+class _Draft:
+    target: RequestStatus
+    area_name: str
+    priority: RequestPriority
+    received_at: datetime
+    last_activity_at: datetime | None = None
 
 
 @dataclass(slots=True)
@@ -159,41 +185,41 @@ class _DemoBuilder:
         self._areas = areas
         self._admin = admin
 
-    async def build(self, target: RequestStatus, received_at: datetime) -> list[RequestEvent]:
+    async def build(self, draft: _Draft) -> list[RequestEvent]:
         rng = self._rng
-        area_name = rng.choices(list(AREA_WEIGHTS), weights=list(AREA_WEIGHTS.values()))[0]
-        priority = rng.choices(list(PRIORITY_WEIGHTS), weights=list(PRIORITY_WEIGHTS.values()))[0]
         requester = self._people[rng.choice(REQUESTERS)]
-        title = rng.choice(TITLES[area_name])
+        title = rng.choice(TITLES[draft.area_name])
         request = ServiceRequest(
             title=title,
             description=f"{title}. Detalles adicionales en el historial de la solicitud.",
-            area_id=self._areas[area_name].id,
+            area_id=self._areas[draft.area_name].id,
             requester_id=requester.id,
-            priority=priority,
+            priority=draft.priority,
             status=RequestStatus.RECEIVED,
-            received_at=received_at,
-            last_activity_at=received_at,
-            due_at=self._catalog.due_at(priority, received_at),
-            created_at=received_at,
+            received_at=draft.received_at,
+            last_activity_at=draft.received_at,
+            due_at=self._catalog.due_at(draft.priority, draft.received_at),
+            created_at=draft.received_at,
             version=1,
         )
         self._session.add(request)
         await self._session.flush()
 
-        timeline = _Timeline(request=request, cursor=received_at)
+        timeline = _Timeline(request=request, cursor=draft.received_at)
         self._event(
             timeline,
             requester,
             RequestEventType.CREATED,
             to_status=RequestStatus.RECEIVED,
-            details={"priority": priority.value},
+            details={"priority": draft.priority.value},
             bump=False,
         )
-        assignee = self._people[rng.choice(AREA_ASSIGNEES[area_name])]
-        supervisor = self._people.get(AREA_SUPERVISORS.get(area_name, ""), self._admin)
+        assignee = self._people[rng.choice(AREA_ASSIGNEES[draft.area_name])]
+        supervisor = self._people.get(AREA_SUPERVISORS.get(draft.area_name, ""), self._admin)
 
-        if target is RequestStatus.CANCELLED:
+        if draft.last_activity_at is not None:
+            self._walk_open(timeline, draft, assignee, supervisor, requester)
+        elif draft.target is RequestStatus.CANCELLED:
             cutoff = rng.choice(SLA_STAGES)
             self._walk(timeline, cutoff, assignee, supervisor, requester)
             self._advance(timeline, request.status)
@@ -207,11 +233,55 @@ class _DemoBuilder:
             )
             request.status = RequestStatus.CANCELLED
         else:
-            self._walk(timeline, target, assignee, supervisor, requester)
+            self._walk(timeline, draft.target, assignee, supervisor, requester)
 
         request.last_activity_at = timeline.cursor
         request.updated_at = timeline.cursor
         return timeline.events
+
+    def _walk_open(
+        self,
+        timeline: _Timeline,
+        draft: _Draft,
+        assignee: User,
+        supervisor: User,
+        requester: User,
+    ) -> None:
+        rng = self._rng
+        target = draft.target
+        actions: list[Callable[[], None]] = []
+        if target is RequestStatus.RECEIVED:
+            if rng.random() < RETURN_PROBABILITY:
+                actions.append(partial(self._assign, timeline, supervisor, assignee))
+                actions.append(partial(self._return, timeline, assignee))
+            if not actions or rng.random() < COMMENT_PROBABILITY:
+                actions.append(partial(self._comment, timeline, requester, REQUESTER_COMMENTS))
+        else:
+            actions.append(partial(self._assign, timeline, supervisor, assignee))
+            if target is RequestStatus.IN_PROGRESS:
+                actions.append(partial(self._change, timeline, assignee, RequestStatus.IN_PROGRESS))
+                if rng.random() < STEP_BACK_PROBABILITY:
+                    reason = rng.choice(STEP_BACK_REASONS)
+                    actions.append(
+                        partial(self._change, timeline, assignee, RequestStatus.ASSIGNED, reason)
+                    )
+                    actions.append(
+                        partial(self._change, timeline, assignee, RequestStatus.IN_PROGRESS)
+                    )
+            if rng.random() < COMMENT_PROBABILITY:
+                author, texts = (
+                    (assignee, ASSIGNEE_COMMENTS)
+                    if target is RequestStatus.IN_PROGRESS
+                    else (requester, REQUESTER_COMMENTS)
+                )
+                actions.append(partial(self._comment, timeline, author, texts))
+
+        start = timeline.cursor
+        span = (draft.last_activity_at or start) - start
+        moments = sorted(rng.uniform(*ACTION_WINDOW) for _ in actions[:-1])
+        for action, fraction in zip(actions, [*moments, 1.0], strict=True):
+            timeline.cursor = start + span * fraction
+            action()
 
     def _walk(
         self,
@@ -225,32 +295,36 @@ class _DemoBuilder:
         request = timeline.request
         if target is RequestStatus.RECEIVED:
             if rng.random() < RETURN_PROBABILITY:
+                self._advance(timeline, RequestStatus.RECEIVED)
                 self._assign(timeline, supervisor, assignee)
+                self._advance(timeline, RequestStatus.ASSIGNED)
                 self._return(timeline, assignee)
             self._maybe_comment(timeline, requester, REQUESTER_COMMENTS)
             return
 
+        self._advance(timeline, RequestStatus.RECEIVED)
         self._assign(timeline, supervisor, assignee)
         self._maybe_comment(timeline, requester, REQUESTER_COMMENTS)
         if target is RequestStatus.ASSIGNED:
             return
 
+        self._advance(timeline, RequestStatus.ASSIGNED)
         self._change(timeline, assignee, RequestStatus.IN_PROGRESS)
         self._maybe_comment(timeline, assignee, ASSIGNEE_COMMENTS)
         if rng.random() < STEP_BACK_PROBABILITY:
-            self._change(
-                timeline, assignee, RequestStatus.ASSIGNED, comment=rng.choice(STEP_BACK_REASONS)
-            )
+            self._advance(timeline, RequestStatus.IN_PROGRESS)
+            self._change(timeline, assignee, RequestStatus.ASSIGNED, rng.choice(STEP_BACK_REASONS))
+            self._advance(timeline, RequestStatus.ASSIGNED)
             self._change(timeline, assignee, RequestStatus.IN_PROGRESS)
         if target is RequestStatus.IN_PROGRESS:
             return
 
+        self._advance(timeline, RequestStatus.IN_PROGRESS)
         self._change(timeline, assignee, RequestStatus.COMPLETED)
         request.completed_at = timeline.cursor
 
     def _assign(self, timeline: _Timeline, supervisor: User, assignee: User) -> None:
         request = timeline.request
-        self._advance(timeline, RequestStatus.RECEIVED)
         self._event(
             timeline,
             supervisor,
@@ -271,7 +345,6 @@ class _DemoBuilder:
     def _return(self, timeline: _Timeline, assignee: User) -> None:
         request = timeline.request
         reason = self._rng.choice(RETURN_REASONS)
-        self._advance(timeline, RequestStatus.ASSIGNED)
         self._event(
             timeline,
             assignee,
@@ -298,7 +371,6 @@ class _DemoBuilder:
         comment: str | None = None,
     ) -> None:
         request = timeline.request
-        self._advance(timeline, request.status)
         self._event(
             timeline,
             actor,
@@ -309,16 +381,19 @@ class _DemoBuilder:
         )
         request.status = target
 
+    def _comment(self, timeline: _Timeline, actor: User, texts: tuple[str, ...]) -> None:
+        self._event(
+            timeline,
+            actor,
+            RequestEventType.COMMENT,
+            comment=self._rng.choice(texts),
+            bump=False,
+        )
+
     def _maybe_comment(self, timeline: _Timeline, actor: User, texts: tuple[str, ...]) -> None:
         if self._rng.random() < COMMENT_PROBABILITY:
             self._advance(timeline, timeline.request.status, fraction=0.3)
-            self._event(
-                timeline,
-                actor,
-                RequestEventType.COMMENT,
-                comment=self._rng.choice(texts),
-                bump=False,
-            )
+            self._comment(timeline, actor, texts)
 
     def _advance(self, timeline: _Timeline, stage: RequestStatus, fraction: float = 1.0) -> None:
         hours = self._stage_hours[timeline.request.priority].get(stage, 24)
@@ -356,6 +431,82 @@ class _DemoBuilder:
 
 def _age_hours(rng: random.Random) -> float:
     return MIN_AGE_HOURS + (MAX_AGE_HOURS - MIN_AGE_HOURS) * math.pow(rng.random(), AGE_SKEW)
+
+
+def _weighted[T](rng: random.Random, weights: dict[T, float]) -> T:
+    return rng.choices(list(weights), weights=list(weights.values()))[0]
+
+
+def _hours_between(start: datetime, end: datetime) -> float:
+    return (end - start).total_seconds() / 3600
+
+
+def _plan_drafts(
+    rng: random.Random,
+    now: datetime,
+    catalog: SlaCatalog,
+    inactivity: dict[tuple[RequestPriority, RequestStatus], int],
+) -> list[_Draft]:
+    plan = list(STATUS_PLAN)
+    rng.shuffle(plan)
+    drafts = [
+        _Draft(
+            target=target,
+            area_name=_weighted(rng, AREA_WEIGHTS),
+            priority=_weighted(rng, PRIORITY_WEIGHTS),
+            received_at=now - timedelta(hours=_age_hours(rng)),
+        )
+        for target in plan
+    ]
+    _place_open_requests(
+        rng,
+        now,
+        catalog,
+        inactivity,
+        [draft for draft in drafts if draft.target not in CLOSED_STATUSES],
+    )
+    return sorted(drafts, key=lambda draft: draft.received_at)
+
+
+def _place_open_requests(
+    rng: random.Random,
+    now: datetime,
+    catalog: SlaCatalog,
+    inactivity: dict[tuple[RequestPriority, RequestStatus], int],
+    drafts: list[_Draft],
+) -> None:
+    total = len(drafts)
+    overdue = round(total * OVERDUE_SHARE)
+    due_soon = round(total * DUE_SOON_SHARE)
+    buckets = (
+        [SlaStatus.OVERDUE] * overdue
+        + [SlaStatus.AT_RISK] * due_soon
+        + [SlaStatus.ON_TRACK] * (total - overdue - due_soon)
+    )
+    rng.shuffle(buckets)
+    for draft, bucket in zip(drafts, buckets, strict=True):
+        hours = catalog.total_hours(draft.priority)
+        if hours is not None:
+            draft.received_at = now - timedelta(hours=hours * rng.uniform(*SLA_RATIOS[bucket]))
+
+    def threshold(draft: _Draft) -> int:
+        return inactivity.get((draft.priority, draft.target), 24)
+
+    low, high = STALLED_IDLE_FACTORS
+    feasible = [
+        index
+        for index, draft in enumerate(drafts)
+        if _hours_between(draft.received_at, now) * ACTION_WINDOW[1] > threshold(draft) * low
+    ]
+    stalled = set(rng.sample(feasible, min(len(feasible), round(total * STALLED_SHARE))))
+    for index, draft in enumerate(drafts):
+        age = _hours_between(draft.received_at, now)
+        hours = threshold(draft)
+        if index in stalled:
+            idle = hours * rng.uniform(low, min(high, age * ACTION_WINDOW[1] / hours))
+        else:
+            idle = min(hours * rng.uniform(*ACTIVE_IDLE_FACTORS), age / 2)
+        draft.last_activity_at = now - timedelta(hours=idle)
 
 
 async def _ensure_people(
@@ -405,25 +556,25 @@ async def create_demo_requests(
 
     policies = await SlaPolicyRepository(session).list_ordered()
     stage_hours: dict[RequestPriority, dict[RequestStatus, int]] = {}
+    inactivity: dict[tuple[RequestPriority, RequestStatus], int] = {}
     for policy in policies:
         stage_hours.setdefault(policy.priority, {})[policy.status] = policy.max_hours
+        inactivity[(policy.priority, policy.status)] = policy.inactivity_hours
 
     rng = random.Random(RANDOM_SEED)  # noqa: S311
-    plan = list(STATUS_PLAN)
-    rng.shuffle(plan)
+    catalog = SlaCatalog(policies)
     builder = _DemoBuilder(
         session=session,
         rng=rng,
         now=now,
-        catalog=SlaCatalog(policies),
+        catalog=catalog,
         stage_hours=stage_hours,
         people=people,
         areas=areas,
         admin=admin,
     )
-    drafts = [(now - timedelta(hours=_age_hours(rng)), target) for target in plan]
-    for received_at, target in sorted(drafts, key=lambda draft: draft[0]):
-        events = await builder.build(target, received_at)
+    for draft in _plan_drafts(rng, now, catalog, inactivity):
+        events = await builder.build(draft)
         report.requests_created += 1
         report.events_created += len(events)
     return report

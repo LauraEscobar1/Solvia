@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -11,12 +10,12 @@ from app.core.security import verify_password
 from app.core.time import utcnow
 from app.models import Area, RequestEvent, ServiceRequest, SlaPolicy, User
 from app.models.enums import (
-    CLOSED_STATUSES,
     RequestEventType,
     RequestPriority,
     RequestStatus,
     UserRole,
 )
+from app.repositories.sla_rules import SlaRules
 from app.scripts.seed import SeedError, seed
 from tests.conftest import make_settings
 
@@ -196,25 +195,29 @@ async def test_demo_seed_creates_requests_with_a_consistent_history(
             assert request.assignee_id is not None
 
 
-async def test_demo_seed_mixes_overdue_and_stalled_requests(
+async def test_demo_seed_has_a_realistic_sla_mix(
     session: AsyncSession, db_settings: Settings
 ) -> None:
+    now = utcnow()
     await seed(
         session,
         _seed_settings(db_settings, seed_demo_password=SecretStr(DEMO_PASSWORD)),
         demo=True,
+        now=now,
     )
 
-    now = utcnow()
-    open_requests = list(
-        await session.scalars(
-            select(ServiceRequest).where(ServiceRequest.status.not_in(CLOSED_STATUSES))
+    rules = SlaRules(now)
+    counts = (
+        await session.execute(
+            select(
+                func.count().filter(rules.is_open),
+                func.count().filter(rules.is_overdue),
+                func.count().filter(rules.is_due_soon),
+                func.count().filter(rules.is_stalled),
+            )
         )
-    )
-    overdue = [r for r in open_requests if r.due_at is not None and r.due_at < now]
-    stale = [r for r in open_requests if now - r.last_activity_at > timedelta(days=3)]
-    assert 0 < len(overdue) < len(open_requests)
-    assert 0 < len(stale) < len(open_requests)
+    ).one()
+    assert tuple(counts) == (36, 5, 4, 7)
 
 
 @pytest.mark.parametrize(

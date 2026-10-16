@@ -29,8 +29,8 @@ DEFAULT_TEST_DATABASE_URL = "postgresql+asyncpg://solvia:solvia@localhost:5433/s
 PASSWORD = "contrasena-de-prueba-123"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 TRUNCATE_ALL = (
-    "TRUNCATE users, areas, requests, request_events, sla_policies, alerts, ai_insights, "
-    "refresh_tokens RESTART IDENTITY CASCADE"
+    "TRUNCATE users, areas, requests, request_events, sla_policies, alerts, alert_reads, "
+    "ai_insights, refresh_tokens RESTART IDENTITY CASCADE"
 )
 
 
