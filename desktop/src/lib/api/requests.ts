@@ -7,7 +7,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { apiQuery, type RequestFilters, type RequestListParams } from '@/lib/requests/filters'
+import { alertKeys } from './alerts'
 import { apiRequest } from './client'
+import { dashboardKeys } from './dashboard'
 import type {
   BoardCard,
   DueEstimate,
@@ -65,7 +67,12 @@ export interface AssignInput {
 }
 
 export function invalidateRequest(queryClient: QueryClient, id?: string): Promise<void> {
-  const keys: (readonly unknown[])[] = [requestKeys.lists(), requestKeys.boards()]
+  const keys: (readonly unknown[])[] = [
+    requestKeys.lists(),
+    requestKeys.boards(),
+    alertKeys.all,
+    dashboardKeys.all,
+  ]
   if (id) keys.push(requestKeys.detail(id), requestKeys.events(id))
   return Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))).then(
     () => undefined,

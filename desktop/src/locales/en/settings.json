@@ -43,5 +43,12 @@
     "lastChecked": "Last checked: {{time}}",
     "apiUrl": "API: {{url}}",
     "description": "Connection to the API, the database and the AI provider."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Operating system notices when a new critical alert appears.",
+    "critical": "Notify new critical alerts",
+    "denied": "The system did not grant permission to show notifications.",
+    "unavailable": "Native notifications are only available in the desktop application."
   }
 }

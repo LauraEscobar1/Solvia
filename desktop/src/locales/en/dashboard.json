@@ -22,10 +22,6 @@
     "noValue": "—",
     "viewList": "View requests: {{label}}"
   },
-  "duration": {
-    "hours": "{{value}} h",
-    "days": "{{value}} d"
-  },
   "byStatus": {
     "title": "Requests by status",
     "description": "Received in the range, by current status",

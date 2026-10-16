@@ -43,5 +43,12 @@
     "lastChecked": "Última comprobación: {{time}}",
     "apiUrl": "API: {{url}}",
     "description": "Conexión con la API, la base de datos y el proveedor de IA."
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "description": "Avisos del sistema operativo cuando aparece una alerta crítica nueva.",
+    "critical": "Notificar alertas críticas nuevas",
+    "denied": "El sistema no concedió permiso para mostrar notificaciones.",
+    "unavailable": "Las notificaciones nativas solo están disponibles en la aplicación de escritorio."
   }
 }

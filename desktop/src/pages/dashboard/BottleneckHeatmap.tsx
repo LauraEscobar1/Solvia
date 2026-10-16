@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { useBottlenecks } from '@/lib/api/dashboard'
 import { type BottleneckCell, type DashboardQuery, SLA_STAGES } from '@/lib/api/types'
-import { useFormatters } from '@/lib/format'
+import { useDurationFormatter, useFormatters } from '@/lib/format'
 import { requestsPath } from '@/lib/requests/filters'
 import { DashboardBlock } from './DashboardBlock'
-import { useDurationFormatter } from './dashboardQuery'
 
 const MIN_OPACITY = 0.06
 const OPACITY_RANGE = 0.5

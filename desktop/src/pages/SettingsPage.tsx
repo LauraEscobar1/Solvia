@@ -1,5 +1,6 @@
 import { type FormEvent, type ReactNode, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NotificationSettings } from '@/components/alerts/NotificationSettings'
 import { ChangePasswordForm } from '@/components/ChangePasswordForm'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { SystemStatus } from '@/components/SystemStatus'
@@ -126,6 +127,10 @@ export function SettingsPage() {
         {authenticated && (
           <p className="text-muted-foreground mt-4 text-xs">{t('appearance.syncNote')}</p>
         )}
+      </Section>
+
+      <Section title={t('notifications.title')} description={t('notifications.description')}>
+        <NotificationSettings />
       </Section>
 
       {authenticated && (

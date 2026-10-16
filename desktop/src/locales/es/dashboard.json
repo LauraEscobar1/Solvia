@@ -22,10 +22,6 @@
     "noValue": "—",
     "viewList": "Ver solicitudes: {{label}}"
   },
-  "duration": {
-    "hours": "{{value}} h",
-    "days": "{{value}} d"
-  },
   "byStatus": {
     "title": "Solicitudes por estado",
     "description": "Recibidas en el rango, según su estado actual",

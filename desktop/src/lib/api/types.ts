@@ -236,3 +236,34 @@ export interface TrendSeries {
   days: TrendPoint[]
   range: DateRange
 }
+
+export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck'] as const
+export type AlertType = (typeof ALERT_TYPES)[number]
+
+export const ALERT_SEVERITIES = ['warning', 'critical'] as const
+export type AlertSeverity = 'info' | (typeof ALERT_SEVERITIES)[number]
+
+export type AlertState = 'open' | 'resolved'
+
+export interface Alert {
+  id: string
+  type: AlertType
+  severity: AlertSeverity
+  source: 'rule' | 'ai'
+  message_code: string
+  params: Record<string, unknown>
+  area: AreaRef
+  request: { id: string; code: string; title: string; status: RequestStatus } | null
+  is_read: boolean
+  created_at: string
+  resolved_at: string | null
+}
+
+export interface AlertListParams {
+  page: number
+  size: number
+  type: AlertType[]
+  severity: AlertSeverity[]
+  state?: AlertState
+  is_read?: boolean
+}

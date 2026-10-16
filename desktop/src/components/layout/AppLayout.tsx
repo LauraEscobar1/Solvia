@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router'
+import { CriticalAlertNotifier } from '@/components/alerts/CriticalAlertNotifier'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 
 export function AppLayout() {
   return (
     <div className="flex h-full">
+      <CriticalAlertNotifier />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />

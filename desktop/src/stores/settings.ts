@@ -6,8 +6,10 @@ export const SETTINGS_STORAGE_KEY = 'solvia.settings'
 
 interface SettingsState {
   apiBaseUrl: string
+  criticalNotifications: boolean
   setApiBaseUrl: (url: string) => void
   resetApiBaseUrl: () => void
+  setCriticalNotifications: (enabled: boolean) => void
 }
 
 export function normalizeApiBaseUrl(raw: string): string | null {
@@ -27,18 +29,25 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       apiBaseUrl: DEFAULT_API_BASE_URL,
+      criticalNotifications: false,
       setApiBaseUrl: (url) => {
         set({ apiBaseUrl: url })
       },
       resetApiBaseUrl: () => {
         set({ apiBaseUrl: DEFAULT_API_BASE_URL })
       },
+      setCriticalNotifications: (enabled) => {
+        set({ criticalNotifications: enabled })
+      },
     }),
     {
       name: SETTINGS_STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ apiBaseUrl }) => ({ apiBaseUrl }),
+      partialize: ({ apiBaseUrl, criticalNotifications }) => ({
+        apiBaseUrl,
+        criticalNotifications,
+      }),
     },
   ),
 )

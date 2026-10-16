@@ -10,10 +10,9 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type { DashboardQuery, DashboardSummary } from '@/lib/api/types'
-import { useFormatters } from '@/lib/format'
+import { useDurationFormatter, useFormatters } from '@/lib/format'
 import { type RequestFilters, requestsPath } from '@/lib/requests/filters'
 import { BlockSkeleton, type BlockState, DashboardBlock } from './DashboardBlock'
-import { useDurationFormatter } from './dashboardQuery'
 
 type CardKey = 'open' | 'due_soon' | 'overdue' | 'stalled' | 'completed' | 'resolution'
 type CardTone = 'default' | 'warning' | 'danger'
