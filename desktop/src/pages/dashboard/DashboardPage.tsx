@@ -5,40 +5,17 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
-import { SelectPill } from '@/components/ui/SelectPill'
-import { useAreaOptions } from '@/lib/api/admin'
 import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
 import { requestKeys } from '@/lib/api/requests'
 import { useFormatters } from '@/lib/format'
 import { useSessionStore } from '@/stores/session'
 import { CreateRequestDialog } from '../requests/CreateRequestDialog'
 import { AIBanner } from './AIBanner'
-import { useDashboardQuery } from './dashboardQuery'
+import { AreaFilter } from './AreaFilter'
+import { useDashboardArea } from './dashboardQuery'
 import { MyRequests } from './MyRequests'
 import { RiskSpotlight } from './RiskSpotlight'
 import { StatusOverview } from './StatusOverview'
-
-function AreaFilter({ value, onChange }: { value?: string; onChange: (areaId?: string) => void }) {
-  const { t } = useTranslation('dashboard')
-  const areas = useAreaOptions()
-  return (
-    <SelectPill
-      label={t('filters.area')}
-      value={value ?? ''}
-      onChange={(event) => {
-        onChange(event.target.value || undefined)
-      }}
-      className="min-w-56"
-    >
-      <option value="">{t('filters.allAreas')}</option>
-      {areas.data?.map((area) => (
-        <option key={area.id} value={area.id}>
-          {area.name}
-        </option>
-      ))}
-    </SelectPill>
-  )
-}
 
 export function DashboardPage() {
   const { t } = useTranslation(['dashboard', 'requests'])
@@ -46,11 +23,10 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const user = useSessionStore((state) => state.user)
-  const [query, setQuery] = useDashboardQuery()
+  const [areaId, setAreaId] = useDashboardArea()
   const [creating, setCreating] = useState(false)
   const isAdmin = user?.role === 'admin'
   const oversees = isAdmin || user?.role === 'supervisor'
-  const areaId = isAdmin ? query.area_id : undefined
   const summaryQuery = { area_id: areaId }
   const summary = useDashboardSummary(summaryQuery)
   const firstName = user?.full_name.trim().split(/\s+/)[0] ?? ''
@@ -91,12 +67,7 @@ export function DashboardPage() {
             {t('requests:new')}
           </Button>
           {isAdmin && (
-            <AreaFilter
-              value={query.area_id}
-              onChange={(area_id) => {
-                setQuery({ area_id })
-              }}
-            />
+            <AreaFilter value={areaId} onChange={setAreaId} />
           )}
           <IconButton
             variant="glass"

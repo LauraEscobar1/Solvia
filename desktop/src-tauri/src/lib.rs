@@ -1,9 +1,11 @@
+mod exports;
 mod secure_store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(secure_store::init())
+        .plugin(exports::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             if cfg!(debug_assertions) {

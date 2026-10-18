@@ -100,6 +100,17 @@ class TrendSeries(BaseModel):
     range: DateRangeRead
 
 
+class StageFlowItem(BaseModel):
+    status: RequestStatus
+    count: int
+    median_hours: float | None
+    target_hours: float | None
+
+
+class StageFlow(BaseModel):
+    stages: list[StageFlowItem]
+
+
 class AreaMetrics(BaseModel):
     area: AreaRef
     open: int

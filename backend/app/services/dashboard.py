@@ -24,6 +24,8 @@ from app.schemas.dashboard import (
     DateRangeRead,
     RequestHighlights,
     StageCounts,
+    StageFlow,
+    StageFlowItem,
     StatusBreakdown,
     StatusCount,
     TrendPoint,
@@ -159,6 +161,20 @@ class DashboardService:
                 for day in (period.date_from + timedelta(days=offset) for offset in range(days))
             ],
             range=self._range(period),
+        )
+
+    async def stage_flow(self, actor: User, query: DashboardQuery) -> StageFlow:
+        rows = await self._repository.stage_flow(self._filter(actor, query), self._clock())
+        return StageFlow(
+            stages=[
+                StageFlowItem(
+                    status=row.status,
+                    count=row.count,
+                    median_hours=_round(row.median_hours),
+                    target_hours=_round(row.target_hours),
+                )
+                for row in rows
+            ]
         )
 
     async def by_area(self, actor: User, query: DashboardQuery) -> AreaBreakdown:

@@ -322,6 +322,76 @@ async def test_by_area_reports_open_overdue_and_resolution(
     ]
 
 
+async def test_stage_flow_reports_open_count_median_and_sla_target(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    flow = await _get(db_client, "stage-flow", data.headers(factory, "admin"))
+
+    assert flow == {
+        "stages": [
+            {"status": "received", "count": 1, "median_hours": 2.0, "target_hours": 8.0},
+            {"status": "assigned", "count": 1, "median_hours": 50.0, "target_hours": 24.0},
+            {"status": "in_progress", "count": 1, "median_hours": 100.0, "target_hours": 72.0},
+        ]
+    }
+
+
+async def test_stage_flow_respects_role_scope_and_area_filter(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    own = await _get(db_client, "stage-flow", data.headers(factory, "carla"))
+    finance = await _get(
+        db_client,
+        "stage-flow",
+        data.headers(factory, "admin"),
+        {"area_id": str(data.finance.id)},
+    )
+
+    assert [(item["status"], item["count"], item["median_hours"]) for item in own["stages"]] == [
+        ("received", 1, 2.0),
+        ("assigned", 1, 50.0),
+        ("in_progress", 0, None),
+    ]
+    assert [(item["count"], item["target_hours"]) for item in finance["stages"]] == [
+        (0, None),
+        (0, None),
+        (0, None),
+    ]
+
+
+async def test_stage_flow_measures_time_since_entering_the_stage(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    await factory.sla_matrix({RequestPriority.MEDIUM: (4, 12, 36)})
+    entries = [(RequestPriority.HIGH, 4), (RequestPriority.MEDIUM, 10)]
+    for priority, hours in entries:
+        request = await factory.request(
+            area=data.support,
+            requester=data.people["diego"],
+            status=RequestStatus.ASSIGNED,
+            priority=priority,
+            received_at=NOW - timedelta(hours=30),
+        )
+        await factory.stage_change(
+            request, to_status=RequestStatus.RECEIVED, at=NOW - timedelta(hours=30)
+        )
+        await factory.stage_change(
+            request,
+            from_status=RequestStatus.RECEIVED,
+            to_status=RequestStatus.ASSIGNED,
+            at=NOW - timedelta(hours=hours),
+        )
+
+    flow = await _get(db_client, "stage-flow", data.headers(factory, "admin"))
+
+    assert flow["stages"][1] == {
+        "status": "assigned",
+        "count": 3,
+        "median_hours": 10.0,
+        "target_hours": 20.0,
+    }
+
+
 async def test_trends_group_days_in_the_organization_timezone_near_midnight(
     db_client: httpx2.AsyncClient, factory: Factory, data: Data
 ) -> None:

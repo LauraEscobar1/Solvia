@@ -1,15 +1,12 @@
 import { useSyncExternalStore } from 'react'
 
 export const THEME_COLOR_TOKENS = [
-  'primary',
-  'success',
-  'warning',
-  'danger',
   'foreground',
   'muted-foreground',
-  'border',
-  'surface',
-  'surface-muted',
+  'accent-line',
+  'accent-band',
+  'chart-grid',
+  'surface-solid',
 ] as const
 
 export type ThemeColorToken = (typeof THEME_COLOR_TOKENS)[number]

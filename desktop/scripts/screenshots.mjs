@@ -136,6 +136,13 @@ async function captureVariant(browser, variant, accounts) {
   }
   await go(page, '#/analytics')
   add(await shoot(page, folder, '05-analisis'))
+  if (wanted('05-analisis-cursor')) {
+    const box = await page.locator('.recharts-surface').first().boundingBox()
+    if (box) await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.4)
+    await page.waitForTimeout(200)
+    add(await shoot(page, folder, '05-analisis-cursor'))
+    await page.mouse.move(0, 0)
+  }
   if (wanted('06-detalle')) {
     await go(page, '#/requests?sort=-risk_score')
     await page.locator('main a[href^="#/requests/"]').first().click()
@@ -155,11 +162,11 @@ async function captureVariant(browser, variant, accounts) {
   }
   await supervisor.context.close()
 
-  const adminScreens = ['10-admin-usuarios', '11-admin-areas', '12-admin-sla', '13-admin-ia']
+  const adminScreens = ['10-admin-usuarios', '11-admin-areas', '12-admin-sla', '13-admin-ia', '16-analisis-admin']
   if (adminScreens.some(wanted)) {
     const admin = await openSession(browser, variant, accounts.admin)
     await signIn(admin.page, accounts.admin)
-    const routes = ['#/admin/users', '#/admin/areas', '#/admin/sla', '#/admin/ai']
+    const routes = ['#/admin/users', '#/admin/areas', '#/admin/sla', '#/admin/ai', '#/analytics?range=90']
     for (const [index, name] of adminScreens.entries()) {
       if (!wanted(name)) continue
       await go(admin.page, routes[index])
@@ -168,14 +175,18 @@ async function captureVariant(browser, variant, accounts) {
     await admin.context.close()
   }
 
-  for (const [name, account] of [
-    ['14-panel-responsable', accounts.assignee],
-    ['15-panel-solicitante', accounts.requester],
+  for (const [names, account] of [
+    [['14-panel-responsable'], accounts.assignee],
+    [['15-panel-solicitante', '17-analisis-solicitante'], accounts.requester],
   ]) {
-    if (!wanted(name)) continue
+    if (!names.some(wanted)) continue
     const session = await openSession(browser, variant, account)
     await signIn(session.page, account)
-    add(await shoot(session.page, folder, name))
+    add(await shoot(session.page, folder, names[0]))
+    if (names[1] && wanted(names[1])) {
+      await go(session.page, '#/analytics')
+      add(await shoot(session.page, folder, names[1]))
+    }
     await session.context.close()
   }
   return files

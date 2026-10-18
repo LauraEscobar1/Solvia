@@ -13,10 +13,11 @@ from app.models.area import Area
 from app.models.enums import SLA_STAGES, RequestStatus, SlaStatus
 from app.models.request import ServiceRequest
 from app.models.request_event import RequestEvent
+from app.models.sla_policy import SlaPolicy
 from app.repositories.request import RequestScope, scope_condition
 from app.repositories.risk_rules import RiskRules
-from app.repositories.sla_rules import Expression, SlaRules, elapsed_hours
-from app.repositories.stage_history import status_change
+from app.repositories.sla_rules import Expression, SlaRules, elapsed_hours, stage_policy_hours
+from app.repositories.stage_history import stage_entered_at, status_change
 
 
 class Highlight(StrEnum):
@@ -70,6 +71,14 @@ class AreaRow:
     open: int
     overdue: int
     avg_resolution_hours: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class StageFlowRow:
+    status: RequestStatus
+    count: int
+    median_hours: float | None
+    target_hours: float | None
 
 
 def _float(value: float | Decimal | None) -> float | None:
@@ -259,6 +268,27 @@ class DashboardRepository:
             AreaRow(area_id, name, open_count, overdue, _float(avg_resolution))
             for area_id, name, open_count, overdue, avg_resolution in rows
         ]
+
+    async def stage_flow(self, target: DashboardFilter, now: datetime) -> list[StageFlowRow]:
+        rows = await self._session.execute(
+            select(
+                ServiceRequest.status,
+                func.count(),
+                func.percentile_cont(0.5).within_group(elapsed_hours(stage_entered_at(), now)),
+                func.avg(
+                    stage_policy_hours(
+                        SlaPolicy.max_hours, ServiceRequest.priority, ServiceRequest.status
+                    )
+                ),
+            )
+            .where(*target.conditions(), ServiceRequest.status.in_(SLA_STAGES))
+            .group_by(ServiceRequest.status)
+        )
+        found = {
+            status: StageFlowRow(status, count, _float(median), _float(target_hours))
+            for status, count, median, target_hours in rows
+        }
+        return [found.get(stage, StageFlowRow(stage, 0, None, None)) for stage in SLA_STAGES]
 
     async def _per_day(
         self,

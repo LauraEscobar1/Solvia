@@ -54,7 +54,11 @@ export function SectionCard({
           <Heading id={titleId} className="text-heading">
             {title}
           </Heading>
-          {description && <p className="text-caption text-subtle-foreground">{description}</p>}
+          {typeof description === 'string' ? (
+            <p className="text-caption text-subtle-foreground">{description}</p>
+          ) : (
+            description
+          )}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </header>

@@ -1,42 +1,73 @@
 {
   "refresh": "Actualizar",
-  "range": "Del {{from}} al {{to}} · {{timezone}}",
+  "range": {
+    "label": "Periodo",
+    "days7": "7 días",
+    "days30": "30 días",
+    "quarter": "Trimestre"
+  },
   "filters": {
-    "label": "Filtros del panel",
     "area": "Área",
-    "allAreas": "Todas las áreas",
-    "from": "Desde",
-    "to": "Hasta",
-    "reset": "Últimos 30 días"
+    "allAreas": "Todas las áreas"
   },
   "trends": {
-    "title": "Creadas y completadas",
-    "description": "Por día, en la zona horaria de la organización",
+    "title": "Entrada vs. cierre",
+    "legend": "Series del gráfico",
     "created": "Creadas",
-    "completed": "Completadas"
+    "completed": "Completadas",
+    "day": "Fecha",
+    "completedTotal": "Completadas",
+    "avgResolution": "Resolución promedio",
+    "netUp_one": "+{{count}} pendiente",
+    "netUp_other": "+{{count}} pendientes",
+    "netDown_one": "−{{count}} pendiente",
+    "netDown_other": "−{{count}} pendientes",
+    "netEven": "Sin cambio en pendientes",
+    "table": "Solicitudes creadas y completadas por día",
+    "download": "Descargar CSV",
+    "fileName": "solvia-entrada-vs-cierre",
+    "saved": "CSV guardado en {{path}}",
+    "exportError": "No se pudo guardar el CSV.",
+    "empty": "No hay solicitudes creadas ni completadas en este periodo."
+  },
+  "flow": {
+    "title": "Flujo por etapa",
+    "description": "Solicitudes abiertas y tiempo mediano en cada etapa",
+    "median": "Mediana {{value}}",
+    "medianTarget": "Mediana {{value}} · objetivo {{target}}",
+    "noOpen": "Sin abiertas",
+    "count_one": "{{count}} abierta",
+    "count_other": "{{count}} abiertas",
+    "over": "Acumula {{value}} su objetivo"
   },
   "bottlenecks": {
     "title": "Cuellos de botella",
-    "description": "Carga actual por área y etapa frente a su mediana de 30 días",
+    "description": "Tiempo en etapa frente a la mediana histórica",
     "area": "Área",
-    "flagged": "Cuello de botella",
-    "critical": "Cuello de botella crítico",
-    "count_one": "{{count}} solicitud",
-    "count_other": "{{count}} solicitudes",
+    "multiple": "{{value}}×",
+    "levels": {
+      "normal": "Normal",
+      "slow": "Lento",
+      "bottleneck": "Cuello de botella"
+    },
+    "legend": {
+      "label": "Leyenda de colores",
+      "normal": "Normal (menos de {{value}})",
+      "slow": "Lento ({{value}} o más)",
+      "bottleneck": "Cuello de botella (acumulación inusual o promedio sobre el SLA)"
+    },
+    "cell": "{{area}}, {{stage}}: {{value}}, {{level}}. Ver solicitudes",
+    "noData": "sin datos",
+    "count_one": "{{count}} solicitud abierta",
+    "count_other": "{{count}} solicitudes abiertas",
     "avgHours": "Promedio en la etapa: {{value}}",
-    "median": "Mediana de 30 días: {{count}} · {{hours}}",
+    "median": "Mediana histórica: {{value}}",
     "slaMax": "Máximo SLA de la etapa: {{value}}",
-    "open": "Ver solicitudes de {{area}} en «{{stage}}»",
     "reasons": {
-      "count_above_median": "Supera 1,5 veces la mediana",
+      "count_above_median": "Supera 1,5 veces la cantidad habitual",
       "avg_above_sla": "El promedio supera el máximo SLA"
     },
     "empty": "No hay áreas para mostrar."
-  },
-  "block": {
-    "loading": "Cargando…",
-    "error": "No se pudo cargar este bloque.",
-    "empty": "No hay datos para este rango."
   },
   "greeting": "Hola, {{name}}",
   "greetingEmoji": "👋",

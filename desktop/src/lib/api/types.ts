@@ -218,31 +218,6 @@ export interface DashboardSummary {
   range: DateRange
 }
 
-export interface StatusBreakdown {
-  items: { status: RequestStatus; count: number }[]
-  range: DateRange
-}
-
-export interface DashboardRequestItem {
-  id: string
-  code: string
-  title: string
-  area: AreaRef
-  assignee: UserRef | null
-  priority: RequestPriority
-  status: RequestStatus
-  due_at: string | null
-  last_activity_at: string
-  sla_status: SlaStatus | null
-  consumed_pct: number | null
-  idle_hours: number
-  inactivity_hours: number | null
-}
-
-export interface RequestHighlights {
-  items: DashboardRequestItem[]
-}
-
 export type BottleneckReason = 'count_above_median' | 'avg_above_sla'
 
 export interface BottleneckCell {
@@ -270,6 +245,17 @@ export interface TrendPoint {
 export interface TrendSeries {
   days: TrendPoint[]
   range: DateRange
+}
+
+export interface StageFlowItem {
+  status: SlaStage
+  count: number
+  median_hours: number | null
+  target_hours: number | null
+}
+
+export interface StageFlow {
+  stages: StageFlowItem[]
 }
 
 export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck', 'ai_risk'] as const
