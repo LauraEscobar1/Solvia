@@ -11,6 +11,7 @@ import { alertKeys } from './alerts'
 import { apiRequest } from './client'
 import { dashboardKeys } from './dashboard'
 import type {
+  AssignmentSuggestionRead,
   BoardCard,
   DueEstimate,
   Page,
@@ -33,6 +34,7 @@ export const requestKeys = {
   boards: () => [...requestKeys.all, 'board'] as const,
   board: (filters: RequestFilters) => [...requestKeys.boards(), filters] as const,
   detail: (id: string) => [...requestKeys.all, 'detail', id] as const,
+  suggestion: (id: string) => [...requestKeys.all, 'suggestion', id] as const,
   events: (id: string) => [...requestKeys.all, 'events', id] as const,
   dueEstimates: () => [...requestKeys.all, 'due-estimates'] as const,
   assignees: (areaId: string | undefined) => [...requestKeys.all, 'assignees', areaId] as const,
@@ -73,7 +75,7 @@ export function invalidateRequest(queryClient: QueryClient, id?: string): Promis
     alertKeys.all,
     dashboardKeys.all,
   ]
-  if (id) keys.push(requestKeys.detail(id), requestKeys.events(id))
+  if (id) keys.push(requestKeys.detail(id), requestKeys.events(id), requestKeys.suggestion(id))
   return Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))).then(
     () => undefined,
   )
@@ -101,6 +103,16 @@ export function useRequest(id: string) {
   return useQuery({
     queryKey: requestKeys.detail(id),
     queryFn: ({ signal }) => apiRequest<RequestDetail>(`/api/v1/requests/${id}`, { signal }),
+  })
+}
+
+export function useAssignmentSuggestion(id: string) {
+  return useQuery({
+    queryKey: requestKeys.suggestion(id),
+    queryFn: ({ signal }) =>
+      apiRequest<AssignmentSuggestionRead>(`/api/v1/requests/${id}/assignment-suggestion`, {
+        signal,
+      }),
   })
 }
 

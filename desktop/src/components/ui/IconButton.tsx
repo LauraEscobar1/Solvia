@@ -26,6 +26,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   tooltip?: boolean
   tooltipHidden?: boolean
   tooltipSide?: 'top' | 'bottom'
+  tooltipAlign?: 'center' | 'end'
   ref?: Ref<HTMLButtonElement>
 }
 
@@ -37,6 +38,7 @@ export function IconButton({
   tooltip = true,
   tooltipHidden = false,
   tooltipSide,
+  tooltipAlign,
   className = '',
   type = 'button',
   ...props
@@ -52,7 +54,7 @@ export function IconButton({
     </button>
   )
   return tooltip ? (
-    <Tooltip label={label} side={tooltipSide} hidden={tooltipHidden}>
+    <Tooltip label={label} side={tooltipSide} align={tooltipAlign} hidden={tooltipHidden}>
       {button}
     </Tooltip>
   ) : (

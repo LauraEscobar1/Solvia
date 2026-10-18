@@ -1,6 +1,4 @@
 {
-  "subtitle": "Solicitudes, SLA y alertas de un vistazo",
-  "updatedAt": "Actualizado a las {{time}}",
   "refresh": "Actualizar",
   "range": "Del {{from}} al {{to}} · {{timezone}}",
   "filters": {
@@ -10,22 +8,6 @@
     "from": "Desde",
     "to": "Hasta",
     "reset": "Últimos 30 días"
-  },
-  "cards": {
-    "label": "Resumen",
-    "open": "Abiertas",
-    "due_soon": "Próximas a vencer",
-    "overdue": "Vencidas",
-    "stalled": "Sin movimiento",
-    "completed": "Completadas · 7 días",
-    "resolution": "Resolución promedio",
-    "noValue": "—",
-    "viewList": "Ver solicitudes: {{label}}"
-  },
-  "byStatus": {
-    "title": "Solicitudes por estado",
-    "description": "Recibidas en el rango, según su estado actual",
-    "count": "Solicitudes"
   },
   "trends": {
     "title": "Creadas y completadas",
@@ -51,21 +33,64 @@
     },
     "empty": "No hay áreas para mostrar."
   },
-  "atRisk": {
-    "title": "En riesgo",
-    "description": "Vencidas primero, luego por porcentaje de SLA consumido",
-    "consumed": "{{value}} % del SLA",
-    "empty": "No hay solicitudes vencidas ni próximas a vencer."
-  },
-  "stalled": {
-    "title": "Sin movimiento",
-    "description": "Ordenadas por horas sin actividad",
-    "idle": "Sin actividad {{time}}",
-    "empty": "Todas las solicitudes abiertas tienen actividad reciente."
-  },
   "block": {
     "loading": "Cargando…",
     "error": "No se pudo cargar este bloque.",
     "empty": "No hay datos para este rango."
+  },
+  "greeting": "Hola, {{name}}",
+  "greetingEmoji": "👋",
+  "attention_zero": "<brand>Solvia</brand> ya revisó tus solicitudes: <emphasis>hoy ninguna necesita atención urgente</emphasis>.",
+  "attention_one": "<brand>Solvia</brand> ya revisó tus solicitudes: <emphasis>{{count}} necesita tu atención hoy</emphasis>.",
+  "attention_other": "<brand>Solvia</brand> ya revisó tus solicitudes: <emphasis>{{count}} necesitan tu atención hoy</emphasis>.",
+  "refreshedAt": "Actualizar (datos de las {{time}})",
+  "status": {
+    "title": "Estado actual",
+    "mine": "Estado de mis solicitudes",
+    "today": "Todas las cifras son de hoy",
+    "open": "Abiertas",
+    "overdue": "Vencidas",
+    "dueSoon": "Por vencer",
+    "stalled": "Sin movimiento",
+    "inAreas_one": "en {{count}} área",
+    "inAreas_other": "en {{count}} áreas",
+    "yourScope": "en tu alcance",
+    "overdueUp": "+{{count}} desde ayer",
+    "overdueDown": "−{{count}} desde ayer",
+    "overdueSame": "Igual que ayer",
+    "highRisk_one": "{{count}} con riesgo alto",
+    "highRisk_other": "{{count}} con riesgo alto",
+    "forgotten_one": "{{count}} posiblemente olvidada",
+    "forgotten_other": "{{count}} posiblemente olvidadas",
+    "stagesLabel": "Abiertas por etapa",
+    "stageCount": "{{stage}} · {{count}}",
+    "linkLabel": "{{label}}: {{value}}, {{detail}}. Ver solicitudes"
+  },
+  "risk": {
+    "title": "En riesgo de retraso",
+    "viewAll": "Ver todas",
+    "listLabel": "Solicitudes con más riesgo",
+    "empty": "Ninguna solicitud abierta está en riesgo.",
+    "detail": "Detalle del riesgo",
+    "assignee": "Responsable",
+    "unassigned": "Sin responsable",
+    "inStage": "en {{stage}}",
+    "reference": "referencia: {{kind}}",
+    "assigneeLoad": "abiertas tiene su responsable",
+    "noAssignee": "sin responsable asignado",
+    "suggestion": "Sugerencia",
+    "suggestionText": "Reasignar a {{name}}, con {{count}} abiertas.",
+    "noSuggestion": "Sin sugerencia de reasignación.",
+    "open": "Abrir",
+    "reassignNow": "Reasignar ahora",
+    "confirmTitle": "Reasignar {{code}}",
+    "confirmMessage": "{{code}} pasará a {{name}}, que tiene {{count}} solicitudes abiertas.",
+    "confirm": "Reasignar"
+  },
+  "mine": {
+    "title": "Mis solicitudes",
+    "description": "Las de movimiento más reciente",
+    "empty": "No tienes solicitudes abiertas.",
+    "viewAll": "Ver todas"
   }
 }

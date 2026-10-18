@@ -142,6 +142,16 @@ export interface RequestEvent {
   created_at: string
 }
 
+export interface AssignmentSuggestion {
+  assignee: UserRef
+  open_count: number
+  current_open_count: number | null
+}
+
+export interface AssignmentSuggestionRead {
+  suggestion: AssignmentSuggestion | null
+}
+
 export interface BoardCard extends RequestSummary {
   allowed_transitions: AllowedTransition[]
 }
@@ -173,6 +183,12 @@ export interface DateRange {
   timezone: string
 }
 
+export interface StageCounts {
+  received: number
+  assigned: number
+  in_progress: number
+}
+
 export interface DashboardSummary {
   open: number
   due_soon: number
@@ -181,6 +197,12 @@ export interface DashboardSummary {
   completed_last_7_days: number
   completed_since: string
   avg_resolution_hours: number | null
+  open_areas: number
+  overdue_change: number
+  high_risk: number
+  due_soon_high_risk: number
+  stalled_forgotten: number
+  open_by_stage: StageCounts
   range: DateRange
 }
 

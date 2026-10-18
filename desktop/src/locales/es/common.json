@@ -30,7 +30,11 @@
   "duration": {
     "hours": "{{value}} h",
     "days": "{{value}} d",
-    "minutes": "{{value}} min"
+    "minutes": "{{value}} min",
+    "lessThanHour": "menos de 1 h",
+    "longHours": "{{value}} h",
+    "longDays_one": "{{value}} día",
+    "longDays_other": "{{value}} días"
   },
   "noValue": "—",
   "breadcrumbs": "Ruta de navegación",

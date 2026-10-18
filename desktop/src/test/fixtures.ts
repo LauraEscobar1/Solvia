@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { RequestSummary, TokenResponse, User } from '@/lib/api/types'
+import type { DashboardSummary, RequestSummary, TokenResponse, User } from '@/lib/api/types'
 
 export interface RecordedRequest {
   method: string
@@ -104,6 +104,28 @@ export function makeRequest(overrides: Partial<RequestSummary> = {}): RequestSum
     sla_status: 'on_track',
     is_stalled: false,
     risk_score: 12,
+    ...overrides,
+  }
+}
+
+export const SUMMARY_RANGE = { date_from: '2026-09-16', date_to: '2026-10-15', timezone: 'America/Bogota' }
+
+export function makeSummary(overrides: Partial<DashboardSummary> = {}): DashboardSummary {
+  return {
+    open: 128,
+    due_soon: 14,
+    overdue: 9,
+    stalled: 11,
+    completed_last_7_days: 17,
+    completed_since: '2026-10-09',
+    avg_resolution_hours: 61.4,
+    open_areas: 5,
+    overdue_change: 3,
+    high_risk: 3,
+    due_soon_high_risk: 6,
+    stalled_forgotten: 2,
+    open_by_stage: { received: 34, assigned: 41, in_progress: 53 },
+    range: SUMMARY_RANGE,
     ...overrides,
   }
 }

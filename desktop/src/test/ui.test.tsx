@@ -373,7 +373,7 @@ describe('estados de carga, vacío y error', () => {
 
 describe('píldoras de solicitudes', () => {
   it.each([
-    [due({ sla_status: 'overdue', due_at: '2026-10-14T12:00:00Z', is_stalled: true }), 'Vencida hace 24 h'],
+    [due({ sla_status: 'overdue', due_at: '2026-10-14T12:00:00Z', is_stalled: true }), 'Vencida hace 1 d'],
     [due({ sla_status: 'at_risk', due_at: '2026-10-16T06:00:00Z' }), 'Vence en 18 h'],
     [due({ is_stalled: true, last_activity_at: '2026-10-09T12:00:00Z' }), 'Sin movimiento 6 d'],
     [due({ due_at: '2026-10-18T12:00:00Z' }), 'Vence en 3 d'],

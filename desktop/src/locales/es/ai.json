@@ -156,5 +156,18 @@
     "lastDaily": "Último análisis diario",
     "lastDailyValue": "{{time}} · {{source}} · {{tokens}} tokens",
     "never": "Todavía no se ha ejecutado"
+  },
+  "banner": {
+    "title": "Solvia IA",
+    "updated": "Actualizado · {{time}}",
+    "analyzing": "Analizando…",
+    "none": "Sin análisis todavía",
+    "view_zero": "Ver recomendaciones",
+    "view_one": "Ver {{count}} recomendación",
+    "view_other": "Ver {{count}} recomendaciones",
+    "slides": "Hallazgos",
+    "slide": "Hallazgo {{index}} de {{total}}",
+    "pause": "Pausar la rotación",
+    "play": "Reanudar la rotación"
   }
 }

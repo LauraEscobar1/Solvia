@@ -1,6 +1,4 @@
 {
-  "subtitle": "Requests, SLA and alerts at a glance",
-  "updatedAt": "Updated at {{time}}",
   "refresh": "Refresh",
   "range": "From {{from}} to {{to}} · {{timezone}}",
   "filters": {
@@ -10,22 +8,6 @@
     "from": "From",
     "to": "To",
     "reset": "Last 30 days"
-  },
-  "cards": {
-    "label": "Summary",
-    "open": "Open",
-    "due_soon": "Due soon",
-    "overdue": "Overdue",
-    "stalled": "Stalled",
-    "completed": "Completed · 7 days",
-    "resolution": "Average resolution",
-    "noValue": "—",
-    "viewList": "View requests: {{label}}"
-  },
-  "byStatus": {
-    "title": "Requests by status",
-    "description": "Received in the range, by current status",
-    "count": "Requests"
   },
   "trends": {
     "title": "Created and completed",
@@ -51,21 +33,64 @@
     },
     "empty": "There are no areas to show."
   },
-  "atRisk": {
-    "title": "At risk",
-    "description": "Overdue first, then by share of SLA consumed",
-    "consumed": "{{value}}% of SLA",
-    "empty": "No overdue or due-soon requests."
-  },
-  "stalled": {
-    "title": "Stalled",
-    "description": "Sorted by hours without activity",
-    "idle": "No activity {{time}}",
-    "empty": "Every open request has recent activity."
-  },
   "block": {
     "loading": "Loading…",
     "error": "This block could not be loaded.",
     "empty": "There is no data for this range."
+  },
+  "greeting": "Hi, {{name}}",
+  "greetingEmoji": "👋",
+  "attention_zero": "<brand>Solvia</brand> already reviewed your requests: <emphasis>none needs urgent attention today</emphasis>.",
+  "attention_one": "<brand>Solvia</brand> already reviewed your requests: <emphasis>{{count}} needs your attention today</emphasis>.",
+  "attention_other": "<brand>Solvia</brand> already reviewed your requests: <emphasis>{{count}} need your attention today</emphasis>.",
+  "refreshedAt": "Refresh (data from {{time}})",
+  "status": {
+    "title": "Current status",
+    "mine": "My requests at a glance",
+    "today": "Today's figures",
+    "open": "Open",
+    "overdue": "Overdue",
+    "dueSoon": "Due soon",
+    "stalled": "Stalled",
+    "inAreas_one": "in {{count}} area",
+    "inAreas_other": "in {{count}} areas",
+    "yourScope": "in your scope",
+    "overdueUp": "+{{count}} since yesterday",
+    "overdueDown": "−{{count}} since yesterday",
+    "overdueSame": "Same as yesterday",
+    "highRisk_one": "{{count}} at high risk",
+    "highRisk_other": "{{count}} at high risk",
+    "forgotten_one": "{{count}} possibly forgotten",
+    "forgotten_other": "{{count}} possibly forgotten",
+    "stagesLabel": "Open by stage",
+    "stageCount": "{{stage}} · {{count}}",
+    "linkLabel": "{{label}}: {{value}}, {{detail}}. View requests"
+  },
+  "risk": {
+    "title": "At risk of delay",
+    "viewAll": "See all",
+    "listLabel": "Requests with the highest risk",
+    "empty": "No open request is at risk.",
+    "detail": "Risk detail",
+    "assignee": "Assignee",
+    "unassigned": "Unassigned",
+    "inStage": "in {{stage}}",
+    "reference": "reference: {{kind}}",
+    "assigneeLoad": "open requests held by the assignee",
+    "noAssignee": "no assignee yet",
+    "suggestion": "Suggestion",
+    "suggestionText": "Reassign to {{name}}, who has {{count}} open.",
+    "noSuggestion": "No reassignment suggested.",
+    "open": "Open",
+    "reassignNow": "Reassign now",
+    "confirmTitle": "Reassign {{code}}",
+    "confirmMessage": "{{code}} will go to {{name}}, who has {{count}} open requests.",
+    "confirm": "Reassign"
+  },
+  "mine": {
+    "title": "My requests",
+    "description": "Most recently active",
+    "empty": "You have no open requests.",
+    "viewAll": "See all"
   }
 }

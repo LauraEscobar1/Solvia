@@ -42,6 +42,7 @@
   --color-slate: var(--slate);
   --color-slate-soft: var(--slate-soft);
   --color-slate-foreground: var(--slate-foreground);
+  --color-slate-pill: var(--slate-pill);
 
   --color-danger: var(--danger);
   --color-danger-text: var(--danger-text);

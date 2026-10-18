@@ -87,6 +87,7 @@ const BOTH_MODES: [string, string, number][] = [
   ['risk-medium-on-feature', 'feature-row', TEXT],
   ['slate-foreground', 'slate', TEXT],
   ['slate-foreground', 'slate-soft', TEXT],
+  ['ink', 'slate-pill', TEXT],
   ['danger-text', 'background', TEXT],
   ['danger-text', 'surface-solid', TEXT],
   ['danger-soft-foreground', 'danger-soft', TEXT],

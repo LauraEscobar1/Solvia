@@ -17,6 +17,8 @@ from app.schemas.common import Page
 from app.schemas.request import (
     AllowedTransitionRead,
     AssignInput,
+    AssignmentSuggestion,
+    AssignmentSuggestionRead,
     BoardCard,
     BoardColumn,
     CommentInput,
@@ -143,6 +145,36 @@ class RequestService:
                 "allowed_transitions": transitions,
                 "permissions": permissions,
             }
+        )
+
+    async def assignment_suggestion(
+        self, actor: User, request_id: uuid.UUID
+    ) -> AssignmentSuggestionRead:
+        request = await self._requests.get(request_id)
+        policy = RequestPolicy(actor)
+        if request is None or not policy.can(Capability.VIEW, request):
+            raise NotFoundError(ErrorCode.REQUEST_NOT_FOUND)
+        if request.status in CLOSED_STATUSES or not policy.can(Capability.ASSIGN, request):
+            return AssignmentSuggestionRead(suggestion=None)
+        candidates = [
+            (user, count)
+            for user, count in await self._requests.assignee_loads(request.area_id)
+            if user.id != request.assignee_id
+        ]
+        if not candidates:
+            return AssignmentSuggestionRead(suggestion=None)
+        user, count = min(candidates, key=lambda item: item[1])
+        current = (
+            None
+            if request.assignee_id is None
+            else await self._requests.open_count_for(request.assignee_id)
+        )
+        if current is not None and count >= current:
+            return AssignmentSuggestionRead(suggestion=None)
+        return AssignmentSuggestionRead(
+            suggestion=AssignmentSuggestion(
+                assignee=UserRef.model_validate(user), open_count=count, current_open_count=current
+            )
         )
 
     async def create(self, actor: User, data: RequestCreate) -> RequestDetail:

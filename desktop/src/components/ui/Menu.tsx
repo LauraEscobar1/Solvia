@@ -122,6 +122,7 @@ export function Menu({ label, icon, entries, header, triggerVariant = 'glass' }:
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         tooltipHidden={open}
+        tooltipAlign="end"
         onClick={() => {
           setOpen((value) => !value)
         }}

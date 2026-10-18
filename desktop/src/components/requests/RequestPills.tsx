@@ -2,12 +2,10 @@ import { CircleAlert, Clock3, Dot, Pause } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Pill, type PillTone } from '@/components/ui/Pill'
 import type { RequestPriority, RequestStatus } from '@/lib/api/types'
-import { useNow } from '@/lib/clock'
-import { useCompactDuration } from '@/lib/format'
-import { type DueKind, dueKind, type DueRequest } from '@/lib/requests/due'
+import type { DueKind, DueRequest } from '@/lib/requests/due'
+import { useDueLabel } from '@/lib/requests/useDueLabel'
 import { riskLevel, STAGE_ORDER, type RiskLevel } from '@/lib/requests/tones'
 
-const HOUR_MS = 3_600_000
 
 const PRIORITY_TONES: Record<RequestPriority, PillTone> = {
   critical: 'solid',
@@ -43,24 +41,9 @@ const DUE_ICONS = {
 } as const
 
 export function DuePill({ request }: { request: DueRequest }) {
-  const { t } = useTranslation(['requests', 'common'])
-  const now = useNow()
-  const compact = useCompactDuration()
-  const kind = dueKind(request)
-  if (kind === 'closed') return <span className="text-subtle-foreground">{t('common:noValue')}</span>
-
-  const due = request.due_at ? new Date(request.due_at).getTime() : null
-  const idle = (now - new Date(request.last_activity_at).getTime()) / HOUR_MS
-  const label =
-    kind === 'overdue' && due !== null
-      ? t('due.overdue', { time: compact((now - due) / HOUR_MS) })
-      : kind === 'stalled'
-        ? t('due.stalled', { time: compact(idle) })
-        : due !== null
-          ? t('due.dueIn', { time: compact((due - now) / HOUR_MS) })
-          : t('due.none')
+  const { kind, label } = useDueLabel(request)
+  if (kind === 'closed') return <span className="text-subtle-foreground">{label}</span>
   const Icon = DUE_ICONS[kind]
-
   return (
     <Pill tone={DUE_TONES[kind]} icon={<Icon className="size-3.5 shrink-0" aria-hidden="true" />}>
       {label}

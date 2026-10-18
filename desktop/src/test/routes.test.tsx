@@ -68,7 +68,7 @@ describe('protección de rutas', () => {
     signInAs(makeUser({ role: 'requester' }))
     const router = renderAt('/admin/users')
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Panel' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hola, Ana' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(mainNavigation().getByRole('link', { name: 'Solicitudes' })).toBeInTheDocument()
     const menu = await openAccountMenu()
@@ -80,7 +80,7 @@ describe('protección de rutas', () => {
     signInAs(makeUser({ role: 'supervisor' }))
     const router = renderAt('/admin/sla')
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Panel' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hola, Ana' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     const menu = await openAccountMenu()
     expect(menu.queryByRole('menuitem', { name: 'Usuarios' })).toBeNull()

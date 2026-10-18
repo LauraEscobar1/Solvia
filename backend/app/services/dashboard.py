@@ -23,6 +23,7 @@ from app.schemas.dashboard import (
     DashboardSummary,
     DateRangeRead,
     RequestHighlights,
+    StageCounts,
     StatusBreakdown,
     StatusCount,
     TrendPoint,
@@ -36,6 +37,7 @@ DEFAULT_RANGE_DAYS = 30
 MAX_RANGE_DAYS = 366
 RECENT_COMPLETION_DAYS = 7
 HIGHLIGHT_LIMIT = 20
+OVERDUE_CHANGE_WINDOW = timedelta(hours=24)
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,8 +72,11 @@ class DashboardService:
         rules = SlaRules(self._clock())
         period = self._period(query, rules.now)
         completed_since = period.today - timedelta(days=RECENT_COMPLETION_DAYS - 1)
+        target = self._filter(actor, query)
+        yesterday = rules.now - OVERDUE_CHANGE_WINDOW
+        overdue_before = await self._repository.overdue_at(target, yesterday)
         row = await self._repository.summary(
-            self._filter(actor, query),
+            target,
             rules,
             completed_since=day_start(completed_since, self._timezone),
             start=period.start,
@@ -85,6 +90,16 @@ class DashboardService:
             completed_last_7_days=row.completed_recently,
             completed_since=completed_since,
             avg_resolution_hours=_round(row.avg_resolution_hours),
+            open_areas=row.open_areas,
+            overdue_change=row.overdue - overdue_before,
+            high_risk=row.high_risk,
+            due_soon_high_risk=row.due_soon_high_risk,
+            stalled_forgotten=row.stalled_forgotten,
+            open_by_stage=StageCounts(
+                received=row.open_by_stage[RequestStatus.RECEIVED],
+                assigned=row.open_by_stage[RequestStatus.ASSIGNED],
+                in_progress=row.open_by_stage[RequestStatus.IN_PROGRESS],
+            ),
             range=self._range(period),
         )
 

@@ -30,7 +30,11 @@
   "duration": {
     "hours": "{{value}} h",
     "days": "{{value}} d",
-    "minutes": "{{value}} min"
+    "minutes": "{{value}} min",
+    "lessThanHour": "under 1 h",
+    "longHours": "{{value}} h",
+    "longDays_one": "{{value}} day",
+    "longDays_other": "{{value}} days"
   },
   "noValue": "—",
   "breadcrumbs": "Breadcrumb",

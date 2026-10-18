@@ -12,14 +12,14 @@ const MIN_OPACITY = 0.06
 const OPACITY_RANGE = 0.5
 
 function HeatCell({ cell, maxCount }: { cell: BottleneckCell; maxCount: number }) {
-  const { t } = useTranslation(['dashboard', 'requests'])
+  const { t } = useTranslation(['dashboard', 'requests', 'common'])
   const { number } = useFormatters()
   const duration = useDurationFormatter()
   const tooltipId = useId()
   const stage = t(`requests:status.${cell.status}`)
   const critical = cell.reasons.length > 1
   const intensity = maxCount > 0 ? cell.count / maxCount : 0
-  const hours = (value: number | null) => (value === null ? t('cards.noValue') : duration(value))
+  const hours = (value: number | null) => (value === null ? t('common:noValue') : duration(value))
 
   return (
     <Link

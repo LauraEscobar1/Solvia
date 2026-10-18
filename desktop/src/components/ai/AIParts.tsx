@@ -1,38 +1,20 @@
 import { Database, Info, Sparkles, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StatusBadge } from '@/components/StatusBadge'
-import { riskTone } from '@/lib/ai/messages'
+import { RiskPill } from '@/components/requests/RequestPills'
+import { Pill } from '@/components/ui/Pill'
 import { useInsightFeedback } from '@/lib/api/ai'
 import type { InsightMeta } from '@/lib/api/types'
 import { useFormatters } from '@/lib/format'
 
-const RISK_CLASSES = {
-  danger: 'bg-danger-soft text-danger',
-  warning: 'bg-warning-soft text-warning',
-  success: 'bg-success-soft text-success',
-} as const
-
 export function RiskBadge({ score }: { score: number | null }) {
-  const { t } = useTranslation('ai')
-  if (score === null) return <span className="text-muted-foreground">—</span>
-  const tone = riskTone(score)
-  const level = tone === 'danger' ? 'high' : tone === 'warning' ? 'medium' : 'low'
-  return (
-    <span
-      title={t(`risk.levels.${level}`)}
-      data-risk-tone={tone}
-      className={`inline-flex min-w-9 justify-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${RISK_CLASSES[tone]}`}
-    >
-      {score}
-    </span>
-  )
+  return <RiskPill score={score} />
 }
 
 export function AIGeneratedLabel() {
   const { t } = useTranslation('ai')
   return (
-    <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+    <p className="text-caption text-muted-foreground flex items-center gap-1.5 font-medium">
       <Sparkles className="size-3.5" aria-hidden="true" />
       {t('label')}
     </p>
@@ -43,7 +25,7 @@ export function AINotice({ notice }: { notice: string | null }) {
   const { i18n } = useTranslation()
   if (!notice) return null
   return (
-    <p role="status" className="text-muted-foreground flex items-start gap-1.5 text-xs">
+    <p role="status" className="text-caption text-muted-foreground flex items-start gap-1.5">
       <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
       {i18n.t(notice, { ns: 'errors', defaultValue: i18n.t('unknown', { ns: 'errors' }) })}
     </p>
@@ -54,10 +36,8 @@ export function InsightMetaLine({ insight }: { insight: InsightMeta }) {
   const { t } = useTranslation('ai')
   const { relative, dateTime } = useFormatters()
   return (
-    <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-      <StatusBadge tone={insight.source === 'ai' ? 'success' : 'neutral'}>
-        {t(`source.${insight.source}`)}
-      </StatusBadge>
+    <div className="text-caption text-muted-foreground flex flex-wrap items-center gap-2">
+      <Pill tone={insight.source === 'ai' ? 'accent-soft' : 'neutral'}>{t(`source.${insight.source}`)}</Pill>
       <time dateTime={insight.created_at} title={dateTime(insight.created_at)}>
         {t('analyzedAt', { time: relative(insight.created_at) })}
       </time>
@@ -71,13 +51,10 @@ export function InsightMetaLine({ insight }: { insight: InsightMeta }) {
   )
 }
 
-export function FeedbackButtons({
-  insight,
-  item,
-}: {
-  insight: InsightMeta
-  item: number
-}) {
+const FEEDBACK_BUTTON =
+  'text-muted-foreground inline-flex size-7 items-center justify-center rounded-full transition-colors hover:bg-surface-sunken'
+
+export function FeedbackButtons({ insight, item }: { insight: InsightMeta; item: number }) {
   const { t } = useTranslation('ai')
   const feedback = useInsightFeedback()
   const [choice, setChoice] = useState<boolean | undefined>(insight.feedback[String(item)])
@@ -97,7 +74,7 @@ export function FeedbackButtons({
         onClick={() => {
           send(true)
         }}
-        className="text-muted-foreground hover:text-success aria-pressed:text-success rounded p-1"
+        className={`${FEEDBACK_BUTTON} aria-pressed:bg-accent-soft aria-pressed:text-accent-text`}
       >
         <ThumbsUp className="size-3.5" aria-hidden="true" />
       </button>
@@ -109,7 +86,7 @@ export function FeedbackButtons({
         onClick={() => {
           send(false)
         }}
-        className="text-muted-foreground hover:text-danger aria-pressed:text-danger rounded p-1"
+        className={`${FEEDBACK_BUTTON} aria-pressed:bg-danger-soft aria-pressed:text-danger-soft-foreground`}
       >
         <ThumbsDown className="size-3.5" aria-hidden="true" />
       </button>

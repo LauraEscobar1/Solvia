@@ -20,6 +20,12 @@ class DateRangeRead(BaseModel):
     timezone: str
 
 
+class StageCounts(BaseModel):
+    received: int
+    assigned: int
+    in_progress: int
+
+
 class DashboardSummary(BaseModel):
     open: int
     due_soon: int
@@ -28,6 +34,12 @@ class DashboardSummary(BaseModel):
     completed_last_7_days: int
     completed_since: date
     avg_resolution_hours: float | None
+    open_areas: int
+    overdue_change: int
+    high_risk: int
+    due_soon_high_risk: int
+    stalled_forgotten: int
+    open_by_stage: StageCounts
     range: DateRangeRead
 
 

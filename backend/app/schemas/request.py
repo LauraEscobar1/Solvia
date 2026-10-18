@@ -20,6 +20,16 @@ OptionalComment = Annotated[str, StringConstraints(strip_whitespace=True, max_le
 Version = Annotated[int, Field(ge=1)]
 
 
+class AssignmentSuggestion(BaseModel):
+    assignee: UserRef
+    open_count: int
+    current_open_count: int | None
+
+
+class AssignmentSuggestionRead(BaseModel):
+    suggestion: AssignmentSuggestion | None
+
+
 class RequestCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
