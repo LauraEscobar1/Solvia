@@ -171,6 +171,8 @@ function renderInRouter(element: ReactElement, user: User = makeUser()) {
   )
 }
 
+const OVERVIEW_INSIGHT = AI_OVERVIEW.insight as NonNullable<typeof AI_OVERVIEW.insight>
+
 function panelApi(overview: unknown) {
   return (request: RecordedRequest) => {
     const path = request.path
@@ -216,6 +218,56 @@ describe('banner de IA en el panel', () => {
     expect(within(sheet).getByText(/Basado en tiempos de 1\.?240 solicitudes previas/)).toBeInTheDocument()
     expect(await within(sheet).findByRole('button', { name: 'Reasignar' })).toBeInTheDocument()
     expect(within(sheet).getByText('Generado por IA: verifica antes de actuar')).toBeInTheDocument()
+  })
+
+  it('el titular grande usa headline y, sin él, la primera frase recortada del resumen', async () => {
+    const withHeadline = {
+      ...AI_OVERVIEW,
+      insight: { ...OVERVIEW_INSIGHT, content: { ...OVERVIEW_INSIGHT.content, headline: text('La etapa Asignada acumula retraso en Finanzas.') } },
+    }
+    mockApi(panelApi(withHeadline))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByTestId('overview-headline')).toHaveTextContent('La etapa Asignada acumula retraso en Finanzas.')
+    expect(within(sheet).getByTestId('overview-summary')).toHaveTextContent('Soporte TI acumula solicitudes recibidas.')
+    expect(within(sheet).getByText('Asignada')).toHaveClass('text-accent')
+  })
+
+  it('recorta el titular de respaldo a 15 palabras y ofrece «Ver más» en resúmenes largos', async () => {
+    const long = 'Uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciséis diecisiete. '.repeat(3)
+    mockApi(panelApi({ ...AI_OVERVIEW, insight: { ...OVERVIEW_INSIGHT, content: { ...OVERVIEW_INSIGHT.content, summary: text(long) } } }))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByTestId('overview-headline')).toHaveTextContent('Uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince…')
+    const more = within(sheet).getByRole('button', { name: 'Ver más' })
+    await user.click(more)
+    expect(more).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('no muestra un análisis de otro idioma: lo genera en el idioma activo', async () => {
+    const { default: i18n } = await import('@/i18n')
+    await i18n.changeLanguage('en')
+    const requests = mockApi((request) => {
+      if (request.method === 'POST' && request.path.startsWith('/api/v1/ai/overview/analyze')) {
+        return jsonResponse({ ...AI_OVERVIEW, insight: { ...OVERVIEW_INSIGHT, language: 'en' } })
+      }
+      if (request.path.startsWith('/api/v1/ai/overview')) return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+      return errorResponse('common.not_found', 404)
+    })
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: /View/ }))
+
+    await screen.findByTestId('overview-headline')
+    expect(requests.filter((request) => request.method === 'POST').map((request) => request.path)).toEqual([
+      '/api/v1/ai/overview/analyze?language=en',
+    ])
+    expect(requests.some((request) => request.path === '/api/v1/ai/overview?language=en')).toBe(true)
   })
 
   it('en respaldo traduce el análisis por reglas y muestra el aviso', async () => {

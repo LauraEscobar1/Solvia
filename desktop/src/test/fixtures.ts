@@ -132,7 +132,7 @@ export function makeSummary(overrides: Partial<DashboardSummary> = {}): Dashboar
       { day: '2026-10-20', count: 4 },
       { day: '2026-10-21', count: 1 },
     ],
-    completed_total: 1240,
+    baseline_requests: 1240,
     range: SUMMARY_RANGE,
     ...overrides,
   }

@@ -125,7 +125,15 @@ export function Dialog({
           />
         </header>
         )}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
+        <div
+          className={
+            tone === 'feature'
+              ? 'flex min-h-0 flex-1 flex-col overflow-hidden px-6'
+              : 'flex-1 overflow-y-auto px-6 pb-6'
+          }
+        >
+          {children}
+        </div>
         {footer && (
           <footer className="border-divider flex flex-wrap justify-end gap-2 border-t px-6 py-4">{footer}</footer>
         )}

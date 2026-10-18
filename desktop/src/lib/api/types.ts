@@ -216,7 +216,7 @@ export interface DashboardSummary {
   stalled_forgotten: number
   open_by_stage: StageCounts
   due_by_day: { day: string; count: number }[]
-  completed_total: number
+  baseline_requests: number
   range: DateRange
 }
 
@@ -371,6 +371,7 @@ export interface RecommendationTarget {
 }
 
 export interface OverviewInsightContent {
+  headline?: AIMessage | null
   summary: AIMessage
   findings: {
     type: FindingType

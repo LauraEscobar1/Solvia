@@ -129,7 +129,7 @@ async def test_summary_has_known_values(
         "open_areas": 1,
         "overdue_change": 1,
         "open_by_stage": {"received": 1, "assigned": 1, "in_progress": 1},
-        "completed_total": 2,
+        "baseline_requests": 2,
         "due_by_day": [
             {"day": "2026-10-15", "count": 2},
             {"day": "2026-10-16", "count": 0},
@@ -153,6 +153,24 @@ async def test_due_by_day_skips_weekends_and_respects_role_scope(
         ("2026-10-20", 0),
         ("2026-10-21", 0),
     ]
+
+
+async def test_baseline_requests_counts_completed_inside_the_reference_window(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    await factory.request(
+        area=data.finance,
+        requester=data.people["carla"],
+        status=RequestStatus.COMPLETED,
+        received_at=NOW - timedelta(days=130),
+        completed_at=NOW - timedelta(days=120),
+    )
+
+    summary = await _get(db_client, "summary", data.headers(factory, "admin"))
+    own = await _get(db_client, "summary", data.headers(factory, "diego"))
+
+    assert summary["baseline_requests"] == 2
+    assert own["baseline_requests"] == 1
 
 
 async def test_summary_risk_counts_match_the_request_list(

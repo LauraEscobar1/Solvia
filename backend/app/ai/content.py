@@ -182,6 +182,7 @@ def overview_content_from_ai(
             )
         )
     return OverviewInsightContent(
+        headline=_text(analysis.headline) if analysis.headline else None,
         summary=_text(analysis.summary),
         findings=findings[:MAX_FINDINGS],
         recommendations=recommendations[:MAX_RECOMMENDATIONS],

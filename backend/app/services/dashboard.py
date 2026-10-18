@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.risk_model import BASELINE_WINDOW_DAYS
 from app.core.errors import ErrorCode, UnprocessableError
 from app.core.time import Clock, day_end, day_start, local_date, utcnow
 from app.models.enums import RequestStatus, UserRole
@@ -113,7 +114,9 @@ class DashboardService:
                 assigned=row.open_by_stage[RequestStatus.ASSIGNED],
                 in_progress=row.open_by_stage[RequestStatus.IN_PROGRESS],
             ),
-            completed_total=await self._repository.completed_total(target),
+            baseline_requests=await self._repository.baseline_requests(
+                target, rules.now - timedelta(days=BASELINE_WINDOW_DAYS)
+            ),
             due_by_day=[DueDay(day=day, count=due_counts.get(day, 0)) for day in forecast],
             range=self._range(period),
         )

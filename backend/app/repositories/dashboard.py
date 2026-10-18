@@ -195,11 +195,15 @@ class DashboardRepository:
         )
         return total or 0
 
-    async def completed_total(self, target: DashboardFilter) -> int:
+    async def baseline_requests(self, target: DashboardFilter, since: datetime) -> int:
         total = await self._session.scalar(
             select(func.count())
             .select_from(ServiceRequest)
-            .where(*target.conditions(), ServiceRequest.status == RequestStatus.COMPLETED)
+            .where(
+                *target.conditions(),
+                ServiceRequest.status == RequestStatus.COMPLETED,
+                ServiceRequest.completed_at >= since,
+            )
         )
         return total or 0
 

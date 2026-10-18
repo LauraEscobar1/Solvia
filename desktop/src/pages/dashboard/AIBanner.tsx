@@ -26,8 +26,9 @@ export function AIBanner({ areaId }: { areaId?: string }) {
   const [paused, setPaused] = useState(false)
   const [hovered, setHovered] = useState(false)
 
-  const insight = regenerate.data?.insight ?? overview.data?.insight ?? null
-  const notice = regenerate.data?.notice ?? overview.data?.notice ?? null
+  const generated = regenerate.data?.insight?.language === language ? regenerate.data : undefined
+  const insight = generated?.insight ?? overview.data?.insight ?? null
+  const notice = generated?.notice ?? overview.data?.notice ?? null
   const slides = insight
     ? [text(insight.content.summary), ...insight.content.findings.map((finding) => text(finding.evidence))]
     : []

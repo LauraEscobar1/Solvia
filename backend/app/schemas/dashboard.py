@@ -46,7 +46,7 @@ class DashboardSummary(BaseModel):
     stalled_forgotten: int
     open_by_stage: StageCounts
     due_by_day: list[DueDay]
-    completed_total: int
+    baseline_requests: int
     range: DateRangeRead
 
 

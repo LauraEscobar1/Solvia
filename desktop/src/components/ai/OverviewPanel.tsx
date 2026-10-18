@@ -1,11 +1,11 @@
 import { RefreshCw, ThumbsDown, ThumbsUp, X } from 'lucide-react'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { ReassignButton } from '@/components/requests/ReassignButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { IconButton } from '@/components/ui/IconButton'
-import { EmptyState, InlineAlert } from '@/components/ui/States'
+import { EmptyState, InlineAlert, Skeleton } from '@/components/ui/States'
 import { useAIText } from '@/lib/ai/messages'
 import { useInsightFeedback } from '@/lib/api/ai'
 import { useDashboardSummary } from '@/lib/api/dashboard'
@@ -18,6 +18,8 @@ import { AINotice, AIGeneratedLabel } from './AIParts'
 import type { useAnalyzeOverview } from '@/lib/api/ai'
 
 const HIGH_DAY = 4
+const HEADLINE_WORDS = 15
+const LONG_SUMMARY_CHARS = 140
 const MAX_BAR = 64
 const MIN_BAR = 14
 const WEEKDAY: Intl.DateTimeFormatOptions = { weekday: 'short', timeZone: 'UTC' }
@@ -41,11 +43,18 @@ function Highlighted({ text, terms }: { text: string; terms: string[] }) {
   )
 }
 
+function firstSentence(text: string): string {
+  const sentence = text.trim().split(/(?<=[.!?])\s+/)[0] ?? ''
+  const words = sentence.split(/\s+/)
+  return words.length > HEADLINE_WORDS ? `${words.slice(0, HEADLINE_WORDS).join(' ')}…` : sentence
+}
+
 function DueForecast({ areaId }: { areaId?: string }) {
   const { t } = useTranslation('ai')
   const { number, dateTime } = useFormatters()
   const summary = useDashboardSummary({ area_id: areaId })
   const days = summary.data?.due_by_day ?? []
+  if (summary.isPending) return <Skeleton className="bg-feature-row h-36" />
   const today = summary.data?.range.date_to
   const total = days.reduce((sum, item) => sum + item.count, 0)
   const peak = Math.max(1, ...days.map((item) => item.count))
@@ -114,13 +123,13 @@ function RecommendationCard({ insight, index, onNavigate }: { insight: OverviewI
       : null
 
   return (
-    <li className="bg-feature-row rounded-inner flex items-center gap-4 p-4">
-      {code && <span className="text-code text-muted-foreground shrink-0 font-mono">{code}</span>}
-      <p className="text-body min-w-0 flex-1">
-        {text(recommendation.title)}
-        {recommendation.detail && <span className="text-muted-foreground"> {text(recommendation.detail)}</span>}
-      </p>
-      <div className="flex shrink-0 items-center gap-2">
+    <li className="bg-feature-row rounded-inner grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-4 p-4">
+      <span className="text-code text-muted-foreground font-mono">{code}</span>
+      <div className="min-w-0">
+        <p className="text-body truncate font-semibold">{text(recommendation.title)}</p>
+        {recommendation.detail && <p className="text-caption text-muted-foreground line-clamp-2">{text(recommendation.detail)}</p>}
+      </div>
+      <div className="flex items-center gap-2">
         {target?.request_id && <ReassignAction requestId={target.request_id} code={code ?? ''} />}
         {link && (
           <Link
@@ -153,8 +162,19 @@ export function OverviewPanel({ insight, notice, areaId, regenerate, onClose }: 
   const feedback = useInsightFeedback()
   const summary = useDashboardSummary({ area_id: areaId })
   const [choice, setChoice] = useState<boolean | null>(null)
+  const [expanded, setExpanded] = useState(false)
+  const attempted = useRef(false)
   const stages = SLA_STAGES.map((stage) => t(`requests:status.${stage}`))
   const recommendations = insight?.content.recommendations ?? []
+  const summaryText = insight ? text(insight.content.summary) : ''
+  const headline = insight?.content.headline ? text(insight.content.headline) || firstSentence(summaryText) : firstSentence(summaryText)
+  const { mutate: generate, isPending: generating, isError: generateFailed } = regenerate
+
+  useEffect(() => {
+    if (insight || generating || generateFailed || attempted.current) return
+    attempted.current = true
+    generate()
+  }, [insight, generating, generateFailed, generate])
 
   const rate = (useful: boolean) => {
     if (!insight) return
@@ -208,7 +228,7 @@ export function OverviewPanel({ insight, notice, areaId, regenerate, onClose }: 
           <div className="flex w-full flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-caption text-muted-foreground">
-                {t('ai:overview.panel.basedOn', { count: number(summary.data?.completed_total ?? 0) })}
+                {t('ai:overview.panel.basedOn', { count: number(summary.data?.baseline_requests ?? 0) })}
               </p>
               {recommendations.length > 0 && (
                 <div role="group" aria-label={t('ai:overview.panel.feedback')} className="flex items-center gap-2">
@@ -226,21 +246,44 @@ export function OverviewPanel({ insight, notice, areaId, regenerate, onClose }: 
         ) : undefined
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
         {regenerate.isError && <InlineAlert tone="error">{translateError(regenerate.error)}</InlineAlert>}
         <AINotice notice={notice} />
         {insight ? (
           <>
-            <p className="text-greeting" data-testid="overview-summary">
-              <Highlighted text={text(insight.content.summary)} terms={stages} />
-            </p>
+            <div className="flex flex-col gap-2">
+              <p className="text-greeting line-clamp-3 font-medium" data-testid="overview-headline">
+                <Highlighted text={headline} terms={stages} />
+              </p>
+              <p
+                className={`text-caption text-muted-foreground ${expanded ? '' : 'line-clamp-2'}`}
+                data-testid="overview-summary"
+              >
+                {summaryText}
+              </p>
+              {summaryText.length > LONG_SUMMARY_CHARS && (
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  onClick={() => {
+                    setExpanded((value) => !value)
+                  }}
+                  className="text-caption text-accent self-start rounded-full font-semibold"
+                >
+                  {expanded ? t('ai:overview.panel.less') : t('ai:overview.panel.more')}
+                </button>
+              )}
+            </div>
             <DueForecast areaId={areaId} />
             {recommendations.length > 0 && (
-              <ol aria-label={t('ai:overview.recommendations')} className="flex flex-col gap-3">
-                {recommendations.map((_, index) => (
-                  <RecommendationCard key={index} insight={insight} index={index} onNavigate={onClose} />
-                ))}
-              </ol>
+              <div className="relative min-h-0 flex-1">
+                <ol aria-label={t('ai:overview.recommendations')} className="flex h-full flex-col gap-3 overflow-y-auto pb-8">
+                  {recommendations.map((_, index) => (
+                    <RecommendationCard key={index} insight={insight} index={index} onNavigate={onClose} />
+                  ))}
+                </ol>
+                <div aria-hidden="true" className="from-feature pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t to-transparent" />
+              </div>
             )}
           </>
         ) : (

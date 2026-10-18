@@ -83,7 +83,9 @@
       "reassign": "Reassign",
       "basedOn": "Based on times from {{count}} past requests",
       "recommendation": "Recommendation {{index}}",
-      "feedback": "Rate the recommendations"
+      "feedback": "Rate the recommendations",
+      "more": "Show more",
+      "less": "Show less"
     }
   },
   "feedback": {
