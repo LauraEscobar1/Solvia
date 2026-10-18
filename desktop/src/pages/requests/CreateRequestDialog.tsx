@@ -1,3 +1,4 @@
+import { CalendarClock } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useId, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -7,6 +8,8 @@ import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
 import { Dialog } from '@/components/ui/Dialog'
 import { Select } from '@/components/ui/Select'
+import { InlineAlert } from '@/components/ui/States'
+import { TextArea } from '@/components/ui/TextArea'
 import { inputClass } from '@/components/ui/styles'
 import { useAreaOptions } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -39,14 +42,15 @@ function DueEstimateHint({ priority }: { priority: RequestValues['priority'] }) 
 
   if (!estimates.data) return null
   if (hours === null || hours === undefined) {
-    return <p className="text-muted-foreground text-xs">{t('create.noEstimate')}</p>
+    return <p className="text-caption text-muted-foreground">{t('create.noEstimate')}</p>
   }
   return (
-    <div role="status" className="bg-primary-soft text-primary rounded-lg px-3 py-2 text-sm">
-      <p className="font-medium">
-        {t('create.estimate', { date: dateTime(openedAt + hours * HOUR_MS) })}
-      </p>
-      <p className="text-xs opacity-80">{t('create.estimateHours', { hours })}</p>
+    <div role="status" className="bg-accent-soft text-accent-text rounded-inner flex items-start gap-3 px-4 py-3">
+      <CalendarClock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <div className="flex flex-col gap-0.5">
+        <p className="text-body font-semibold">{t('create.estimate', { date: dateTime(openedAt + hours * HOUR_MS) })}</p>
+        <p className="text-caption">{t('create.estimateHours', { hours })}</p>
+      </div>
     </div>
   )
 }
@@ -92,11 +96,10 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
           htmlFor={ids.description}
           error={errors.description?.message}
         >
-          <textarea
+          <TextArea
             id={ids.description}
             rows={4}
             aria-invalid={Boolean(errors.description)}
-            className={inputClass}
             {...register('description')}
           />
         </FormField>
@@ -126,14 +129,10 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
           </FormField>
         </div>
         <DueEstimateHint priority={priority} />
-        {create.error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {translateError(create.error)}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
+        {create.error && <InlineAlert tone="error">{translateError(create.error)}</InlineAlert>}
+        <div className="mt-2 flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="solid" disabled={create.isPending}>
+          <Button type="submit" variant="accent" loading={create.isPending}>
             {create.isPending ? t('common:actions.saving') : t('create.submit')}
           </Button>
         </div>

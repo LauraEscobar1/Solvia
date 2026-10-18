@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
 import { Dialog } from '@/components/ui/Dialog'
 import { Select } from '@/components/ui/Select'
-import { inputClass } from '@/components/ui/styles'
+import { InlineAlert } from '@/components/ui/States'
+import { TextArea } from '@/components/ui/TextArea'
 import { useAssignableUsers } from '@/lib/api/requests'
 import type { AllowedTransition, AreaRef, RequestStatus } from '@/lib/api/types'
 import { transitionAction } from '@/lib/requests/transitions'
@@ -102,22 +103,17 @@ export function TransitionDialog({
           htmlFor={ids.comment}
           error={errors.comment?.message}
         >
-          <textarea
+          <TextArea
             id={ids.comment}
             rows={3}
             aria-invalid={Boolean(errors.comment)}
-            className={inputClass}
             {...register('comment')}
           />
         </FormField>
-        {error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {error}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
+        {error && <InlineAlert tone="error">{error}</InlineAlert>}
+        <div className="mt-2 flex justify-end gap-2">
           <Button onClick={onCancel}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="solid" disabled={pending}>
+          <Button type="submit" variant="solid" loading={pending}>
             {pending ? t('common:actions.saving') : t('transitionDialog.confirm')}
           </Button>
         </div>
