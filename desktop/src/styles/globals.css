@@ -128,6 +128,10 @@
   --text-metric--line-height: 1;
   --text-metric--letter-spacing: -0.02em;
   --text-metric--font-weight: 600;
+  --text-tile: 2rem;
+  --text-tile--line-height: 1.1;
+  --text-tile--letter-spacing: -0.02em;
+  --text-tile--font-weight: 600;
   --text-greeting: 1.875rem;
   --text-greeting--line-height: 1.2;
   --text-greeting--letter-spacing: -0.02em;

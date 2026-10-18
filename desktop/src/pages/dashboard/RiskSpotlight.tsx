@@ -1,7 +1,8 @@
-import { ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowRight, ChartColumn, Clock, type LucideIcon, ShieldCheck, User } from 'lucide-react'
 import { type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { Grow } from '@/components/motion/Motion'
 import { ReassignButton } from '@/components/requests/ReassignButton'
 import { Avatar, EmptyAvatar } from '@/components/ui/Avatar'
 import { buttonClasses } from '@/components/ui/buttonStyles'
@@ -12,7 +13,7 @@ import { useRequestInsight } from '@/lib/api/ai'
 import { useAssignmentSuggestion, useRequest, useRequests } from '@/lib/api/requests'
 import { type RequestSummary, type RiskFactorRead, SLA_STAGES } from '@/lib/api/types'
 import { moveFocus } from '@/lib/focus'
-import { useFormatters, useLongDuration } from '@/lib/format'
+import { useDurationParts, useFormatters } from '@/lib/format'
 import { riskLevel, MEDIUM_RISK } from '@/lib/requests/tones'
 import { useDueLabel } from '@/lib/requests/useDueLabel'
 
@@ -79,11 +80,56 @@ function factor(factors: RiskFactorRead[] | undefined, key: RiskFactorRead['fact
   return factors?.find((item) => item.factor === key)
 }
 
-function Tile({ value, label }: { value: string; label: string }) {
+const LOAD_REFERENCE = 10
+const CRITICAL_MULTIPLE = 2
+const MULTIPLE_FORMAT: Intl.NumberFormatOptions = { maximumFractionDigits: 1 }
+
+interface TileProps {
+  icon: LucideIcon
+  value: string
+  unit?: string
+  label: string
+  measured: number | null
+  reference: number | null
+}
+
+function Tile({ icon: Icon, value, unit, label, measured, reference }: TileProps) {
+  const { t } = useTranslation('dashboard')
+  const { number } = useFormatters()
+  const ratio = measured !== null && reference !== null && reference > 0 ? measured / reference : null
+  const exceeded = ratio !== null && ratio > 1
+  const critical = ratio !== null && ratio >= CRITICAL_MULTIPLE
+  const multiple = ratio === null ? '' : number(ratio, MULTIPLE_FORMAT)
+
   return (
-    <div className="bg-slate-soft/70 rounded-inner flex min-h-24 flex-col gap-1 border border-card-edge px-4 py-3">
-      <span className="text-heading">{value}</span>
-      <span className="text-caption font-semibold">{label}</span>
+    <div className="bg-slate-soft/80 rounded-inner border-slate-foreground/15 flex min-h-36 flex-col gap-3 border p-4">
+      <div className="flex items-start justify-between gap-2">
+        <Icon className="size-4" aria-hidden="true" />
+        {exceeded && (
+          <span
+            className={`text-micro inline-flex h-5 items-center rounded-full px-2 tabular-nums ${
+              critical ? 'bg-danger-soft text-danger-soft-foreground' : 'bg-warning-soft text-warning-soft-foreground'
+            }`}
+          >
+            <span aria-hidden="true">{`${multiple}×`}</span>
+            <span className="sr-only">{t('risk.tileMultiple', { value: multiple })}</span>
+          </span>
+        )}
+      </div>
+      <p className="text-tile tabular-nums">
+        {value}
+        {unit && <span className="text-body ml-1.5 font-medium">{unit}</span>}
+      </p>
+      <p className="text-caption truncate font-semibold">{label}</p>
+      {ratio !== null && (
+        <div aria-hidden="true" className="bg-slate-foreground/15 mt-auto h-1.5 overflow-hidden rounded-full">
+          <div className="h-full" style={{ width: `${Math.min(1, ratio) * 100}%` }}>
+            <Grow
+              className={`h-full rounded-full ${critical ? 'bg-danger' : exceeded ? 'bg-warning' : 'bg-slate-foreground'}`}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -91,7 +137,7 @@ function Tile({ value, label }: { value: string; label: string }) {
 function RiskDetail({ request }: { request: RequestSummary }) {
   const { t } = useTranslation(['dashboard', 'ai', 'requests', 'common'])
   const { number } = useFormatters()
-  const duration = useLongDuration()
+  const durationParts = useDurationParts()
   const language = useAILanguage()
   const insight = useRequestInsight(request.id, language)
   const suggestion = useAssignmentSuggestion(request.id)
@@ -100,8 +146,10 @@ function RiskDetail({ request }: { request: RequestSummary }) {
 
   const factors = insight.data?.risk?.factors
   const stage = factor(factors, 'stage_delay')
+  const idle = factor(factors, 'inactivity')
+  const parts = (hours: number | string | null | undefined) =>
+    typeof hours === 'number' ? durationParts(hours) : { value: t('common:noValue') }
   const load = factor(factors, 'assignee_load')
-  const stageName = t(`requests:status.${request.status}`)
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -138,18 +186,27 @@ function RiskDetail({ request }: { request: RequestSummary }) {
       ) : (
         <div className="grid gap-3 sm:grid-cols-3">
           <Tile
-            value={typeof stage?.value === 'number' ? duration(stage.value) : t('common:noValue')}
-            label={t('risk.inStage', { stage: stageName })}
+            icon={Clock}
+            {...parts(idle?.value)}
+            label={t('risk.idle')}
+            measured={typeof idle?.value === 'number' ? idle.value : null}
+            reference={idle?.reference ?? null}
           />
           <Tile
-            value={stage?.reference != null ? duration(stage.reference) : t('common:noValue')}
+            icon={ChartColumn}
+            {...parts(stage?.reference)}
             label={t('risk.reference', {
               kind: stage?.reference_kind ? t(`ai:referenceKind.${stage.reference_kind}`) : t('common:noValue'),
             })}
+            measured={typeof stage?.value === 'number' ? stage.value : null}
+            reference={stage?.reference ?? null}
           />
           <Tile
+            icon={User}
             value={typeof load?.value === 'number' ? number(load.value) : t('common:noValue')}
             label={request.assignee ? t('risk.assigneeLoad') : t('risk.noAssignee')}
+            measured={typeof load?.value === 'number' ? load.value : null}
+            reference={LOAD_REFERENCE}
           />
         </div>
       )}

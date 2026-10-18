@@ -51,5 +51,11 @@
   "password": {
     "show": "Show password",
     "hide": "Hide password"
+  },
+  "durationUnit": {
+    "minutes": "min",
+    "hours": "h",
+    "days_one": "day",
+    "days_other": "days"
   }
 }

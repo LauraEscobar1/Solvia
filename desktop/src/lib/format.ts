@@ -96,6 +96,20 @@ export function useCompactDuration(): (hours: number) => string {
   )
 }
 
+export function useDurationParts(): (hours: number) => { value: string; unit: string } {
+  const { t } = useTranslation()
+  const { number } = useFormatters()
+  return useCallback(
+    (hours: number) => {
+      if (hours < 1) return { value: number(Math.max(1, Math.round(hours * 60))), unit: t('durationUnit.minutes') }
+      if (hours < COMPACT_DAYS_FROM_HOURS) return { value: number(Math.round(hours)), unit: t('durationUnit.hours') }
+      const days = Math.round(hours / 24)
+      return { value: number(days), unit: t('durationUnit.days', { count: days }) }
+    },
+    [number, t],
+  )
+}
+
 export function useLongDuration(): (hours: number) => string {
   const { t } = useTranslation()
   const { number } = useFormatters()

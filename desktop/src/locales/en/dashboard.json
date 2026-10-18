@@ -116,7 +116,9 @@
     "reassignNow": "Reassign now",
     "confirmTitle": "Reassign {{code}}",
     "confirmMessage": "{{code}} will go to {{name}}, who has {{count}} open requests.",
-    "confirm": "Reassign"
+    "confirm": "Reassign",
+    "idle": "without activity",
+    "tileMultiple": "{{value}} times the reference"
   },
   "mine": {
     "title": "My requests",

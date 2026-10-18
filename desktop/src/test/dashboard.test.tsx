@@ -174,10 +174,15 @@ describe('panel', () => {
     expect(tabs[0]).toHaveTextContent('91')
     const panel = screen.getByRole('tabpanel')
     expect(within(panel).getByText('Reembolso de matrícula por doble cobro')).toBeInTheDocument()
-    expect(await within(panel).findByText('6 días')).toBeInTheDocument()
-    expect(within(panel).getByText('en Asignada')).toBeInTheDocument()
-    expect(within(panel).getByText('referencia: P90 del área')).toBeInTheDocument()
-    expect(within(panel).getByText('14')).toBeInTheDocument()
+    const idle = (await within(panel).findByText('sin movimiento')).parentElement as HTMLElement
+    expect(idle).toHaveTextContent('6días')
+    expect(idle).toHaveTextContent('11,7×')
+    const reference = within(panel).getByText('referencia: P90 del área').parentElement as HTMLElement
+    expect(reference).toHaveTextContent('1día')
+    expect(reference).toHaveTextContent('6×')
+    const load = within(panel).getByText('abiertas tiene su responsable').parentElement as HTMLElement
+    expect(load).toHaveTextContent('14')
+    expect(load).toHaveTextContent('1,4×')
     expect(await within(panel).findByText('Reasignar a Pablo Ortiz, con 5 abiertas.')).toBeInTheDocument()
 
     tabs[0]?.focus()

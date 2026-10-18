@@ -116,7 +116,9 @@
     "reassignNow": "Reasignar ahora",
     "confirmTitle": "Reasignar {{code}}",
     "confirmMessage": "{{code}} pasará a {{name}}, que tiene {{count}} solicitudes abiertas.",
-    "confirm": "Reasignar"
+    "confirm": "Reasignar",
+    "idle": "sin movimiento",
+    "tileMultiple": "{{value}} veces la referencia"
   },
   "mine": {
     "title": "Mis solicitudes",
