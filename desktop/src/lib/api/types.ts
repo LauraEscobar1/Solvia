@@ -215,6 +215,8 @@ export interface DashboardSummary {
   due_soon_high_risk: number
   stalled_forgotten: number
   open_by_stage: StageCounts
+  due_by_day: { day: string; count: number }[]
+  completed_total: number
   range: DateRange
 }
 

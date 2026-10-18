@@ -125,6 +125,14 @@ export function makeSummary(overrides: Partial<DashboardSummary> = {}): Dashboar
     due_soon_high_risk: 6,
     stalled_forgotten: 2,
     open_by_stage: { received: 34, assigned: 41, in_progress: 53 },
+    due_by_day: [
+      { day: '2026-10-15', count: 3 },
+      { day: '2026-10-16', count: 5 },
+      { day: '2026-10-19', count: 2 },
+      { day: '2026-10-20', count: 4 },
+      { day: '2026-10-21', count: 1 },
+    ],
+    completed_total: 1240,
     range: SUMMARY_RANGE,
     ...overrides,
   }

@@ -14,9 +14,10 @@ interface ReassignButtonProps {
   suggestion: AssignmentSuggestion
   variant?: ButtonVariant
   size?: ButtonSize
+  label?: string
 }
 
-export function ReassignButton({ requestId, code, version, suggestion, variant = 'accent', size = 'md' }: ReassignButtonProps) {
+export function ReassignButton({ requestId, code, version, suggestion, variant = 'accent', size = 'md', label }: ReassignButtonProps) {
   const { t } = useTranslation('dashboard')
   const translateError = useTranslateError()
   const { assign } = useRequestActions(requestId)
@@ -32,7 +33,7 @@ export function ReassignButton({ requestId, code, version, suggestion, variant =
           setConfirming(true)
         }}
       >
-        {t('risk.reassignNow')}
+        {label ?? t('risk.reassignNow')}
       </Button>
       {confirming && (
         <ConfirmDialog

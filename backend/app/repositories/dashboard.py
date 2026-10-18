@@ -195,6 +195,36 @@ class DashboardRepository:
         )
         return total or 0
 
+    async def completed_total(self, target: DashboardFilter) -> int:
+        total = await self._session.scalar(
+            select(func.count())
+            .select_from(ServiceRequest)
+            .where(*target.conditions(), ServiceRequest.status == RequestStatus.COMPLETED)
+        )
+        return total or 0
+
+    async def due_per_day(
+        self,
+        target: DashboardFilter,
+        rules: SlaRules,
+        timezone: str,
+        *,
+        start: datetime,
+        end: datetime,
+    ) -> dict[date, int]:
+        days = (
+            select(cast(func.timezone(timezone, ServiceRequest.due_at), Date).label("day"))
+            .where(
+                *target.conditions(),
+                rules.is_open,
+                ServiceRequest.due_at >= start,
+                ServiceRequest.due_at < end,
+            )
+            .subquery()
+        )
+        rows = await self._session.execute(select(days.c.day, func.count()).group_by(days.c.day))
+        return dict(rows.all())
+
     async def by_status(
         self, target: DashboardFilter, *, start: datetime, end: datetime
     ) -> dict[RequestStatus, int]:

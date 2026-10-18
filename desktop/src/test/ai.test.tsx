@@ -20,12 +20,14 @@ import { RequestTable } from '@/pages/requests/RequestTable'
 import { useSessionStore } from '@/stores/session'
 import {
   EMPTY_PAGE,
+  errorResponse,
   jsonResponse,
   makeRequest,
   makeSummary,
   makeTokens,
   makeUser,
   mockApi,
+  type RecordedRequest,
 } from './fixtures'
 
 vi.mock('@/lib/secureStore', () => ({
@@ -169,9 +171,24 @@ function renderInRouter(element: ReactElement, user: User = makeUser()) {
   )
 }
 
+function panelApi(overview: unknown) {
+  return (request: RecordedRequest) => {
+    const path = request.path
+    if (path.startsWith('/api/v1/ai/overview')) return jsonResponse(overview)
+    if (path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+    if (path.endsWith('/assignment-suggestion')) {
+      return jsonResponse({ suggestion: { assignee: { id: 'user-5', full_name: 'Pablo Ortiz' }, open_count: 5, current_open_count: 14 } })
+    }
+    if (path === '/api/v1/requests/req-106') {
+      return jsonResponse({ ...makeRequest({ id: 'req-106', code: 'SOL-0106' }), description: 'x', created_at: '2026-10-10T10:00:00Z', updated_at: '2026-10-10T10:00:00Z', allowed_transitions: [], permissions: { editable_fields: [], can_assign: true, can_comment: true } })
+    }
+    return errorResponse('common.not_found', 404)
+  }
+}
+
 describe('banner de IA en el panel', () => {
   it('rota los hallazgos y abre las recomendaciones con enlaces y la etiqueta de verificación', async () => {
-    mockApi(() => jsonResponse(AI_OVERVIEW))
+    mockApi(panelApi(AI_OVERVIEW))
     const user = userEvent.setup()
     renderInRouter(<AIBanner />)
 
@@ -185,19 +202,24 @@ describe('banner de IA en el panel', () => {
     expect(within(banner).getByRole('button', { name: 'Reanudar la rotación' })).toBeInTheDocument()
 
     await user.click(within(banner).getByRole('button', { name: 'Ver 2 recomendaciones' }))
-    const sheet = screen.getByRole('dialog', { name: 'Recomendaciones de IA' })
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
     expect(within(sheet).getByTestId('overview-summary')).toHaveTextContent('Soporte TI acumula solicitudes recibidas.')
     expect(within(sheet).getByRole('link', { name: 'Ver SOL-0106' })).toHaveAttribute('href', '/requests/req-106')
-    expect(within(sheet).getByRole('link', { name: 'Ver solicitudes' })).toHaveAttribute(
+    expect(within(sheet).getByRole('link', { name: 'Ver' })).toHaveAttribute(
       'href',
       '/requests?status=received&area_id=area-1',
     )
-    expect(within(sheet).getByText('IA')).toBeInTheDocument()
+    expect(within(sheet).getByRole('region', { name: 'Vencimientos previstos · próximos 5 días' })).toBeInTheDocument()
+    expect(within(sheet).getByLabelText('Hoy: 3 por vencer')).toBeInTheDocument()
+    expect(within(sheet).getByLabelText('vie: 5 por vencer')).toBeInTheDocument()
+    expect(within(sheet).getByText('15 en total')).toBeInTheDocument()
+    expect(within(sheet).getByText(/Basado en tiempos de 1\.?240 solicitudes previas/)).toBeInTheDocument()
+    expect(await within(sheet).findByRole('button', { name: 'Reasignar' })).toBeInTheDocument()
     expect(within(sheet).getByText('Generado por IA: verifica antes de actuar')).toBeInTheDocument()
   })
 
   it('en respaldo traduce el análisis por reglas y muestra el aviso', async () => {
-    mockApi(() => jsonResponse(RULE_OVERVIEW))
+    mockApi(panelApi(RULE_OVERVIEW))
     const user = userEvent.setup()
     renderInRouter(<AIBanner />)
 
@@ -206,9 +228,8 @@ describe('banner de IA en el panel', () => {
       'Hay 36 solicitudes abiertas: 5 vencidas, 4 por vencer y 7 sin movimiento.',
     )
     await user.click(within(banner).getByRole('button', { name: 'Ver 1 recomendación' }))
-    const sheet = screen.getByRole('dialog', { name: 'Recomendaciones de IA' })
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
     expect(within(sheet).getByText('Aliviar Soporte TI · Recibida')).toBeInTheDocument()
-    expect(within(sheet).getByText('Reglas')).toBeInTheDocument()
     expect(within(sheet).getByRole('status')).toHaveTextContent('Se agotó el presupuesto diario de IA.')
     expect(within(sheet).queryByText('Generado por IA: verifica antes de actuar')).toBeNull()
   })
@@ -219,7 +240,9 @@ describe('banner de IA en el panel', () => {
         return jsonResponse(AI_OVERVIEW)
       }
       if (request.path.includes('/feedback')) return new Response(null, { status: 204 })
-      return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/ai/overview')) return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+      return errorResponse('common.not_found', 404)
     })
     const user = userEvent.setup()
     renderInRouter(<AIBanner />)
@@ -227,7 +250,7 @@ describe('banner de IA en el panel', () => {
     const banner = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
     expect(await within(banner).findByText('Todavía no hay un análisis.')).toBeInTheDocument()
     await user.click(within(banner).getByRole('button', { name: 'Ver recomendaciones' }))
-    const sheet = screen.getByRole('dialog', { name: 'Recomendaciones de IA' })
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
     await user.click(within(sheet).getByRole('button', { name: 'Regenerar' }))
     await within(sheet).findByTestId('overview-summary')
     await user.click(within(sheet).getAllByRole('button', { name: 'Útil' })[0] as HTMLElement)

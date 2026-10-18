@@ -71,6 +71,19 @@
       "workload": "Workload",
       "trend": "Trend",
       "sla": "SLA"
+    },
+    "panel": {
+      "badge": "AI analysis",
+      "close": "Close",
+      "dueTitle": "Forecast due dates · next 5 days",
+      "dueTotal": "{{count}} in total",
+      "dueDay": "{{day}}: {{count}} due",
+      "today": "Today",
+      "view": "View",
+      "reassign": "Reassign",
+      "basedOn": "Based on times from {{count}} past requests",
+      "recommendation": "Recommendation {{index}}",
+      "feedback": "Rate the recommendations"
     }
   },
   "feedback": {

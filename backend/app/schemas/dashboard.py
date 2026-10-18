@@ -26,6 +26,11 @@ class StageCounts(BaseModel):
     in_progress: int
 
 
+class DueDay(BaseModel):
+    day: date
+    count: int
+
+
 class DashboardSummary(BaseModel):
     open: int
     due_soon: int
@@ -40,6 +45,8 @@ class DashboardSummary(BaseModel):
     due_soon_high_risk: int
     stalled_forgotten: int
     open_by_stage: StageCounts
+    due_by_day: list[DueDay]
+    completed_total: int
     range: DateRangeRead
 
 

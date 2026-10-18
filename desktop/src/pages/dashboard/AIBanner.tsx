@@ -1,15 +1,13 @@
-import { ArrowRight, Pause, Play, RefreshCw, Sparkles } from 'lucide-react'
+import { ArrowRight, Pause, Play, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AINotice } from '@/components/ai/AIParts'
-import { OverviewContent } from '@/components/ai/OverviewContent'
+import { OverviewPanel } from '@/components/ai/OverviewPanel'
 import { Button } from '@/components/ui/Button'
-import { Dialog } from '@/components/ui/Dialog'
 import { IconButton } from '@/components/ui/IconButton'
-import { EmptyState, InlineAlert, Skeleton } from '@/components/ui/States'
+import { Skeleton } from '@/components/ui/States'
 import { useAILanguage, useAIText } from '@/lib/ai/messages'
 import { useAnalyzeOverview, useOverview } from '@/lib/api/ai'
-import { useTranslateError } from '@/lib/api/errors'
 import { useFormatters } from '@/lib/format'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 
@@ -18,7 +16,6 @@ const ROTATION_MS = 7000
 export function AIBanner({ areaId }: { areaId?: string }) {
   const { t } = useTranslation('ai')
   const text = useAIText()
-  const translateError = useTranslateError()
   const { relative } = useFormatters()
   const language = useAILanguage()
   const reducedMotion = useReducedMotion()
@@ -136,40 +133,15 @@ export function AIBanner({ areaId }: { areaId?: string }) {
       </Button>
 
       {open && (
-        <Dialog
-          title={t('overview.title')}
-          variant="sheet"
+        <OverviewPanel
+          insight={insight}
+          notice={notice}
+          areaId={areaId}
+          regenerate={regenerate}
           onClose={() => {
             setOpen(false)
           }}
-          footer={
-            <Button
-              loading={regenerate.isPending}
-              onClick={() => {
-                regenerate.mutate()
-              }}
-            >
-              {!regenerate.isPending && <RefreshCw className="size-4" aria-hidden="true" />}
-              {regenerate.isPending ? t('analyzing') : t('overview.regenerate')}
-            </Button>
-          }
-        >
-          <div className="flex flex-col gap-4">
-            {regenerate.isError && <InlineAlert tone="error">{translateError(regenerate.error)}</InlineAlert>}
-            <AINotice notice={notice} />
-            {insight ? (
-              <OverviewContent
-                key={insight.id}
-                insight={insight}
-                onNavigate={() => {
-                  setOpen(false)
-                }}
-              />
-            ) : (
-              <EmptyState icon={Sparkles} title={t('overview.empty')} />
-            )}
-          </div>
-        </Dialog>
+        />
       )}
     </section>
   )

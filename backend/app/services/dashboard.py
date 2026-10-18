@@ -22,6 +22,7 @@ from app.schemas.dashboard import (
     DashboardRequestItem,
     DashboardSummary,
     DateRangeRead,
+    DueDay,
     RequestHighlights,
     StageCounts,
     StageFlow,
@@ -40,6 +41,8 @@ MAX_RANGE_DAYS = 366
 RECENT_COMPLETION_DAYS = 7
 HIGHLIGHT_LIMIT = 20
 OVERDUE_CHANGE_WINDOW = timedelta(hours=24)
+DUE_FORECAST_DAYS = 5
+FIRST_WEEKEND_DAY = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +87,14 @@ class DashboardService:
             start=period.start,
             end=period.end,
         )
+        forecast = self._forecast_days(period.today)
+        due_counts = await self._repository.due_per_day(
+            target,
+            rules,
+            self._timezone.key,
+            start=day_start(forecast[0], self._timezone),
+            end=day_end(forecast[-1], self._timezone),
+        )
         return DashboardSummary(
             open=row.open,
             due_soon=row.due_soon,
@@ -102,6 +113,8 @@ class DashboardService:
                 assigned=row.open_by_stage[RequestStatus.ASSIGNED],
                 in_progress=row.open_by_stage[RequestStatus.IN_PROGRESS],
             ),
+            completed_total=await self._repository.completed_total(target),
+            due_by_day=[DueDay(day=day, count=due_counts.get(day, 0)) for day in forecast],
             range=self._range(period),
         )
 
@@ -237,6 +250,16 @@ class DashboardService:
         if area_id is not None and area_id != actor.area_id:
             return []
         return [actor.area_id]
+
+    @staticmethod
+    def _forecast_days(today: date) -> list[date]:
+        days: list[date] = []
+        cursor = today
+        while len(days) < DUE_FORECAST_DAYS:
+            if cursor.weekday() < FIRST_WEEKEND_DAY:
+                days.append(cursor)
+            cursor += timedelta(days=1)
+        return days
 
     def _period(self, query: DashboardQuery, now: datetime) -> _Period:
         today = local_date(now, self._timezone)

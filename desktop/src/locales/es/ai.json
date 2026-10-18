@@ -71,6 +71,19 @@
       "workload": "Carga",
       "trend": "Tendencia",
       "sla": "SLA"
+    },
+    "panel": {
+      "badge": "Análisis IA",
+      "close": "Cerrar",
+      "dueTitle": "Vencimientos previstos · próximos 5 días",
+      "dueTotal": "{{count}} en total",
+      "dueDay": "{{day}}: {{count}} por vencer",
+      "today": "Hoy",
+      "view": "Ver",
+      "reassign": "Reasignar",
+      "basedOn": "Basado en tiempos de {{count}} solicitudes previas",
+      "recommendation": "Recomendación {{index}}",
+      "feedback": "Valorar las recomendaciones"
     }
   },
   "feedback": {

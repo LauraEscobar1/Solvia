@@ -17,6 +17,8 @@ interface DialogProps {
   footer?: ReactNode
   size?: keyof typeof SIZES
   variant?: 'center' | 'sheet'
+  tone?: 'default' | 'feature'
+  header?: (titleId: string, close: () => void) => ReactNode
 }
 
 export function Dialog({
@@ -27,6 +29,8 @@ export function Dialog({
   footer,
   size = 'md',
   variant = 'center',
+  tone = 'default',
+  header,
 }: DialogProps) {
   const { t } = useTranslation()
   const titleId = useId()
@@ -90,10 +94,14 @@ export function Dialog({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={[
-          'bg-surface-solid border-card-edge shadow-pop flex w-full flex-col border outline-none',
+          tone === 'feature'
+            ? 'bg-feature text-feature-foreground on-dark border-card-edge shadow-pop flex w-full flex-col border outline-none'
+            : 'bg-surface-solid border-card-edge shadow-pop flex w-full flex-col border outline-none',
           sheet ? 'rounded-l-card h-full max-w-xl' : `rounded-card max-h-full ${SIZES[size]}`,
         ].join(' ')}
       >
+        {header?.(titleId, onClose)}
+        {!header && (
         <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
           <div className="flex min-w-0 flex-col gap-1">
             <h2 id={titleId} className="text-heading">
@@ -116,6 +124,7 @@ export function Dialog({
             }}
           />
         </header>
+        )}
         <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
         {footer && (
           <footer className="border-divider flex flex-wrap justify-end gap-2 border-t px-6 py-4">{footer}</footer>
