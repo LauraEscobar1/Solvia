@@ -108,7 +108,7 @@ export function LoginPage() {
               {translateError(submitError)}
             </p>
           )}
-          <Button type="submit" variant="primary" disabled={isSubmitting} className="py-2">
+          <Button type="submit" variant="solid" disabled={isSubmitting} className="py-2">
             {isSubmitting ? t('login.submitting') : t('login.submit')}
           </Button>
         </form>

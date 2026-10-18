@@ -42,6 +42,7 @@
 
   --danger: #d23a2f;
   --danger-text: #bb1f19;
+  --danger-foreground: #ffffff;
   --danger-soft: #fbd5cf;
   --danger-soft-foreground: #8f1f1a;
   --danger-strong: #ff8a7d;
@@ -56,6 +57,8 @@
   --stalled-soft-foreground: #3e3480;
   --neutral-soft: #e3e7eb;
   --neutral-soft-foreground: #3d4650;
+  --pill-inner: #fef3f1;
+  --pill-inner-neutral: #fbfdfe;
 
   --risk-high-on-feature: #ff9d92;
   --risk-medium-on-feature: #ffcf73;
@@ -124,6 +127,7 @@
   --stalled-text: #b9aff5;
   --neutral-soft: #3c444d;
   --neutral-soft-foreground: #c7cfd8;
+  --pill-inner-neutral: #4d5661;
 
   --risk-track: #3e4b57;
 

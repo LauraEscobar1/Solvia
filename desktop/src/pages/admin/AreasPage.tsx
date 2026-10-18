@@ -40,7 +40,7 @@ export function AreasPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchInput value={q} label={t('areas.search')} onChange={onSearch} />
         <Button
-          variant="primary"
+          variant="solid"
           onClick={() => {
             setEditing('new')
           }}
@@ -130,7 +130,7 @@ export function AreasPage() {
           confirmLabel={
             toggling.is_active ? t('common:actions.deactivate') : t('common:actions.activate')
           }
-          variant={toggling.is_active ? 'danger' : 'primary'}
+          variant={toggling.is_active ? 'danger' : 'solid'}
           pending={setActive.isPending}
           error={setActive.error ? translateError(setActive.error) : null}
           onCancel={closeToggle}

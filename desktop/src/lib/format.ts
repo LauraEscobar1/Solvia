@@ -73,3 +73,24 @@ export function useDurationFormatter(): (hours: number) => string {
     [number, t],
   )
 }
+
+export type CompactUnit = 'minutes' | 'hours' | 'days'
+
+export function compactDuration(hours: number): { unit: CompactUnit; value: number } {
+  const span = Math.abs(hours)
+  if (span < 1) return { unit: 'minutes', value: Math.max(1, Math.round(span * 60)) }
+  if (span < DAYS_FROM_HOURS) return { unit: 'hours', value: Math.round(span) }
+  return { unit: 'days', value: Math.round(span / 24) }
+}
+
+export function useCompactDuration(): (hours: number) => string {
+  const { t } = useTranslation()
+  const { number } = useFormatters()
+  return useCallback(
+    (hours: number) => {
+      const { unit, value } = compactDuration(hours)
+      return t(`duration.${unit}`, { value: number(value) })
+    },
+    [number, t],
+  )
+}

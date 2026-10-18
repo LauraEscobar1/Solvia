@@ -169,7 +169,7 @@ export function SlaPage() {
           </p>
         )}
         <div>
-          <Button type="submit" variant="primary" disabled={save.isPending || !policies.data}>
+          <Button type="submit" variant="solid" disabled={save.isPending || !policies.data}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>

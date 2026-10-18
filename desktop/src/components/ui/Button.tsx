@@ -1,29 +1,36 @@
-import type { ButtonHTMLAttributes } from 'react'
+import { LoaderCircle } from 'lucide-react'
+import type { ButtonHTMLAttributes, Ref } from 'react'
+import { type ButtonSize, type ButtonVariant, buttonClasses } from './buttonStyles'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
+export type { ButtonSize, ButtonVariant } from './buttonStyles'
 
-const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:opacity-90',
-  secondary: 'bg-surface border hover:bg-surface-muted',
-  danger: 'bg-danger text-white hover:opacity-90',
-  ghost: 'text-muted-foreground hover:bg-surface-muted hover:text-foreground',
-}
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
+  size?: ButtonSize
+  loading?: boolean
+  ref?: Ref<HTMLButtonElement>
 }
 
 export function Button({
-  variant = 'secondary',
+  variant = 'outline',
+  size = 'md',
+  loading = false,
   className = '',
   type = 'button',
+  disabled,
+  children,
   ...props
 }: ButtonProps) {
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${VARIANT_CLASSES[variant]} ${className}`}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={`${buttonClasses(variant, size)} ${className}`}
       {...props}
-    />
+    >
+      {loading && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}
+      {children}
+    </button>
   )
 }

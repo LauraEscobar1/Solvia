@@ -150,5 +150,12 @@
     "someone": "Someone",
     "change": "{{field}}: {{from}} → {{to}}",
     "empty": "(empty)"
+  },
+  "priorityLabel": "{{priority}} priority",
+  "due": {
+    "overdue": "Overdue by {{time}}",
+    "dueIn": "Due in {{time}}",
+    "stalled": "Idle for {{time}}",
+    "none": "No due date"
   }
 }

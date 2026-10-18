@@ -107,7 +107,7 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
         </p>
       )}
       <div>
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
+        <Button type="submit" variant="solid" disabled={isSubmitting}>
           {isSubmitting ? t('changePassword.submitting') : t('changePassword.submit')}
         </Button>
       </div>

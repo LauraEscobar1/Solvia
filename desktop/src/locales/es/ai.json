@@ -23,7 +23,8 @@
     "aiScore": "Riesgo estimado por la IA: {{score}} de 100",
     "causes": "Causas",
     "actions": "Acciones sugeridas",
-    "noInsight": "Aún no hay un análisis de esta solicitud."
+    "noInsight": "Aún no hay un análisis de esta solicitud.",
+    "scoreTitle": "Riesgo {{score}} de 100"
   },
   "factors": {
     "stage_delay": "Tiempo en la etapa",

@@ -29,6 +29,24 @@
   },
   "duration": {
     "hours": "{{value}} h",
-    "days": "{{value}} d"
+    "days": "{{value}} d",
+    "minutes": "{{value}} min"
+  },
+  "noValue": "—",
+  "breadcrumbs": "Ruta de navegación",
+  "states": {
+    "loading": "Cargando…",
+    "error": "No se pudo cargar esta información."
+  },
+  "pagination": {
+    "label": "Paginación",
+    "showing": "Mostrando {{count}} de {{total}}",
+    "previous": "Página anterior",
+    "next": "Página siguiente",
+    "page": "Página {{page}}"
+  },
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
   }
 }

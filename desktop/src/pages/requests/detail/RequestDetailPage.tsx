@@ -81,7 +81,7 @@ function CommentBox({
         </p>
       )}
       <div>
-        <Button type="submit" variant="primary" disabled={comment.isPending}>
+        <Button type="submit" variant="solid" disabled={comment.isPending}>
           {t('detail.comment.submit')}
         </Button>
       </div>

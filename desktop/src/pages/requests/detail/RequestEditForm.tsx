@@ -148,7 +148,7 @@ export function RequestEditForm({ detail, update }: RequestEditFormProps) {
         <p className="text-muted-foreground text-xs">{t('detail.edit.readOnly')}</p>
       ) : (
         <div className="flex gap-2">
-          <Button type="submit" variant="primary" disabled={!isDirty || update.isPending}>
+          <Button type="submit" variant="solid" disabled={!isDirty || update.isPending}>
             {update.isPending ? t('common:actions.saving') : t('detail.edit.save')}
           </Button>
           {isDirty && (

@@ -29,6 +29,24 @@
   },
   "duration": {
     "hours": "{{value}} h",
-    "days": "{{value}} d"
+    "days": "{{value}} d",
+    "minutes": "{{value}} min"
+  },
+  "noValue": "—",
+  "breadcrumbs": "Breadcrumb",
+  "states": {
+    "loading": "Loading…",
+    "error": "This information couldn't be loaded."
+  },
+  "pagination": {
+    "label": "Pagination",
+    "showing": "Showing {{count}} of {{total}}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}}"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
   }
 }

@@ -56,7 +56,7 @@ export function RequestActions({ detail, actions }: RequestActionsProps) {
         {detail.allowed_transitions.map((target) => (
           <Button
             key={target.to}
-            variant={target.to === 'cancelled' ? 'danger' : 'primary'}
+            variant={target.to === 'cancelled' ? 'danger' : 'solid'}
             disabled={pending}
             onClick={() => {
               start(target)

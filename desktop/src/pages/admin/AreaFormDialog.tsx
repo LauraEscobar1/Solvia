@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
+import { Dialog } from '@/components/ui/Dialog'
 import { inputClass, selectClass } from '@/components/ui/styles'
 import { useManagerOptions, useSaveArea } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -56,7 +56,7 @@ export function AreaFormDialog({ area, onClose }: AreaFormDialogProps) {
   })
 
   return (
-    <Modal title={area ? t('areas.edit') : t('areas.new')} onClose={onClose}>
+    <Dialog title={area ? t('areas.edit') : t('areas.new')} onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -103,11 +103,11 @@ export function AreaFormDialog({ area, onClose }: AreaFormDialogProps) {
         )}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={save.isPending}>
+          <Button type="submit" variant="solid" disabled={save.isPending}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

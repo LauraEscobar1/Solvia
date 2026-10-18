@@ -121,7 +121,7 @@ export function RequestsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ViewToggle />
         <Button
-          variant="primary"
+          variant="solid"
           onClick={() => {
             setCreating(true)
           }}

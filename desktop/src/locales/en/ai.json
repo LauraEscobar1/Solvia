@@ -23,7 +23,8 @@
     "aiScore": "Risk estimated by AI: {{score}} out of 100",
     "causes": "Causes",
     "actions": "Suggested actions",
-    "noInsight": "There is no analysis of this request yet."
+    "noInsight": "There is no analysis of this request yet.",
+    "scoreTitle": "Risk {{score}} out of 100"
   },
   "factors": {
     "stage_delay": "Time in stage",

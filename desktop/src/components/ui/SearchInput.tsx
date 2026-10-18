@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { inputClass } from './styles'
+import { PILL_FIELD } from './SelectPill'
 
 const DEBOUNCE_MS = 300
 
@@ -8,9 +8,10 @@ interface SearchInputProps {
   value: string
   label: string
   onChange: (value: string) => void
+  className?: string
 }
 
-export function SearchInput({ value, label, onChange }: SearchInputProps) {
+export function SearchInput({ value, label, onChange, className = '' }: SearchInputProps) {
   const [draft, setDraft] = useState(value)
 
   useEffect(() => {
@@ -24,12 +25,9 @@ export function SearchInput({ value, label, onChange }: SearchInputProps) {
   }, [draft, value, onChange])
 
   return (
-    <label className="relative block w-full max-w-xs">
+    <label className={`${PILL_FIELD} pr-4 ${className}`}>
       <span className="sr-only">{label}</span>
-      <Search
-        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        aria-hidden="true"
-      />
+      <Search className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
       <input
         type="search"
         value={draft}
@@ -37,7 +35,7 @@ export function SearchInput({ value, label, onChange }: SearchInputProps) {
         onChange={(event) => {
           setDraft(event.target.value)
         }}
-        className={`${inputClass} pl-9`}
+        className="placeholder:text-subtle-foreground min-w-0 flex-1 bg-transparent font-medium outline-none"
       />
     </label>
   )

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
+import { Dialog } from '@/components/ui/Dialog'
 import { inputClass, selectClass } from '@/components/ui/styles'
 import { useAreaOptions } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -72,7 +72,7 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
   })
 
   return (
-    <Modal title={t('create.title')} onClose={onClose}>
+    <Dialog title={t('create.title')} onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -133,11 +133,11 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
         )}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={create.isPending}>
+          <Button type="submit" variant="solid" disabled={create.isPending}>
             {create.isPending ? t('common:actions.saving') : t('create.submit')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

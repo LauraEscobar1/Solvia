@@ -71,7 +71,7 @@ export function UsersPage() {
           </label>
         </div>
         <Button
-          variant="primary"
+          variant="solid"
           onClick={() => {
             setEditing('new')
           }}
@@ -172,7 +172,7 @@ export function UsersPage() {
           confirmLabel={
             toggling.is_active ? t('common:actions.deactivate') : t('common:actions.activate')
           }
-          variant={toggling.is_active ? 'danger' : 'primary'}
+          variant={toggling.is_active ? 'danger' : 'solid'}
           pending={setActive.isPending}
           error={setActive.error ? translateError(setActive.error) : null}
           onCancel={closeToggle}

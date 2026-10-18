@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
+import { Dialog } from '@/components/ui/Dialog'
 import { inputClass, selectClass } from '@/components/ui/styles'
 import { type UserInput, useAreaOptions, useSaveUser } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -84,7 +84,7 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
   })
 
   return (
-    <Modal title={user ? t('users.edit') : t('users.new')} onClose={onClose}>
+    <Dialog title={user ? t('users.edit') : t('users.new')} onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -168,11 +168,11 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
         )}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={save.isPending}>
+          <Button type="submit" variant="solid" disabled={save.isPending}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }
