@@ -22,6 +22,11 @@
   --color-subtle-foreground: var(--subtle-foreground);
   --color-nav-foreground: var(--nav-foreground);
   --color-ink: var(--ink);
+  --color-preview-light: var(--preview-light);
+  --color-preview-light-bar: var(--preview-light-bar);
+  --color-preview-dark: var(--preview-dark);
+  --color-preview-dark-bar: var(--preview-dark-bar);
+  --color-preview-rail: var(--preview-rail);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);

@@ -3,23 +3,23 @@ import type { ReactNode } from 'react'
 export type StatusTone = 'success' | 'warning' | 'danger' | 'neutral'
 
 const TONE_CLASSES: Record<StatusTone, string> = {
-  success: 'bg-success-soft text-success',
-  warning: 'bg-warning-soft text-warning',
-  danger: 'bg-danger-soft text-danger',
-  neutral: 'bg-surface-muted text-muted-foreground',
+  success: 'bg-accent-soft text-accent-text',
+  warning: 'bg-warning-soft text-warning-soft-foreground',
+  danger: 'bg-danger-soft text-danger-soft-foreground',
+  neutral: 'bg-neutral-soft text-neutral-soft-foreground',
 }
 
 const DOT_CLASSES: Record<StatusTone, string> = {
-  success: 'bg-success',
+  success: 'bg-accent-line',
   warning: 'bg-warning',
   danger: 'bg-danger',
-  neutral: 'bg-muted-foreground',
+  neutral: 'bg-subtle-foreground',
 }
 
 export function StatusBadge({ tone, children }: { tone: StatusTone; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${TONE_CLASSES[tone]}`}
+      className={`text-caption inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 font-semibold whitespace-nowrap ${TONE_CLASSES[tone]}`}
     >
       <span className={`size-1.5 rounded-full ${DOT_CLASSES[tone]}`} aria-hidden="true" />
       {children}

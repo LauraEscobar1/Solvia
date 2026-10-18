@@ -1,5 +1,7 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Switch } from '@/components/ui/Checkbox'
+import { InlineAlert } from '@/components/ui/States'
 import {
   ensureNotificationPermission,
   nativeNotificationsAvailable,
@@ -26,28 +28,23 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="flex items-center gap-3 text-sm font-medium">
-        <input
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-4">
+        <label htmlFor={inputId} className="text-body font-semibold">
+          {t('notifications.critical')}
+        </label>
+        <Switch
           id={inputId}
-          type="checkbox"
-          className="accent-primary size-4"
+          label={t('notifications.critical')}
           checked={enabled && available}
           disabled={!available}
-          onChange={(event) => {
-            void onToggle(event.target.checked)
+          onChange={(checked) => {
+            void onToggle(checked)
           }}
         />
-        {t('notifications.critical')}
-      </label>
-      {!available && (
-        <p className="text-muted-foreground text-xs">{t('notifications.unavailable')}</p>
-      )}
-      {denied && (
-        <p role="alert" className="text-danger text-xs">
-          {t('notifications.denied')}
-        </p>
-      )}
+      </div>
+      {!available && <p className="text-caption text-muted-foreground">{t('notifications.unavailable')}</p>}
+      {denied && <InlineAlert tone="error">{t('notifications.denied')}</InlineAlert>}
     </div>
   )
 }

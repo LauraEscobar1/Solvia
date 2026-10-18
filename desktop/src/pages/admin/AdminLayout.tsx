@@ -10,17 +10,15 @@ export function AdminLayout() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('nav:admin')} />
-      <nav aria-label={t('sections')} className="flex gap-1 border-b">
+      <nav aria-label={t('sections')} className="glass border-card-edge inline-flex items-center gap-1 self-start rounded-full border p-1">
         {TABS.map((tab) => (
           <NavLink
             key={tab}
             to={tab}
             className={({ isActive }) =>
               [
-                '-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground border-transparent',
+                'text-body inline-flex h-8 items-center rounded-full px-4 font-semibold whitespace-nowrap transition-colors',
+                isActive ? 'bg-solid text-solid-foreground' : 'text-muted-foreground hover:text-foreground',
               ].join(' ')
             }
           >

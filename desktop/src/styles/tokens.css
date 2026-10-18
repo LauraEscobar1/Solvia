@@ -91,6 +91,12 @@
   --elevation-card: inset 0 1px 0 0 var(--card-edge), 0 18px 40px -24px rgb(30 45 70 / 0.35);
   --elevation-pop: 0 24px 48px -16px rgb(16 24 40 / 0.3);
   --elevation-accent: 0 10px 28px -10px rgb(215 245 59 / 0.7);
+
+  --preview-light: #e7ecf3;
+  --preview-light-bar: #ffffff;
+  --preview-dark: #1d2024;
+  --preview-dark-bar: #3a4148;
+  --preview-rail: #1d2024;
 }
 
 .dark {

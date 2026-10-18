@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
 import { Dialog } from '@/components/ui/Dialog'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { Select } from '@/components/ui/Select'
+import { inputClass } from '@/components/ui/styles'
 import { useAssignableUsers } from '@/lib/api/requests'
 import type { AllowedTransition, AreaRef, RequestStatus } from '@/lib/api/types'
 import { transitionAction } from '@/lib/requests/transitions'
@@ -76,10 +77,9 @@ export function TransitionDialog({
             htmlFor={ids.assignee}
             error={errors.assignee_id?.message}
           >
-            <select
+            <Select
               id={ids.assignee}
               aria-invalid={Boolean(errors.assignee_id)}
-              className={selectClass}
               {...register('assignee_id')}
             >
               <option value="">{t('transitionDialog.selectAssignee')}</option>
@@ -90,7 +90,7 @@ export function TransitionDialog({
                     : t('transitionDialog.otherArea', { name: user.full_name })}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
         )}
         <FormField

@@ -5,10 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
+import { Select } from '@/components/ui/Select'
 import { InlineAlert } from '@/components/ui/States'
 import { TextArea } from '@/components/ui/TextArea'
 import { FormField } from '@/components/ui/FormField'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { inputClass } from '@/components/ui/styles'
 import { useTranslateError } from '@/lib/api/errors'
 import type { RequestUpdateInput, useRequestActions } from '@/lib/api/requests'
 import { REQUEST_PRIORITIES, type RequestDetail } from '@/lib/api/types'
@@ -136,10 +137,9 @@ export function EditRequestDialog({ detail, update, onClose }: EditRequestDialog
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label={t('detail.fields.priority')} htmlFor={ids.priority}>
-            <select
+            <Select
               id={ids.priority}
               disabled={!editable.has('priority')}
-              className={selectClass}
               {...register('priority')}
             >
               {REQUEST_PRIORITIES.map((priority) => (
@@ -147,7 +147,7 @@ export function EditRequestDialog({ detail, update, onClose }: EditRequestDialog
                   {t(`priority.${priority}`)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label={t('detail.fields.due_at')} htmlFor={ids.due}>
             <input

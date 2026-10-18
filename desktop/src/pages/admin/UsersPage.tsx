@@ -2,11 +2,12 @@ import { Plus } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '@/components/StatusBadge'
+import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchInput } from '@/components/ui/SearchInput'
-import { selectClass } from '@/components/ui/styles'
+import { SelectPill } from '@/components/ui/SelectPill'
 import { Table, TableMessage, Td, Th } from '@/components/ui/Table'
 import { useSetUserActive, useUsers } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -46,29 +47,27 @@ export function UsersPage() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 flex-wrap items-center gap-3">
           <SearchInput value={q} label={t('users.search')} onChange={onSearch} />
-          <label className="w-48">
-            <span className="sr-only">{t('users.roleFilter')}</span>
-            <select
-              value={role ?? ''}
-              onChange={(event) => {
-                const { value } = event.target
-                setRole(isUserRole(value) ? value : undefined)
-                setPage(1)
-              }}
-              className={selectClass}
-            >
-              <option value="">{t('users.allRoles')}</option>
-              {USER_ROLES.map((option) => (
-                <option key={option} value={option}>
-                  {t(`auth:roles.${option}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectPill
+            label={t('users.roleFilter')}
+            value={role ?? ''}
+            onChange={(event) => {
+              const { value } = event.target
+              setRole(isUserRole(value) ? value : undefined)
+              setPage(1)
+            }}
+            className="min-w-52"
+          >
+            <option value="">{t('users.allRoles')}</option>
+            {USER_ROLES.map((option) => (
+              <option key={option} value={option}>
+                {t(`auth:roles.${option}`)}
+              </option>
+            ))}
+          </SelectPill>
         </div>
         <Button
           variant="solid"
@@ -103,13 +102,18 @@ export function UsersPage() {
           {users.data?.items.map((user) => (
             <tr key={user.id}>
               <Td>
-                <p className="font-medium">
-                  {user.full_name}
-                  {user.id === currentUserId && (
-                    <span className="text-muted-foreground ml-2 text-xs">{t('users.you')}</span>
-                  )}
-                </p>
-                <p className="text-muted-foreground text-xs">{user.email}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar name={user.full_name} id={user.id} size="md" self={user.id === currentUserId} />
+                  <div className="min-w-0">
+                    <p className="font-semibold">
+                      {user.full_name}
+                      {user.id === currentUserId && (
+                        <span className="text-caption text-muted-foreground ml-2 font-medium">{t('users.you')}</span>
+                      )}
+                    </p>
+                    <p className="text-caption text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
               </Td>
               <Td>{t(`auth:roles.${user.role}`)}</Td>
               <Td className="text-muted-foreground">{user.area?.name ?? t('users.noArea')}</Td>

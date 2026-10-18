@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
-import { inputClass } from '@/components/ui/styles'
+import { InlineAlert } from '@/components/ui/States'
+import { numberInputClass } from '@/components/ui/styles'
 import { Table, TableMessage, Td, Th } from '@/components/ui/Table'
 import { useSaveSlaPolicies, useSlaPolicies } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
@@ -86,8 +87,8 @@ export function SlaPage() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <p className="text-muted-foreground text-sm">{t('sla.description')}</p>
+    <section className="flex flex-col gap-5">
+      <p className="text-body text-muted-foreground">{t('sla.description')}</p>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -110,7 +111,7 @@ export function SlaPage() {
             {policies.data &&
               REQUEST_PRIORITIES.map((priority, row) => (
                 <tr key={priority}>
-                  <Td className="font-medium">{t(`sla.priorities.${priority}`)}</Td>
+                  <Td className="font-semibold">{t(`sla.priorities.${priority}`)}</Td>
                   {SLA_STAGES.map((stage, column) => {
                     const index = row * SLA_STAGES.length + column
                     const cell = `${t(`sla.priorities.${priority}`)} · ${t(`sla.stages.${stage}`)}`
@@ -120,18 +121,18 @@ export function SlaPage() {
                       <Td key={stage}>
                         <div className="flex gap-2">
                           <label className="flex flex-col gap-1">
-                            <span className="text-muted-foreground text-xs">{t('sla.maxHours')}</span>
+                            <span className="text-caption text-muted-foreground">{t('sla.maxHours')}</span>
                             <input
                               type="number"
                               min={1}
                               aria-label={`${t('sla.maxHours')} · ${cell}`}
                               aria-invalid={Boolean(fieldError(index, 'max_hours'))}
-                              className={`${inputClass} w-20`}
+                              className={numberInputClass}
                               {...register(`policies.${index}.max_hours`, { valueAsNumber: true })}
                             />
                           </label>
                           <label className="flex flex-col gap-1">
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-caption text-muted-foreground">
                               {t('sla.inactivityHours')}
                             </span>
                             <input
@@ -139,7 +140,7 @@ export function SlaPage() {
                               min={1}
                               aria-label={`${t('sla.inactivityHours')} · ${cell}`}
                               aria-invalid={Boolean(fieldError(index, 'inactivity_hours'))}
-                              className={`${inputClass} w-20`}
+                              className={numberInputClass}
                               {...register(`policies.${index}.inactivity_hours`, {
                                 valueAsNumber: true,
                               })}
@@ -147,7 +148,7 @@ export function SlaPage() {
                           </label>
                         </div>
                         {errorMessage && (
-                          <p role="alert" className="text-danger mt-1 text-xs">
+                          <p role="alert" className="text-caption text-danger-text mt-1 font-medium">
                             {errorMessage}
                           </p>
                         )}
@@ -158,18 +159,10 @@ export function SlaPage() {
               ))}
           </tbody>
         </Table>
-        {save.error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {translateError(save.error)}
-          </p>
-        )}
-        {saved && (
-          <p role="status" className="text-success text-sm">
-            {t('sla.saved')}
-          </p>
-        )}
+        {save.error && <InlineAlert tone="error">{translateError(save.error)}</InlineAlert>}
+        {saved && <InlineAlert tone="success">{t('sla.saved')}</InlineAlert>}
         <div>
-          <Button type="submit" variant="solid" disabled={save.isPending || !policies.data}>
+          <Button type="submit" variant="solid" loading={save.isPending} disabled={!policies.data}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>

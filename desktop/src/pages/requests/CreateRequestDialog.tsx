@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
 import { Dialog } from '@/components/ui/Dialog'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { Select } from '@/components/ui/Select'
+import { inputClass } from '@/components/ui/styles'
 import { useAreaOptions } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
 import { useCreateRequest, useDueEstimates } from '@/lib/api/requests'
@@ -101,10 +102,9 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label={t('create.area')} htmlFor={ids.area} error={errors.area_id?.message}>
-            <select
+            <Select
               id={ids.area}
               aria-invalid={Boolean(errors.area_id)}
-              className={selectClass}
               {...register('area_id')}
             >
               <option value="">{t('create.selectArea')}</option>
@@ -113,16 +113,16 @@ export function CreateRequestDialog({ onClose, onCreated }: CreateRequestDialogP
                   {area.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label={t('create.priority')} htmlFor={ids.priority}>
-            <select id={ids.priority} className={selectClass} {...register('priority')}>
+            <Select id={ids.priority} {...register('priority')}>
               {REQUEST_PRIORITIES.map((option) => (
                 <option key={option} value={option}>
                   {t(`priority.${option}`)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
         </div>
         <DueEstimateHint priority={priority} />

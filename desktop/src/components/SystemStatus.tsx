@@ -2,6 +2,8 @@ import { BrainCircuit, Database, type LucideIcon, RefreshCw, Server } from 'luci
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBadge, type StatusTone } from '@/components/StatusBadge'
+import { Button } from '@/components/ui/Button'
+import { InlineAlert } from '@/components/ui/States'
 import { useTranslateError } from '@/lib/api/errors'
 import { useHealth } from '@/lib/api/health'
 import { useFormatters } from '@/lib/format'
@@ -17,17 +19,17 @@ interface HealthCardProps {
 
 function HealthCard({ icon: Icon, title, tone, status, children }: HealthCardProps) {
   return (
-    <article className="bg-surface flex flex-col gap-4 rounded-xl border p-5 shadow-xs">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="bg-primary-soft text-primary rounded-lg p-2">
-            <Icon className="size-4" aria-hidden="true" />
-          </span>
-          <h3 className="text-sm font-medium">{title}</h3>
-        </div>
+    <article className="bg-surface-raised rounded-inner flex flex-col gap-3 p-4">
+      <div className="flex items-center gap-2.5">
+        <span className="bg-surface-sunken text-foreground rounded-cell inline-flex size-9 items-center justify-center">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+        <h3 className="text-body font-semibold">{title}</h3>
+      </div>
+      <div>
         <StatusBadge tone={tone}>{status}</StatusBadge>
       </div>
-      {children && <div className="text-muted-foreground text-sm">{children}</div>}
+      {children && <div className="text-caption text-muted-foreground flex flex-col gap-0.5">{children}</div>}
     </article>
   )
 }
@@ -46,28 +48,9 @@ export function SystemStatus() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => void health.refetch()}
-          disabled={health.isFetching}
-          className="bg-surface hover:bg-surface-muted flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-60"
-        >
-          <RefreshCw
-            className={`size-4 ${health.isFetching ? 'animate-spin' : ''}`}
-            aria-hidden="true"
-          />
-          {t('common:actions.retry')}
-        </button>
-      </div>
+      {health.isError && <InlineAlert tone="error">{translateError(health.error)}</InlineAlert>}
 
-      {health.isError && (
-        <div role="alert" className="bg-danger-soft text-danger rounded-xl px-4 py-3 text-sm">
-          {translateError(health.error)}
-        </div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <HealthCard
           icon={Server}
           title={t('health.api')}
@@ -96,12 +79,12 @@ export function SystemStatus() {
           status={!data ? '—' : t(`health.providers.${data.ai.provider}`)}
         >
           {data?.ai.model && (
-            <code className="bg-surface-muted rounded px-1.5 py-0.5 text-xs">{data.ai.model}</code>
+            <code className="text-code font-mono">{data.ai.model}</code>
           )}
         </HealthCard>
       </div>
 
-      <footer className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+      <footer className="text-caption text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2">
         {data && (
           <StatusBadge tone={data.status === 'ok' ? 'success' : 'warning'}>
             {t(`health.overall.${data.status}`)}
@@ -109,6 +92,16 @@ export function SystemStatus() {
         )}
         {lastChecked > 0 && <span>{t('health.lastChecked', { time: dateTime(lastChecked) })}</span>}
         <span>{t('health.apiUrl', { url: apiBaseUrl })}</span>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto"
+          loading={health.isFetching}
+          onClick={() => void health.refetch()}
+        >
+          {!health.isFetching && <RefreshCw className="size-3.5" aria-hidden="true" />}
+          {t('common:actions.retry')}
+        </Button>
       </footer>
     </div>
   )

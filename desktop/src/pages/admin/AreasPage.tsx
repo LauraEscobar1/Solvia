@@ -36,7 +36,7 @@ export function AreasPage() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchInput value={q} label={t('areas.search')} onChange={onSearch} />
         <Button
@@ -70,9 +70,9 @@ export function AreasPage() {
           {areas.data?.items.map((area) => (
             <tr key={area.id}>
               <Td>
-                <p className="font-medium">{area.name}</p>
+                <p className="font-semibold">{area.name}</p>
                 {area.description && (
-                  <p className="text-muted-foreground line-clamp-1 text-xs">{area.description}</p>
+                  <p className="text-caption text-muted-foreground line-clamp-1">{area.description}</p>
                 )}
               </Td>
               <Td className="text-muted-foreground">
