@@ -22,7 +22,7 @@ export function AppLayout() {
       >
         {t('skipToContent')}
       </button>
-      <div className="sticky top-0 z-40 px-6 pt-4 xl:px-10">
+      <div className="relative z-40 px-6 pt-4 xl:px-10">
         <TopBar />
       </div>
       <div className="flex-1 px-6 xl:px-10">

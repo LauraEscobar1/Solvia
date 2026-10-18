@@ -1,18 +1,22 @@
-import { motion, type Variants } from 'motion/react'
-import type { ReactNode } from 'react'
+import { animate, motion, type Variants } from 'motion/react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@/lib/useReducedMotion'
+import { SPRING } from './transitions'
 
 const EASE = [0.22, 1, 0.36, 1] as const
-const FADE_SECONDS = 0.2
-const ITEM_SECONDS = 0.26
-const STAGGER_SECONDS = 0.06
-const GROW_SECONDS = 0.3
-const ENTER_OFFSET = 10
+const PAGE_SECONDS = 0.45
+const PAGE_OFFSET = 24
+const PAGE_SCALE = 0.98
+const STAGGER_SECONDS = 0.08
+const GROW_SECONDS = 0.7
+const COUNT_SECONDS = 0.9
+const ENTER_OFFSET = 16
+const SOFT_BOUNCE = [0.34, 1.3, 0.64, 1] as const
 
 const PARENT: Variants = { hidden: {}, show: { transition: { staggerChildren: STAGGER_SECONDS } } }
 const ITEM: Variants = {
   hidden: { opacity: 0, y: ENTER_OFFSET },
-  show: { opacity: 1, y: 0, transition: { duration: ITEM_SECONDS, ease: EASE } },
+  show: { opacity: 1, y: 0, transition: SPRING },
 }
 
 interface BoxProps {
@@ -25,9 +29,9 @@ export function PageFade({ children, className }: BoxProps) {
   return (
     <motion.div
       className={className}
-      initial={reduced ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: FADE_SECONDS, ease: 'easeOut' }}
+      initial={reduced ? false : { opacity: 0, y: PAGE_OFFSET, scale: PAGE_SCALE }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: PAGE_SECONDS, ease: EASE }}
     >
       {children}
     </motion.div>
@@ -69,9 +73,35 @@ export function Grow({ className, style, delay = 0, axis = 'x', children }: Grow
       style={{ ...style, transformOrigin: axis === 'x' ? 'left center' : 'center bottom', display: 'block' }}
       initial={reduced ? false : from}
       animate={to}
-      transition={{ duration: GROW_SECONDS, delay, ease: EASE }}
+      transition={{ duration: GROW_SECONDS, delay, ease: SOFT_BOUNCE }}
     >
       {children}
     </motion.span>
   )
+}
+
+export function CountUp({ value, format }: { value: number; format: (value: number) => string }) {
+  const reduced = useReducedMotion()
+  const [shown, setShown] = useState(0)
+  const previous = useRef(0)
+
+  useEffect(() => {
+    if (reduced) {
+      previous.current = value
+      return
+    }
+    const controls = animate(previous.current, value, {
+      duration: COUNT_SECONDS,
+      ease: EASE,
+      onUpdate: (latest) => {
+        previous.current = latest
+        setShown(latest)
+      },
+    })
+    return () => {
+      controls.stop()
+    }
+  }, [value, reduced])
+
+  return <>{format(reduced ? value : Math.round(shown))}</>
 }

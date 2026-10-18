@@ -46,7 +46,7 @@ function AlertItem({ alert }: { alert: Alert }) {
     <li
       data-alert-id={alert.id}
       data-read={alert.is_read}
-      className="glass border-card-edge rounded-card shadow-card flex flex-wrap items-center gap-x-4 gap-y-3 border px-5 py-4"
+      className="glass border-card-edge rounded-card shadow-card lift flex flex-wrap items-center gap-x-4 gap-y-3 border px-5 py-4"
     >
       <span
         aria-hidden="true"

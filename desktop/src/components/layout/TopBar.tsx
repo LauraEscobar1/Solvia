@@ -1,12 +1,15 @@
 import { LogOut, Menu as MenuIcon, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink } from 'react-router'
+import { motion } from 'motion/react'
+import { SPRING } from '@/components/motion/transitions'
 import { Avatar } from '@/components/ui/Avatar'
 import { CountBadge } from '@/components/ui/Chip'
 import { Menu, type MenuEntry } from '@/components/ui/Menu'
 import { useUnreadAlertCount } from '@/lib/api/alerts'
 import { signOut } from '@/lib/auth/session'
 import { useFormatters } from '@/lib/format'
+import { useReducedMotion } from '@/lib/useReducedMotion'
 import { useSessionStore } from '@/stores/session'
 import { ADMIN_ITEMS, NAV_ITEMS } from './navigation'
 
@@ -15,6 +18,7 @@ const MAX_BADGE = 99
 function MainNavigation() {
   const { t } = useTranslation('nav')
   const { number } = useFormatters()
+  const reduced = useReducedMotion()
   const unread = useUnreadAlertCount().data ?? 0
   const badge = unread > MAX_BADGE ? `${number(MAX_BADGE)}+` : number(unread)
 
@@ -28,15 +32,23 @@ function MainNavigation() {
               end={path === '/'}
               className={({ isActive }) =>
                 [
-                  'text-body inline-flex h-10 items-center gap-2 rounded-full px-4 font-semibold whitespace-nowrap transition-colors',
-                  isActive
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-nav-foreground hover:text-feature-foreground',
+                  'text-body relative inline-flex h-10 items-center gap-2 rounded-full px-4 font-semibold whitespace-nowrap transition-colors',
+                  isActive ? 'text-accent-foreground' : 'text-nav-foreground hover:text-feature-foreground',
                 ].join(' ')
               }
             >
-              <Icon className="size-4 lg:hidden" aria-hidden="true" />
-              <span className="max-lg:sr-only">{t(labelKey)}</span>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-pill"
+                      aria-hidden="true"
+                      className="bg-accent absolute inset-0 rounded-full"
+                      transition={reduced ? { duration: 0 } : SPRING}
+                    />
+                  )}
+                  <Icon className="relative size-4 lg:hidden" aria-hidden="true" />
+                  <span className="relative max-lg:sr-only">{t(labelKey)}</span>
               {labelKey === 'alerts' && unread > 0 && (
                 <>
                   <CountBadge tone="alert" className="max-lg:absolute max-lg:translate-x-3 max-lg:-translate-y-3">
@@ -44,6 +56,8 @@ function MainNavigation() {
                   </CountBadge>
                   {' '}
                   <span className="sr-only">{t('unread', { count: unread })}</span>
+                </>
+              )}
                 </>
               )}
             </NavLink>

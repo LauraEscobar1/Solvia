@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { CountUp } from '@/components/motion/Motion'
 import { Link } from 'react-router'
 import { SectionCard } from '@/components/ui/Card'
 import { StageBar } from '@/components/ui/Progress'
@@ -78,7 +79,9 @@ function Figures({ summary, query, scoped }: { summary: DashboardSummary; query:
                   <span aria-hidden="true" className={`size-2 rounded-full ${dot}`} />
                   {label}
                 </span>{' '}
-                <span className="text-metric tabular-nums">{number(value)}</span>{' '}
+                <span className="text-metric tabular-nums">
+                  <CountUp value={value} format={number} />
+                </span>{' '}
                 <span className="text-caption text-subtle-foreground font-medium">{detail}</span>{' '}
                 <span className="sr-only">{t('status.linkHint')}</span>
               </Link>

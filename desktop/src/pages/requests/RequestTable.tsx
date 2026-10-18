@@ -76,7 +76,7 @@ export function RequestTable({ items, loading, error, onRetry, sort, onSort, foo
           </TableMessage>
         )}
         {items?.map((request) => (
-          <tr key={request.id} className="hover:bg-surface-raised/50 transition-colors">
+          <tr key={request.id} className="hover:bg-surface-raised/50 lift">
             <Td className="max-w-md">
               <span className="text-code text-muted-foreground block font-mono">{request.code}</span>
               <Link to={`/requests/${request.id}`} className="line-clamp-1 rounded-check font-semibold hover:underline">

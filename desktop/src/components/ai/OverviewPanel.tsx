@@ -2,7 +2,7 @@ import { RefreshCw, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import { Grow } from '@/components/motion/Motion'
+import { Grow, Stagger, StaggerItem } from '@/components/motion/Motion'
 import { ReassignButton } from '@/components/requests/ReassignButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { IconButton } from '@/components/ui/IconButton'
@@ -271,12 +271,12 @@ export function OverviewPanel({ insight, notice, areaId, regenerate, onClose }: 
         ) : undefined
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <Stagger className="flex min-h-0 flex-1 flex-col gap-4">
         {regenerate.isError && <InlineAlert tone="error">{translateError(regenerate.error)}</InlineAlert>}
         <AINotice notice={notice} />
         {insight ? (
           <>
-            <div className="flex flex-col gap-2">
+            <StaggerItem className="flex flex-col gap-2">
               <p className="text-greeting line-clamp-3 font-medium" data-testid="overview-headline">
                 <Highlighted text={headline} terms={stages} />
               </p>
@@ -298,23 +298,25 @@ export function OverviewPanel({ insight, notice, areaId, regenerate, onClose }: 
                   {expanded ? t('ai:overview.panel.less') : t('ai:overview.panel.more')}
                 </button>
               )}
-            </div>
-            <DueForecast areaId={areaId} />
+            </StaggerItem>
+            <StaggerItem>
+              <DueForecast areaId={areaId} />
+            </StaggerItem>
             {recommendations.length > 0 && (
-              <div className="relative min-h-0 flex-1">
+              <StaggerItem className="relative min-h-0 flex-1">
                 <ol aria-label={t('ai:overview.recommendations')} className="flex h-full flex-col gap-3 overflow-y-auto pb-8">
                   {recommendations.map((_, index) => (
                     <RecommendationCard key={index} insight={insight} index={index} onNavigate={onClose} />
                   ))}
                 </ol>
                 <div aria-hidden="true" className="from-feature pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t to-transparent" />
-              </div>
+              </StaggerItem>
             )}
           </>
         ) : (
           <EmptyState title={t('ai:overview.empty')} />
         )}
-      </div>
+      </Stagger>
     </Dialog>
   )
 }

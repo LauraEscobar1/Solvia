@@ -3,9 +3,9 @@ import { type ElementType, type HTMLAttributes, type ReactNode, useId } from 're
 export type CardVariant = 'glass' | 'feature' | 'hero' | 'slate' | 'raised'
 
 const VARIANT_CLASSES: Record<CardVariant, string> = {
-  glass: 'glass border-card-edge rounded-card border shadow-card',
-  feature: 'bg-feature text-feature-foreground rounded-feature shadow-card on-dark',
-  hero: 'bg-hero text-feature-foreground rounded-feature shadow-card on-dark',
+  glass: 'glass border-card-edge rounded-card border shadow-card lift',
+  feature: 'bg-feature text-feature-foreground rounded-feature shadow-card on-dark lift',
+  hero: 'bg-hero text-feature-foreground rounded-feature shadow-card on-dark lift',
   slate: 'bg-slate text-slate-foreground rounded-card on-slate',
   raised: 'bg-surface-raised rounded-inner',
 }

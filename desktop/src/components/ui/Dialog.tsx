@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useId, useRef } from 'react'
 import { motion } from 'motion/react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { SPRING } from '@/components/motion/transitions'
 import { focusableWithin, trapTab } from '@/lib/focus'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { IconButton } from './IconButton'
@@ -96,7 +97,7 @@ export function Dialog({
         ref={panel}
         initial={reduced || !sheet ? false : { x: '100%' }}
         animate={{ x: 0 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        transition={SPRING}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
