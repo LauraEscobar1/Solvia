@@ -142,6 +142,18 @@ export interface RequestEvent {
   created_at: string
 }
 
+export interface StageTime {
+  status: RequestStatus
+  hours: number
+  entered_at: string
+  visits: number
+}
+
+export interface RequestStages {
+  current: RequestStatus
+  stages: StageTime[]
+}
+
 export interface AssignmentSuggestion {
   assignee: UserRef
   open_count: number

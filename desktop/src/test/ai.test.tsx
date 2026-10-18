@@ -8,6 +8,7 @@ import type {
   AIStatus,
   OverviewAnalysis,
   RequestAnalysis,
+  RequestDetail,
   RiskRead,
   User,
 } from '@/lib/api/types'
@@ -259,13 +260,30 @@ describe('banner de IA en el panel', () => {
   })
 })
 
+function riskDetail(): RequestDetail {
+  return {
+    ...makeRequest({ id: 'req-106', code: 'SOL-0106', status: 'received' }),
+    description: 'Detalle',
+    created_at: '2026-10-10T10:00:00Z',
+    updated_at: '2026-10-10T10:00:00Z',
+    allowed_transitions: [],
+    permissions: { editable_fields: [], can_assign: true, can_comment: true },
+  }
+}
+
 describe('tarjeta de riesgo', () => {
   it('muestra el puntaje, los factores y el análisis de la IA como texto plano', async () => {
     mockApi(() => jsonResponse(analysis()))
-    renderInRouter(<RiskCard requestId="req-106" />)
+    const user = userEvent.setup()
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
-    const card = await screen.findByRole('region', { name: 'Riesgo' })
-    expect(within(card).getByTitle('Riesgo 76 de 100')).toHaveTextContent('Alto76')
+    const card = await screen.findByRole('region', { name: 'Riesgo de retraso' })
+    expect(await within(card).findByText('Alto · 76/100')).toBeInTheDocument()
+    expect(within(card).getByRole('meter', { name: 'Riesgo 76 de 100' })).toHaveAttribute('aria-valuenow', '76')
+    const toggle = within(card).getByRole('button', { name: 'Desglose de factores' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
     const stage = card.querySelector('[data-factor="stage_delay"]') as HTMLElement
     expect(within(stage).getByText('Tiempo en la etapa')).toBeInTheDocument()
     expect(within(stage).getByText('25 pts')).toBeInTheDocument()
@@ -289,13 +307,13 @@ describe('tarjeta de riesgo', () => {
       return jsonResponse(analysis({ insight: null }))
     })
     const user = userEvent.setup()
-    renderInRouter(<RiskCard requestId="req-106" />)
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
     expect(await screen.findByText('Aún no hay un análisis de esta solicitud.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Analizar con IA' }))
 
     expect(await screen.findByText('Resultado en caché')).toBeInTheDocument()
-    expect(requests.at(-1)?.path).toBe('/api/v1/ai/requests/req-106/analyze?language=es')
+    expect(requests.some((request) => request.method === 'POST' && request.path === '/api/v1/ai/requests/req-106/analyze?language=es')).toBe(true)
   })
 
   it('con la IA apagada muestra el nivel 1 y un aviso discreto', async () => {
@@ -326,10 +344,10 @@ describe('tarjeta de riesgo', () => {
         }),
       ),
     )
-    renderInRouter(<RiskCard requestId="req-106" />)
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
-    const card = await screen.findByRole('region', { name: 'Riesgo' })
-    expect(within(card).getByRole('status')).toHaveTextContent('La IA está desactivada.')
+    const card = await screen.findByRole('region', { name: 'Riesgo de retraso' })
+    expect(await within(card).findByRole('status')).toHaveTextContent('La IA está desactivada.')
     expect(within(card).getByTestId('insight-summary')).toHaveTextContent(
       'SOL-0106 tiene un riesgo de 76 sobre 100; el factor principal es sla consumido.',
     )

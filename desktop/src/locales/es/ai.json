@@ -24,7 +24,11 @@
     "causes": "Causas",
     "actions": "Acciones sugeridas",
     "noInsight": "Aún no hay un análisis de esta solicitud.",
-    "scoreTitle": "Riesgo {{score}} de 100"
+    "scoreTitle": "Riesgo {{score}} de 100",
+    "cardTitle": "Riesgo de retraso",
+    "levelScore": "{{level}} · {{score}}/100",
+    "breakdown": "Desglose de factores",
+    "aiTitle": "Análisis con IA"
   },
   "factors": {
     "stage_delay": "Tiempo en la etapa",

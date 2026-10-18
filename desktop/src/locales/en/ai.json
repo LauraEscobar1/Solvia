@@ -24,7 +24,11 @@
     "causes": "Causes",
     "actions": "Suggested actions",
     "noInsight": "There is no analysis of this request yet.",
-    "scoreTitle": "Risk {{score}} out of 100"
+    "scoreTitle": "Risk {{score}} out of 100",
+    "cardTitle": "Delay risk",
+    "levelScore": "{{level}} · {{score}}/100",
+    "breakdown": "Factor breakdown",
+    "aiTitle": "AI analysis"
   },
   "factors": {
     "stage_delay": "Time in stage",

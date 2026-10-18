@@ -2,16 +2,14 @@ import { ArrowRight, ShieldCheck } from 'lucide-react'
 import { type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { ReassignButton } from '@/components/requests/ReassignButton'
 import { Avatar, EmptyAvatar } from '@/components/ui/Avatar'
-import { Button } from '@/components/ui/Button'
 import { buttonClasses } from '@/components/ui/buttonStyles'
 import { Card } from '@/components/ui/Card'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
 import { useAILanguage } from '@/lib/ai/messages'
 import { useRequestInsight } from '@/lib/api/ai'
-import { useTranslateError } from '@/lib/api/errors'
-import { useAssignmentSuggestion, useRequest, useRequestActions, useRequests } from '@/lib/api/requests'
+import { useAssignmentSuggestion, useRequest, useRequests } from '@/lib/api/requests'
 import { type RequestSummary, type RiskFactorRead, SLA_STAGES } from '@/lib/api/types'
 import { moveFocus } from '@/lib/focus'
 import { useFormatters, useLongDuration } from '@/lib/format'
@@ -92,7 +90,6 @@ function Tile({ value, label }: { value: string; label: string }) {
 
 function RiskDetail({ request }: { request: RequestSummary }) {
   const { t } = useTranslation(['dashboard', 'ai', 'requests', 'common'])
-  const translateError = useTranslateError()
   const { number } = useFormatters()
   const duration = useLongDuration()
   const language = useAILanguage()
@@ -100,8 +97,6 @@ function RiskDetail({ request }: { request: RequestSummary }) {
   const suggestion = useAssignmentSuggestion(request.id)
   const proposal = suggestion.data?.suggestion ?? null
   const detail = useRequest(request.id)
-  const actions = useRequestActions(request.id)
-  const [confirming, setConfirming] = useState(false)
 
   const factors = insight.data?.risk?.factors
   const stage = factor(factors, 'stage_delay')
@@ -177,46 +172,16 @@ function RiskDetail({ request }: { request: RequestSummary }) {
             {t('risk.open')}
           </Link>
           {proposal && detail.data?.permissions.can_assign && (
-            <Button
-              variant="accent"
-              onClick={() => {
-                actions.assign.reset()
-                setConfirming(true)
-              }}
-            >
-              {t('risk.reassignNow')}
-            </Button>
+            <ReassignButton
+              requestId={request.id}
+              code={request.code}
+              version={detail.data.version}
+              suggestion={proposal}
+            />
           )}
         </div>
       </div>
 
-      {confirming && proposal && detail.data && (
-        <ConfirmDialog
-          title={t('risk.confirmTitle', { code: request.code })}
-          message={t('risk.confirmMessage', {
-            code: request.code,
-            name: proposal.assignee.full_name,
-            count: proposal.open_count,
-          })}
-          confirmLabel={t('risk.confirm')}
-          variant="solid"
-          pending={actions.assign.isPending}
-          error={actions.assign.error ? translateError(actions.assign.error) : null}
-          onCancel={() => {
-            setConfirming(false)
-          }}
-          onConfirm={() => {
-            actions.assign.mutate(
-              { assignee_id: proposal.assignee.id, version: detail.data.version },
-              {
-                onSuccess: () => {
-                  setConfirming(false)
-                },
-              },
-            )
-          }}
-        />
-      )}
     </div>
   )
 }

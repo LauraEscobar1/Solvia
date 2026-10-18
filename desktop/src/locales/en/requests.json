@@ -129,11 +129,11 @@
       "title": "Title",
       "description": "Description",
       "priority": "Priority",
-      "due_at": "Due date",
+      "due_at": "Due (SLA)",
       "area": "Area",
       "requester": "Requester",
       "assignee": "Assignee",
-      "received_at": "Received",
+      "received_at": "Created",
       "last_activity_at": "Last activity",
       "completed_at": "Completed"
     },
@@ -142,28 +142,47 @@
       "save": "Save changes",
       "saved": "Changes saved.",
       "discard": "Discard changes",
-      "readOnly": "Read only: you can comment to communicate."
+      "readOnly": "Read only: you can comment to communicate.",
+      "open": "Edit",
+      "dialogTitle": "Edit {{code}}"
     },
     "reassign": "Reassign",
     "reassignTitle": "Reassign · {{code}}",
     "actions": "Actions",
-    "history": "History",
-    "loadMore": "Show more",
+    "history": "History and comments",
+    "loadMore": "Show earlier",
     "comment": {
       "label": "New comment",
-      "submit": "Comment"
+      "submit": "Send",
+      "placeholder": "Write a comment"
     },
-    "transitionGone": "That action is no longer available: the request changed in the meantime."
+    "transitionGone": "That action is no longer available: the request changed in the meantime.",
+    "moveTo": "Move to {{stage}}",
+    "description": "Description",
+    "info": "Information",
+    "cancelTitle": "Cancel {{code}}",
+    "cancelMessage": "{{code}} will be cancelled.",
+    "keep": "Go back",
+    "stepper": {
+      "label": "Request stages",
+      "step": "Step {{number}}",
+      "done": "Done · {{duration}}",
+      "current": "Current · {{duration}}",
+      "currentShort": "Current",
+      "pending": "Pending",
+      "finished": "Finished · {{date}}",
+      "cancelled": "Cancelled at this stage"
+    }
   },
   "events": {
-    "created": "{{actor}} created the request",
-    "status_changed": "{{actor}} changed the status from “{{from}}” to “{{to}}”",
-    "returned": "{{actor}} returned the request",
-    "assigned": "{{actor}} assigned the request to {{assignee}}",
-    "reassigned": "{{actor}} reassigned the request from {{previous}} to {{assignee}}",
+    "created": "created the request",
+    "status_changed": "changed the status from “{{from}}” to “{{to}}”",
+    "returned": "returned the request",
+    "assigned": "assigned the request to {{assignee}}",
+    "reassigned": "reassigned the request from {{previous}} to {{assignee}}",
     "areaOverride": "Assigned outside the request's area",
-    "comment": "{{actor}} commented",
-    "updated": "{{actor}} edited the request",
+    "comment": "commented",
+    "updated": "edited the request",
     "someone": "Someone",
     "change": "{{field}}: {{from}} → {{to}}",
     "empty": "(empty)"

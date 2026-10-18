@@ -66,12 +66,12 @@ export function PageHeader({
         </nav>
       )}
       {eyebrow && <div className="flex flex-wrap items-center gap-2">{eyebrow}</div>}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 xl:flex-nowrap xl:items-center">
         <div className="flex min-w-0 flex-wrap items-center gap-4">
-          <h1 className={size === 'title' ? 'text-title' : 'text-title-detail'}>{title}</h1>
+          <h1 className={`${size === 'title' ? 'text-title' : 'text-title-detail'} text-pretty`}>{title}</h1>
           {count}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </header>
   )

@@ -1,8 +1,12 @@
 import { type Ref, type TextareaHTMLAttributes, useCallback, useLayoutEffect, useRef } from 'react'
 import { textareaClass } from './styles'
 
+const BARE =
+  'text-body w-full bg-transparent text-foreground outline-none placeholder:text-subtle-foreground disabled:cursor-not-allowed disabled:opacity-55'
+
 interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   autoGrow?: boolean
+  bare?: boolean
   ref?: Ref<HTMLTextAreaElement>
 }
 
@@ -11,7 +15,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
   else if (ref) ref.current = value
 }
 
-export function TextArea({ autoGrow = false, className = '', onInput, ref, ...props }: TextAreaProps) {
+export function TextArea({ autoGrow = false, bare = false, className = '', onInput, ref, ...props }: TextAreaProps) {
   const local = useRef<HTMLTextAreaElement | null>(null)
 
   const resize = useCallback(() => {
@@ -33,7 +37,7 @@ export function TextArea({ autoGrow = false, className = '', onInput, ref, ...pr
         resize()
         onInput?.(event)
       }}
-      className={`${textareaClass} ${autoGrow ? 'resize-none overflow-hidden' : ''} ${className}`}
+      className={`${bare ? BARE : textareaClass} ${autoGrow ? 'resize-none overflow-y-auto' : ''} ${className}`}
       {...props}
     />
   )

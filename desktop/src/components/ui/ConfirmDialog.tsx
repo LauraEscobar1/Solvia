@@ -8,6 +8,7 @@ interface ConfirmDialogProps {
   title: string
   message: ReactNode
   confirmLabel: string
+  cancelLabel?: string
   variant?: ButtonVariant
   pending?: boolean
   error?: string | null
@@ -20,6 +21,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel,
   variant = 'danger',
   pending = false,
   error = null,
@@ -37,7 +39,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       footer={
         <>
-          <Button onClick={onCancel}>{t('actions.cancel')}</Button>
+          <Button onClick={onCancel}>{cancelLabel ?? t('actions.cancel')}</Button>
           <Button variant={variant} loading={pending} onClick={onConfirm}>
             {pending ? t('actions.saving') : confirmLabel}
           </Button>

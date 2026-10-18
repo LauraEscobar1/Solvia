@@ -129,11 +129,11 @@
       "title": "Título",
       "description": "Descripción",
       "priority": "Prioridad",
-      "due_at": "Fecha límite",
+      "due_at": "Vence (SLA)",
       "area": "Área",
       "requester": "Solicitante",
       "assignee": "Responsable",
-      "received_at": "Recibida",
+      "received_at": "Creada",
       "last_activity_at": "Última actividad",
       "completed_at": "Completada"
     },
@@ -142,28 +142,47 @@
       "save": "Guardar cambios",
       "saved": "Cambios guardados.",
       "discard": "Descartar cambios",
-      "readOnly": "Solo lectura: puedes comentar para comunicarte."
+      "readOnly": "Solo lectura: puedes comentar para comunicarte.",
+      "open": "Editar",
+      "dialogTitle": "Editar {{code}}"
     },
     "reassign": "Reasignar",
     "reassignTitle": "Reasignar · {{code}}",
     "actions": "Acciones",
-    "history": "Historial",
-    "loadMore": "Ver más",
+    "history": "Historial y comentarios",
+    "loadMore": "Ver anteriores",
     "comment": {
       "label": "Nuevo comentario",
-      "submit": "Comentar"
+      "submit": "Enviar",
+      "placeholder": "Escribe un comentario"
     },
-    "transitionGone": "Esa acción ya no está disponible: la solicitud cambió mientras tanto."
+    "transitionGone": "Esa acción ya no está disponible: la solicitud cambió mientras tanto.",
+    "moveTo": "Mover a {{stage}}",
+    "description": "Descripción",
+    "info": "Información",
+    "cancelTitle": "Cancelar {{code}}",
+    "cancelMessage": "{{code}} quedará cancelada.",
+    "keep": "Volver",
+    "stepper": {
+      "label": "Etapas de la solicitud",
+      "step": "Paso {{number}}",
+      "done": "Completada · {{duration}}",
+      "current": "Actual · {{duration}}",
+      "currentShort": "Actual",
+      "pending": "Pendiente",
+      "finished": "Finalizada · {{date}}",
+      "cancelled": "Cancelada en esta etapa"
+    }
   },
   "events": {
-    "created": "{{actor}} creó la solicitud",
-    "status_changed": "{{actor}} cambió el estado de «{{from}}» a «{{to}}»",
-    "returned": "{{actor}} devolvió la solicitud",
-    "assigned": "{{actor}} asignó la solicitud a {{assignee}}",
-    "reassigned": "{{actor}} reasignó la solicitud de {{previous}} a {{assignee}}",
+    "created": "creó la solicitud",
+    "status_changed": "cambió el estado de «{{from}}» a «{{to}}»",
+    "returned": "devolvió la solicitud",
+    "assigned": "asignó la solicitud a {{assignee}}",
+    "reassigned": "reasignó la solicitud de {{previous}} a {{assignee}}",
     "areaOverride": "Asignación fuera del área de la solicitud",
-    "comment": "{{actor}} comentó",
-    "updated": "{{actor}} editó la solicitud",
+    "comment": "comentó",
+    "updated": "editó la solicitud",
     "someone": "Alguien",
     "change": "{{field}}: {{from}} → {{to}}",
     "empty": "(vacío)"

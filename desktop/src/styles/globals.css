@@ -225,12 +225,35 @@
   }
 }
 
-@utility on-slate {
-  --focus: var(--slate-foreground);
-}
-
 @utility on-dark {
   --focus: var(--accent);
+  --foreground: var(--feature-foreground);
+  --muted-foreground: var(--feature-muted);
+  --subtle-foreground: var(--feature-muted);
+  --accent-text: var(--accent);
+  --accent-line: var(--accent);
+  --accent-soft: var(--feature-row);
+  --divider: var(--feature-row);
+  --control: var(--feature-row);
+  --control-border: var(--feature-muted);
+  --surface-raised: var(--feature-row);
+  --surface-sunken: var(--feature-row);
+  --neutral-soft: var(--feature-row);
+  --neutral-soft-foreground: var(--feature-foreground);
+  --card-edge: var(--feature-row);
+}
+
+@utility on-slate {
+  --focus: var(--slate-foreground);
+  --foreground: var(--slate-foreground);
+  --muted-foreground: var(--slate-foreground);
+  --subtle-foreground: var(--slate-foreground);
+  --accent-text: var(--slate-foreground);
+  --divider: var(--slate-soft);
+  --surface-raised: var(--slate-soft);
+  --surface-sunken: var(--slate-soft);
+  --neutral-soft: var(--slate-soft);
+  --neutral-soft-foreground: var(--slate-foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -17,6 +17,7 @@ from app.schemas.request import (
     RequestEventRead,
     RequestFilters,
     RequestListQuery,
+    RequestStages,
     RequestSummary,
     RequestUpdate,
     TransitionInput,
@@ -56,6 +57,13 @@ async def get_request(
     request_id: uuid.UUID, actor: CurrentUserDep, service: RequestServiceDep
 ) -> RequestDetail:
     return await service.get(actor, request_id)
+
+
+@router.get("/{request_id}/stages", summary="Tiempo acumulado en cada etapa según el historial")
+async def request_stages(
+    request_id: uuid.UUID, actor: CurrentUserDep, service: RequestServiceDep
+) -> RequestStages:
+    return await service.stages(actor, request_id)
 
 
 @router.get(

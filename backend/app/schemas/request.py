@@ -20,6 +20,18 @@ OptionalComment = Annotated[str, StringConstraints(strip_whitespace=True, max_le
 Version = Annotated[int, Field(ge=1)]
 
 
+class StageTime(BaseModel):
+    status: RequestStatus
+    hours: float
+    entered_at: datetime
+    visits: int
+
+
+class RequestStages(BaseModel):
+    current: RequestStatus
+    stages: list[StageTime]
+
+
 class AssignmentSuggestion(BaseModel):
     assignee: UserRef
     open_count: int
