@@ -95,7 +95,7 @@
     "forgotten_other": "{{count}} possibly forgotten",
     "stagesLabel": "Open by stage",
     "stageCount": "{{stage}} · {{count}}",
-    "linkLabel": "{{label}}: {{value}}, {{detail}}. View requests"
+    "linkHint": "View requests"
   },
   "risk": {
     "title": "At risk of delay",

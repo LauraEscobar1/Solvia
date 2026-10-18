@@ -10,10 +10,10 @@ function Preview({ mode }: { mode: 'light' | 'dark' }) {
   const light = mode === 'light'
   return (
     <span className={`${PREVIEW_FRAME} ${light ? 'bg-preview-light' : 'bg-preview-dark'}`}>
-      <span className="bg-preview-rail w-4 rounded-md" />
+      <span className="bg-preview-rail w-4 rounded-check" />
       <span className="flex flex-1 flex-col gap-1.5">
-        <span className={`h-3 rounded-md ${light ? 'bg-preview-light-bar' : 'bg-preview-dark-bar'}`} />
-        <span className={`flex-1 rounded-md ${light ? 'bg-preview-light-bar' : 'bg-preview-dark-bar'}`} />
+        <span className={`h-3 rounded-check ${light ? 'bg-preview-light-bar' : 'bg-preview-dark-bar'}`} />
+        <span className={`flex-1 rounded-check ${light ? 'bg-preview-light-bar' : 'bg-preview-dark-bar'}`} />
       </span>
     </span>
   )

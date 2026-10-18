@@ -1,9 +1,17 @@
 @import 'tailwindcss';
 @import './fonts.css';
 @import './tokens.css';
-@import './legacy.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -94,14 +102,6 @@
   --color-focus: var(--focus);
   --color-overlay: var(--overlay);
 
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary-soft: var(--primary-soft);
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
-  --color-surface-muted: var(--surface-muted);
-  --color-sidebar: var(--sidebar);
-  --color-ring: var(--ring);
 
   --shadow-card: var(--elevation-card);
   --shadow-pop: var(--elevation-pop);

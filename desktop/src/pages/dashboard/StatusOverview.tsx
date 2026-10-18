@@ -71,16 +71,16 @@ function Figures({ summary, query, scoped }: { summary: DashboardSummary; query:
             <li key={key}>
               <Link
                 to={requestsPath({ area_id: query.area_id, ...filters })}
-                aria-label={t('status.linkLabel', { label, value: number(value), detail })}
                 data-testid={`kpi-${key}`}
                 className="hover:bg-surface-sunken/60 rounded-inner -m-3 flex flex-col gap-2 p-3 transition-colors"
               >
                 <span className="text-caption text-muted-foreground flex items-center gap-2 font-semibold">
                   <span aria-hidden="true" className={`size-2 rounded-full ${dot}`} />
                   {label}
-                </span>
-                <span className="text-metric tabular-nums">{number(value)}</span>
-                <span className="text-caption text-subtle-foreground font-medium">{detail}</span>
+                </span>{' '}
+                <span className="text-metric tabular-nums">{number(value)}</span>{' '}
+                <span className="text-caption text-subtle-foreground font-medium">{detail}</span>{' '}
+                <span className="sr-only">{t('status.linkHint')}</span>
               </Link>
             </li>
           )

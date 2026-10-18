@@ -151,7 +151,7 @@ describe('panel', () => {
     expect(screen.getByTestId('kpi-dueSoon')).toHaveTextContent('6 con riesgo alto')
     expect(screen.getByTestId('kpi-dueSoon')).toHaveAttribute('href', '/requests?sla_status=at_risk')
     expect(screen.getByTestId('kpi-stalled')).toHaveTextContent('2 posiblemente olvidadas')
-    expect(screen.getByRole('link', { name: 'Vencidas: 9, +3 desde ayer. Ver solicitudes' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Vencidas 9 +3 desde ayer Ver solicitudes' })).toBeInTheDocument()
     const stages = screen.getByRole('list', { name: 'Abiertas por etapa' })
     expect(within(stages).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       'Recibida · 34',

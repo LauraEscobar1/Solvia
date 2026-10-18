@@ -36,3 +36,8 @@ desktop/src-tauri/gen/schemas/
 # ── Referencia de diseño (no se versiona) ──
 docs/design/*.pdf
 docs/design/screenshots/
+
+# Resultados de Playwright
+desktop/test-results/
+desktop/playwright-report/
+desktop/blob-report/

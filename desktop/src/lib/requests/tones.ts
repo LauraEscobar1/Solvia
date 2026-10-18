@@ -1,13 +1,4 @@
-import type { StatusTone } from '@/components/StatusBadge'
 import type { RequestStatus } from '@/lib/api/types'
-
-export const STATUS_TONES: Record<RequestStatus, StatusTone> = {
-  received: 'neutral',
-  assigned: 'warning',
-  in_progress: 'warning',
-  completed: 'success',
-  cancelled: 'neutral',
-}
 
 export const STAGE_COLORS: Record<RequestStatus, string> = {
   received: 'bg-stage-received',

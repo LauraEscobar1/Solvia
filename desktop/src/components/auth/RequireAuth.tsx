@@ -12,7 +12,7 @@ export function RequireAuth() {
 
   if (status === 'loading') {
     return (
-      <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+      <div className="text-muted-foreground flex h-full items-center justify-center text-body">
         {t('session.loading')}
       </div>
     )

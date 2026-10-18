@@ -50,7 +50,7 @@ function CardBody({ card, handle }: { card: BoardCard; handle?: ReactNode }) {
         </span>
         <PriorityPill priority={card.priority} />
       </div>
-      <Link to={`/requests/${card.id}`} className="text-body line-clamp-2 rounded-sm font-semibold hover:underline">
+      <Link to={`/requests/${card.id}`} className="text-body line-clamp-2 rounded-check font-semibold hover:underline">
         {card.title}
       </Link>
     </>
@@ -147,7 +147,7 @@ function Column({ status, total, cards, highlight, collapsed, onToggle, onMove }
     >
       <header className="flex items-center justify-between gap-2 px-2 pt-1">
         <h2 className="text-body flex items-center gap-2 font-semibold">
-          <span aria-hidden="true" className={`size-2.5 rounded-sm ${STAGE_COLORS[status]}`} />
+          <span aria-hidden="true" className={`size-2.5 rounded-check ${STAGE_COLORS[status]}`} />
           {name}
         </h2>
         <span className="flex items-center gap-1">

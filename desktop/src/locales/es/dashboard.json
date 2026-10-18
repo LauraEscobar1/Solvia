@@ -95,7 +95,7 @@
     "forgotten_other": "{{count}} posiblemente olvidadas",
     "stagesLabel": "Abiertas por etapa",
     "stageCount": "{{stage}} · {{count}}",
-    "linkLabel": "{{label}}: {{value}}, {{detail}}. Ver solicitudes"
+    "linkHint": "Ver solicitudes"
   },
   "risk": {
     "title": "En riesgo de retraso",

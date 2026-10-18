@@ -54,7 +54,7 @@ export function StageBar({
       <ul aria-label={label} className="text-caption text-muted-foreground flex flex-wrap gap-x-5 gap-y-1 font-semibold">
         {segments.map((segment) => (
           <li key={segment.key} className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className={`size-2.5 rounded-sm ${segment.colorClass}`} />
+            <span aria-hidden="true" className={`size-2.5 rounded-check ${segment.colorClass}`} />
             {legendItem(segment)}
           </li>
         ))}
