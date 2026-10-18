@@ -11,7 +11,7 @@ export interface SegmentOption<T extends string> {
 interface SegmentedControlProps<T extends string> {
   label: string
   options: readonly SegmentOption<T>[]
-  value: T
+  value: T | null
   onChange: (value: T) => void
   variant?: 'solid' | 'raised'
   className?: string

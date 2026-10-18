@@ -1,8 +1,6 @@
 {
-  "subtitle": "SLA, inactivity and bottleneck notices",
   "bell": "Unread alerts: {{count}}",
   "filters": {
-    "label": "Alert filters",
     "state": "State",
     "open": "Open",
     "resolved": "Resolved",
@@ -12,7 +10,15 @@
     "read": "Read",
     "unread": "Unread",
     "readOnly": "Read",
-    "anyRead": "All"
+    "anyRead": "All",
+    "more": "More filters",
+    "clear": "Clear filters"
+  },
+  "quick": {
+    "label": "Show",
+    "all": "All",
+    "unread": "Unread",
+    "critical": "Critical"
   },
   "types": {
     "due_soon": "Due soon",
@@ -34,19 +40,26 @@
     "bottleneck_other": "Bottleneck in {{area}} · {{status}}: {{count}} requests averaging {{avg}} in the stage.",
     "ai_risk": "AI estimates a risk of {{risk}} out of 100 for {{code}}."
   },
+  "inline": {
+    "due_soon": "Due {{due}}.",
+    "overdue": "Was due {{due}}.",
+    "stalled": "No activity since {{since}} in “{{status}}” (threshold: {{threshold}}).",
+    "ai_risk": "AI estimates a risk of {{risk}} out of 100."
+  },
   "unknownMessage": "Alert {{code}}",
   "unread": "Unread",
   "markRead": "Mark as read",
   "markAllRead": "Mark all as read",
   "markedAll_one": "{{count}} alert marked as read.",
   "markedAll_other": "{{count}} alerts marked as read.",
-  "detectedAt": "Detected {{time}}",
   "resolvedAt": "Resolved {{time}}",
   "viewRequest": "View request",
   "viewRequests": "View requests",
   "empty": "There are no alerts with these filters.",
-  "loading": "Loading alerts…",
   "notification": {
     "title": "Critical alert in Solvia"
-  }
+  },
+  "new": "New",
+  "list": "Alerts",
+  "loading": "Loading alerts…"
 }

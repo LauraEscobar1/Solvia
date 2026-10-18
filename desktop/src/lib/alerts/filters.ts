@@ -39,3 +39,29 @@ export function searchFromAlertParams(params: AlertListParams): URLSearchParams 
   if (params.page > 1) search.set('page', String(params.page))
   return search
 }
+
+export const ALERT_QUICK_FILTERS = ['all', 'unread', 'critical'] as const
+export type AlertQuickFilter = (typeof ALERT_QUICK_FILTERS)[number]
+
+export const QUICK_FILTER_PARAMS: Record<AlertQuickFilter, Pick<AlertListParams, 'severity' | 'is_read'>> = {
+  all: { severity: [], is_read: undefined },
+  unread: { severity: [], is_read: false },
+  critical: { severity: ['critical'], is_read: undefined },
+}
+
+export function quickFilterOf(params: AlertListParams): AlertQuickFilter | null {
+  const match = ALERT_QUICK_FILTERS.find((filter) => {
+    const preset = QUICK_FILTER_PARAMS[filter]
+    return (
+      preset.is_read === params.is_read &&
+      preset.severity.length === params.severity.length &&
+      preset.severity.every((severity) => params.severity.includes(severity))
+    )
+  })
+  return match ?? null
+}
+
+export function moreFilterCount(params: AlertListParams): number {
+  return [params.state !== DEFAULT_ALERT_STATE, params.type.length > 0, quickFilterOf(params) === null].filter(Boolean)
+    .length
+}
