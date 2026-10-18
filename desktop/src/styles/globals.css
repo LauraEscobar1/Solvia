@@ -34,6 +34,7 @@
   --color-solid: var(--solid);
   --color-solid-foreground: var(--solid-foreground);
   --color-hero: var(--hero);
+  --color-hero-row: var(--hero-row);
   --color-feature: var(--feature);
   --color-feature-row: var(--feature-row);
   --color-feature-foreground: var(--feature-foreground);
@@ -129,6 +130,8 @@
   --text-heading--line-height: 1.3;
   --text-heading--letter-spacing: -0.01em;
   --text-heading--font-weight: 600;
+  --text-lead: 1rem;
+  --text-lead--line-height: 1.6;
   --text-body: 0.875rem;
   --text-body--line-height: 1.5;
   --text-caption: 0.75rem;
@@ -140,12 +143,17 @@
   --text-code: 0.75rem;
   --text-code--line-height: 1.3;
 
+  --text-brand: 1.375rem;
+  --text-brand--line-height: 1.2;
+  --text-brand--letter-spacing: -0.02em;
+  --text-brand--font-weight: 600;
   --text-wordmark: 1.625rem;
   --text-wordmark--line-height: 1;
   --text-wordmark--letter-spacing: -0.04em;
   --text-wordmark--font-weight: 700;
 
   --container-page: 85rem;
+  --container-auth: 70rem;
   --container-alerts: 61.25rem;
   --container-settings: 55rem;
 

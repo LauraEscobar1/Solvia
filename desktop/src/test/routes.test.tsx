@@ -60,7 +60,7 @@ describe('protección de rutas', () => {
   it('envía al login a quien no ha iniciado sesión', async () => {
     const router = renderAt('/admin/users')
 
-    expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/login')
   })
 

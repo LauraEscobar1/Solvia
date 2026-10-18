@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     login_rate_limit_attempts: int = Field(default=5, gt=0)
     login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 
+    organization_name: str = Field(default="", max_length=120)
     organization_timezone: str = "America/Bogota"
     alerts_job_enabled: bool = True
     alerts_job_interval_minutes: int = Field(default=15, gt=0)
@@ -95,6 +96,11 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @field_validator("organization_name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("organization_timezone")
     @classmethod

@@ -23,6 +23,7 @@ const HEALTH: HealthResponse = {
   environment: 'development',
   database: { status: 'ok' },
   ai: { provider: 'deepseek', model: 'deepseek-flash', configured: true },
+  organization: { name: null },
 }
 
 describe('cliente de API', () => {

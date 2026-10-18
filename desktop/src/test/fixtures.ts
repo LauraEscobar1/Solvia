@@ -81,6 +81,7 @@ export const HEALTH_OK = {
   environment: 'development',
   database: { status: 'ok' },
   ai: { provider: 'none', model: null, configured: true },
+  organization: { name: null },
 }
 
 export const EMPTY_PAGE = { items: [], total: 0, page: 1, size: 10 }

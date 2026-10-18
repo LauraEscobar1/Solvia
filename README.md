@@ -45,12 +45,13 @@ SEED_DEMO_PASSWORD=<mínimo 12 caracteres>
 ```
 
 Si tu `.env` viene de una versión anterior, copia también las variables nuevas de
-`.env.example` (`REFRESH_TOKEN_DAYS`, `LOGIN_RATE_LIMIT_*`, `SEED_*`, `ORGANIZATION_TIMEZONE`,
-`ALERTS_JOB_*`, `BOTTLENECK_MIN_COUNT`) y cambia `JWT_SECRET`: un secreto de menos de 32
+`.env.example` (`REFRESH_TOKEN_DAYS`, `LOGIN_RATE_LIMIT_*`, `SEED_*`, `ORGANIZATION_NAME`,
+`ORGANIZATION_TIMEZONE`, `ALERTS_JOB_*`, `BOTTLENECK_MIN_COUNT`) y cambia `JWT_SECRET`: un secreto de menos de 32
 caracteres hace que PyJWT muestre avisos.
 
 | Variable | Por defecto | Uso |
 | --- | --- | --- |
+| `ORGANIZATION_NAME` | vacío | Nombre de la organización que la app muestra en el login (lo expone `GET /api/v1/health`); vacío no muestra nada |
 | `ORGANIZATION_TIMEZONE` | `America/Bogota` | Zona IANA con la que se agrupan los días del panel y se leen los filtros por fecha; la base de datos guarda siempre UTC |
 | `ALERTS_JOB_ENABLED` | `true` | Activa el job de alertas dentro de la API |
 | `ALERTS_JOB_INTERVAL_MINUTES` | `15` | Cada cuánto evalúa el job |

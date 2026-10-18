@@ -3,7 +3,13 @@ from collections.abc import Awaitable, Callable
 from app import __version__
 from app.ai.base import AIProvider
 from app.core.config import Settings
-from app.schemas.health import ComponentStatus, DatabaseHealth, HealthResponse, HealthStatus
+from app.schemas.health import (
+    ComponentStatus,
+    DatabaseHealth,
+    HealthResponse,
+    HealthStatus,
+    OrganizationInfo,
+)
 
 DatabaseProbe = Callable[[], Awaitable[bool]]
 
@@ -26,4 +32,5 @@ class HealthService:
                 status=ComponentStatus.OK if database_ok else ComponentStatus.UNAVAILABLE
             ),
             ai=self._ai_provider.health(),
+            organization=OrganizationInfo(name=self._settings.organization_name or None),
         )

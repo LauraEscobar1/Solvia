@@ -1,4 +1,5 @@
 import httpx2
+import pytest
 from fastapi import FastAPI
 from pydantic import SecretStr
 
@@ -9,6 +10,7 @@ from app.api.deps import get_ai_provider, get_database_probe
 from app.core.config import AIProviderName
 from app.core.middleware import REQUEST_ID_HEADER
 from app.db.session import create_engine, ping_database
+from app.main import create_app
 from app.services.health import DatabaseProbe
 from tests.conftest import make_settings
 
@@ -34,7 +36,20 @@ async def test_health_ok_when_database_responds(app: FastAPI, client: httpx2.Asy
         "environment": "test",
         "database": {"status": "ok"},
         "ai": {"provider": "none", "model": None, "configured": True},
+        "organization": {"name": None},
     }
+
+
+@pytest.mark.parametrize("name", ["  Universidad del Norte  ", "Universidad del Norte"])
+async def test_health_exposes_the_organization_name(name: str) -> None:
+    application = create_app(make_settings(organization_name=name))
+    application.dependency_overrides[get_database_probe] = lambda: _probe_returning(ok=True)
+    async with application.router.lifespan_context(application):
+        transport = httpx2.ASGITransport(app=application)
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(HEALTH_URL)
+
+    assert response.json()["organization"] == {"name": "Universidad del Norte"}
 
 
 async def test_health_degraded_when_database_is_down(

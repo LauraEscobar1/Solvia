@@ -1,5 +1,6 @@
-import { Languages } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { PILL_FIELD } from '@/components/ui/SelectPill'
+import { ChevronsUpDown } from 'lucide-react'
 import { saveLanguagePreference } from '@/lib/auth/preferences'
 import { isSupportedLanguage, SUPPORTED_LANGUAGES } from '@/locales'
 
@@ -8,8 +9,7 @@ export function LanguageSelector() {
   const current = i18n.resolvedLanguage ?? i18n.language
 
   return (
-    <label className="bg-surface-muted text-muted-foreground flex items-center gap-1.5 rounded-lg border py-1 pr-1 pl-2.5">
-      <Languages className="size-4" aria-hidden="true" />
+    <label className={PILL_FIELD}>
       <span className="sr-only">{t('language.label')}</span>
       <select
         value={current}
@@ -17,7 +17,7 @@ export function LanguageSelector() {
           const { value } = event.target
           if (isSupportedLanguage(value)) void saveLanguagePreference(value)
         }}
-        className="text-foreground cursor-pointer rounded-md bg-transparent py-0.5 text-sm outline-none"
+        className="cursor-pointer appearance-none bg-transparent font-semibold outline-none"
       >
         {SUPPORTED_LANGUAGES.map((language) => (
           <option key={language} value={language}>
@@ -25,6 +25,10 @@ export function LanguageSelector() {
           </option>
         ))}
       </select>
+      <ChevronsUpDown
+        className="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 size-3.5 -translate-y-1/2"
+        aria-hidden="true"
+      />
     </label>
   )
 }

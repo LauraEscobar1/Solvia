@@ -73,6 +73,8 @@ const BOTH_MODES: [string, string, number][] = [
   ['accent-line', 'surface-solid', NON_TEXT],
   ['solid-foreground', 'solid', TEXT],
   ['feature-foreground', 'hero', TEXT],
+  ['feature-foreground', 'hero-row', TEXT],
+  ['accent', 'hero-row', TEXT],
   ['feature-foreground', 'feature', TEXT],
   ['feature-foreground', 'feature-row', TEXT],
   ['feature-muted', 'feature', TEXT],
