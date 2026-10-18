@@ -32,3 +32,7 @@ desktop/src-tauri/gen/schemas/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# ── Referencia de diseño (no se versiona) ──
+docs/design/*.pdf
+docs/design/screenshots/
