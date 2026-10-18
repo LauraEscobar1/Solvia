@@ -270,6 +270,24 @@ describe('banner de IA en el panel', () => {
     expect(requests.some((request) => request.path === '/api/v1/ai/overview?language=en')).toBe(true)
   })
 
+  it('sin datos de vencimientos muestra los 5 días hábiles con 0', async () => {
+    mockApi((request) =>
+      request.path.startsWith('/api/v1/dashboard/summary')
+        ? jsonResponse(makeSummary({ due_by_day: [] }))
+        : panelApi(AI_OVERVIEW)(request),
+    )
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const forecast = within(screen.getByRole('dialog', { name: 'Análisis IA' })).getByRole('region', {
+      name: 'Vencimientos previstos · próximos 5 días',
+    })
+
+    expect(await within(forecast).findByText('0 en total')).toBeInTheDocument()
+    expect(within(forecast).getAllByLabelText(/: 0 por vencer$/)).toHaveLength(5)
+    expect(within(forecast).getByLabelText('Hoy: 0 por vencer')).toBeInTheDocument()
+  })
+
   it('en respaldo traduce el análisis por reglas y muestra el aviso', async () => {
     mockApi(panelApi(RULE_OVERVIEW))
     const user = userEvent.setup()

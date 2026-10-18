@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Stagger, StaggerItem } from '@/components/motion/Motion'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import type { DashboardQuery } from '@/lib/api/types'
@@ -42,11 +43,21 @@ export function AnalyticsPage() {
           </>
         }
       />
-      <TrendCard query={period} />
-      <div className={`grid gap-6 ${showsBottlenecks ? 'lg:grid-cols-2' : ''}`}>
-        <StageFlowCard query={scope} />
-        {showsBottlenecks && <BottleneckCard query={scope} />}
-      </div>
+      <Stagger className="flex flex-col gap-6">
+        <StaggerItem>
+          <TrendCard query={period} />
+        </StaggerItem>
+        <div className={`grid gap-6 ${showsBottlenecks ? 'lg:grid-cols-2' : ''}`}>
+          <StaggerItem>
+            <StageFlowCard query={scope} />
+          </StaggerItem>
+          {showsBottlenecks && (
+            <StaggerItem>
+              <BottleneckCard query={scope} />
+            </StaggerItem>
+          )}
+        </div>
+      </Stagger>
     </div>
   )
 }

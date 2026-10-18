@@ -3,6 +3,7 @@ import { Plus, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
+import { Stagger, StaggerItem } from '@/components/motion/Motion'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
@@ -84,10 +85,24 @@ export function DashboardPage() {
         </div>
       </header>
 
-      {oversees && <AIBanner areaId={areaId} />}
-      <StatusOverview summary={summary} query={summaryQuery} scoped={!oversees} />
-      <RiskSpotlight areaId={areaId} />
-      {!oversees && <MyRequests />}
+      <Stagger className="flex flex-col gap-6">
+        {oversees && (
+          <StaggerItem>
+            <AIBanner areaId={areaId} />
+          </StaggerItem>
+        )}
+        <StaggerItem>
+          <StatusOverview summary={summary} query={summaryQuery} scoped={!oversees} />
+        </StaggerItem>
+        <StaggerItem>
+          <RiskSpotlight areaId={areaId} />
+        </StaggerItem>
+        {!oversees && (
+          <StaggerItem>
+            <MyRequests />
+          </StaggerItem>
+        )}
+      </Stagger>
 
       {creating && (
         <CreateRequestDialog

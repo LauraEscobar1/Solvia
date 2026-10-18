@@ -1,8 +1,10 @@
 import { X } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useRef } from 'react'
+import { motion } from 'motion/react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { focusableWithin, trapTab } from '@/lib/focus'
+import { useReducedMotion } from '@/lib/useReducedMotion'
 import { IconButton } from './IconButton'
 
 const openDialogs: HTMLElement[] = []
@@ -33,6 +35,7 @@ export function Dialog({
   header,
 }: DialogProps) {
   const { t } = useTranslation()
+  const reduced = useReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
   const panel = useRef<HTMLDivElement>(null)
@@ -77,7 +80,10 @@ export function Dialog({
   const sheet = variant === 'sheet'
 
   return createPortal(
-    <div
+    <motion.div
+      initial={reduced ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className={[
         'bg-overlay fixed inset-0 z-50 flex backdrop-blur-sm',
         sheet ? 'justify-end' : 'items-center justify-center p-4',
@@ -86,8 +92,11 @@ export function Dialog({
         if (event.target === event.currentTarget) onCloseRef.current()
       }}
     >
-      <div
+      <motion.div
         ref={panel}
+        initial={reduced || !sheet ? false : { x: '100%' }}
+        animate={{ x: 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -137,8 +146,8 @@ export function Dialog({
         {footer && (
           <footer className="border-divider flex flex-wrap justify-end gap-2 border-t px-6 py-4">{footer}</footer>
         )}
-      </div>
-    </div>,
+      </motion.div>
+    </motion.div>,
     document.body,
   )
 }

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
+import { PageFade } from '@/components/motion/Motion'
 import { CriticalAlertNotifier } from '@/components/alerts/CriticalAlertNotifier'
 import { TopBar } from './TopBar'
 
@@ -7,6 +8,7 @@ const MAIN_ID = 'main-content'
 
 export function AppLayout() {
   const { t } = useTranslation('nav')
+  const { pathname } = useLocation()
 
   return (
     <div className="flex min-h-full flex-col">
@@ -25,7 +27,9 @@ export function AppLayout() {
       </div>
       <div className="flex-1 px-6 xl:px-10">
         <main id={MAIN_ID} tabIndex={-1} className="mx-auto w-full max-w-page pt-8 pb-16 outline-none">
-          <Outlet />
+          <PageFade key={pathname}>
+            <Outlet />
+          </PageFade>
         </main>
       </div>
     </div>

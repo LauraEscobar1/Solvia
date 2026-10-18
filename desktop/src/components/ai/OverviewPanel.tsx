@@ -1,7 +1,8 @@
 import { RefreshCw, ThumbsDown, ThumbsUp, X } from 'lucide-react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { Grow } from '@/components/motion/Motion'
 import { ReassignButton } from '@/components/requests/ReassignButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { IconButton } from '@/components/ui/IconButton'
@@ -20,8 +21,11 @@ import type { useAnalyzeOverview } from '@/lib/api/ai'
 const HIGH_DAY = 4
 const HEADLINE_WORDS = 15
 const LONG_SUMMARY_CHARS = 140
-const MAX_BAR = 64
-const MIN_BAR = 14
+const MAX_BAR = 72
+const MIN_BAR = 24
+const FORECAST_DAYS = 5
+const SUNDAY = 0
+const SATURDAY = 6
 const WEEKDAY: Intl.DateTimeFormatOptions = { weekday: 'short', timeZone: 'UTC' }
 
 function Highlighted({ text, terms }: { text: string; terms: string[] }) {
@@ -49,16 +53,33 @@ function firstSentence(text: string): string {
   return words.length > HEADLINE_WORDS ? `${words.slice(0, HEADLINE_WORDS).join(' ')}…` : sentence
 }
 
+function isoDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+function emptyForecast(): { day: string; count: number }[] {
+  const days: { day: string; count: number }[] = []
+  const cursor = new Date()
+  while (days.length < FORECAST_DAYS) {
+    if (cursor.getDay() !== SUNDAY && cursor.getDay() !== SATURDAY) days.push({ day: isoDate(cursor), count: 0 })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return days
+}
+
 function DueForecast({ areaId }: { areaId?: string }) {
   const { t } = useTranslation('ai')
   const { number, dateTime } = useFormatters()
   const summary = useDashboardSummary({ area_id: areaId })
-  const days = summary.data?.due_by_day ?? []
-  if (summary.isPending) return <Skeleton className="bg-feature-row h-36" />
-  const today = summary.data?.range.date_to
+  const fallback = useMemo(() => emptyForecast(), [])
+  if (summary.isPending) return <Skeleton className="bg-feature-row h-40" />
+  const reported = summary.data?.due_by_day
+  const days = reported && reported.length > 0 ? reported : fallback
+  const today = days === fallback ? fallback[0]?.day : summary.data?.range.date_to
   const total = days.reduce((sum, item) => sum + item.count, 0)
   const peak = Math.max(1, ...days.map((item) => item.count))
-  if (days.length === 0) return null
 
   return (
     <section className="bg-feature-row rounded-inner flex flex-col gap-4 p-5" aria-label={t('overview.panel.dueTitle')}>
@@ -67,18 +88,22 @@ function DueForecast({ areaId }: { areaId?: string }) {
         <span>{t('overview.panel.dueTotal', { count: total })}</span>
       </div>
       <ul className="flex items-end justify-around gap-2">
-        {days.map((item) => {
+        {days.map((item, position) => {
           const label = item.day === today ? t('overview.panel.today') : dateTime(`${item.day}T00:00:00Z`, WEEKDAY)
           const tone = item.day === today ? 'bg-accent' : item.count >= HIGH_DAY ? 'bg-danger-strong' : 'bg-control-border'
           const height = MIN_BAR + ((MAX_BAR - MIN_BAR) * item.count) / peak
           return (
             <li
               key={item.day}
-              className="text-caption flex flex-col items-center gap-1.5 font-semibold"
+              className="text-caption flex flex-col items-center gap-2 font-semibold"
               aria-label={t('overview.panel.dueDay', { day: label, count: item.count })}
             >
-              <span aria-hidden="true">{number(item.count)}</span>
-              <span aria-hidden="true" className={`w-13 rounded-t-inner rounded-b-check ${tone}`} style={{ height }} />
+              <span aria-hidden="true" className="text-body">
+                {number(item.count)}
+              </span>
+              <span aria-hidden="true" className="block w-12" style={{ height }}>
+                <Grow axis="y" delay={position * 0.04} className={`h-full w-full rounded-cell ${tone}`} />
+              </span>
               <span aria-hidden="true" className="text-muted-foreground capitalize">
                 {label}
               </span>

@@ -1,5 +1,6 @@
 import { Triangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Grow } from '@/components/motion/Motion'
 import { SectionCard } from '@/components/ui/Card'
 import { QueryState, SkeletonRows } from '@/components/ui/States'
 import { useStageFlow } from '@/lib/api/dashboard'
@@ -35,7 +36,9 @@ function StageRow({ item, maxCount }: { item: StageFlowItem; maxCount: number })
       </div>
       <div className="flex items-center gap-4">
         <div aria-hidden="true" className="bg-surface-sunken h-6 flex-1 overflow-hidden rounded-full">
-          <div className={`h-full rounded-full ${STAGE_COLORS[item.status]}`} style={{ width: `${width}%` }} />
+          <div className="h-full" style={{ width: `${width}%` }}>
+            <Grow className={`h-full rounded-full ${STAGE_COLORS[item.status]}`} />
+          </div>
         </div>
         <span className="text-heading w-10 shrink-0 text-right tabular-nums">
           <span aria-hidden="true">{number(item.count)}</span>

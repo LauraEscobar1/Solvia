@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Grow } from '@/components/motion/Motion'
 
 export function RiskMeter({ value, label }: { value: number; label: string }) {
   const clamped = Math.min(100, Math.max(0, value))
@@ -43,11 +44,9 @@ export function StageBar({
           <span className="bg-surface-sunken h-full flex-1 rounded-full" />
         ) : (
           visible.map((segment) => (
-            <span
-              key={segment.key}
-              className={`h-full min-w-3 rounded-full ${segment.colorClass}`}
-              style={{ flexGrow: segment.count }}
-            />
+            <span key={segment.key} className="h-full min-w-3" style={{ flexGrow: segment.count }}>
+              <Grow className={`h-full rounded-full ${segment.colorClass}`} />
+            </span>
           ))
         )}
       </div>
