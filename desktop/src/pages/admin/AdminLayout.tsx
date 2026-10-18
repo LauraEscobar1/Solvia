@@ -1,14 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import { Navigate, NavLink, Outlet } from 'react-router'
+import { Navigate, NavLink, Outlet, useLocation } from 'react-router'
 import { PageHeader } from '@/components/ui/PageHeader'
 
 const TABS = ['users', 'areas', 'sla', 'ai'] as const
 
 export function AdminLayout() {
   const { t } = useTranslation(['admin', 'nav'])
+  const centered = useLocation().pathname.endsWith('/ai')
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={`flex flex-col gap-6 ${centered ? 'max-w-settings mx-auto w-full' : ''}`}>
       <PageHeader title={t('nav:admin')} />
       <nav aria-label={t('sections')} className="glass border-card-edge inline-flex items-center gap-1 self-start rounded-full border p-1">
         {TABS.map((tab) => (

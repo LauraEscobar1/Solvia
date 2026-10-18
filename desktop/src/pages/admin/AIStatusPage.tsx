@@ -36,7 +36,7 @@ export function AIStatusPage() {
   const last = data.last_daily_run
 
   return (
-    <SectionCard title={t('admin.title')} description={t('admin.description')} className="max-w-settings">
+    <SectionCard title={t('admin.title')} description={t('admin.description')}>
       <div className="flex flex-col gap-2">
         <div className="text-body flex items-center justify-between gap-3">
           <span className="font-semibold">{t('admin.usage')}</span>

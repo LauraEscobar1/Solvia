@@ -159,7 +159,7 @@ export function SettingsPage() {
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
 
   return (
-    <div className="max-w-settings flex w-full flex-col gap-6">
+    <div className="max-w-settings mx-auto flex w-full flex-col gap-6">
       <PageHeader title={t('nav:settings')} />
       {authenticated && <ProfileCard />}
       <SectionCard title={t('appearance.title')} description={authenticated ? t('appearance.syncNote') : undefined}>
