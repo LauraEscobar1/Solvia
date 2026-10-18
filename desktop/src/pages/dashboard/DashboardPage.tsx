@@ -3,12 +3,13 @@ import { Plus, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Stagger, StaggerItem } from '@/components/motion/Motion'
+import { RefreshFade, Stagger, StaggerItem } from '@/components/motion/Motion'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
 import { requestKeys } from '@/lib/api/requests'
 import { useFormatters } from '@/lib/format'
+import { useCompleteSpin } from '@/lib/useCompleteSpin'
 import { useSessionStore } from '@/stores/session'
 import { CreateRequestDialog } from '../requests/CreateRequestDialog'
 import { AIBanner } from './AIBanner'
@@ -30,6 +31,7 @@ export function DashboardPage() {
   const oversees = isAdmin || user?.role === 'supervisor'
   const summaryQuery = { area_id: areaId }
   const summary = useDashboardSummary(summaryQuery)
+  const refreshing = useCompleteSpin(summary.isFetching)
   const firstName = user?.full_name.trim().split(/\s+/)[0] ?? ''
   const attention = summary.data?.high_risk ?? 0
 
@@ -79,12 +81,15 @@ export function DashboardPage() {
                 : t('refresh')
             }
             tooltipAlign="end"
-            disabled={summary.isFetching}
+            spin={refreshing.spinning}
+            onSpinCycle={refreshing.onCycle}
+            disabled={summary.isFetching || refreshing.spinning}
             onClick={refresh}
           />
         </div>
       </header>
 
+      <RefreshFade token={summary.dataUpdatedAt}>
       <Stagger className="flex flex-col gap-6">
         {oversees && (
           <StaggerItem>
@@ -103,6 +108,7 @@ export function DashboardPage() {
           </StaggerItem>
         )}
       </Stagger>
+      </RefreshFade>
 
       {creating && (
         <CreateRequestDialog

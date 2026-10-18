@@ -2,7 +2,7 @@ import { LogOut, Menu as MenuIcon, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink } from 'react-router'
 import { motion } from 'motion/react'
-import { SPRING } from '@/components/motion/transitions'
+import { NAV_SPRING } from '@/components/motion/transitions'
 import { Avatar } from '@/components/ui/Avatar'
 import { CountBadge } from '@/components/ui/Chip'
 import { Menu, type MenuEntry } from '@/components/ui/Menu'
@@ -32,7 +32,7 @@ function MainNavigation() {
               end={path === '/'}
               className={({ isActive }) =>
                 [
-                  'text-body relative inline-flex h-10 items-center gap-2 rounded-full px-4 font-semibold whitespace-nowrap transition-colors',
+                  'text-body relative inline-flex h-10 items-center gap-2 rounded-full px-4 font-semibold whitespace-nowrap transition-colors duration-200',
                   isActive ? 'text-accent-foreground' : 'text-nav-foreground hover:text-feature-foreground',
                 ].join(' ')
               }
@@ -44,7 +44,7 @@ function MainNavigation() {
                       layoutId="nav-pill"
                       aria-hidden="true"
                       className="bg-accent absolute inset-0 rounded-full"
-                      transition={reduced ? { duration: 0 } : SPRING}
+                      transition={reduced ? { duration: 0 } : NAV_SPRING}
                     />
                   )}
                   <Icon className="relative size-4 lg:hidden" aria-hidden="true" />

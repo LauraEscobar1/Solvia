@@ -17,7 +17,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 }
 
 export const BUTTON_BASE =
-  'inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition-[background-color,color,opacity,filter,transform] duration-150 not-disabled:motion-safe:hover:scale-[1.04] disabled:cursor-not-allowed disabled:opacity-55'
+  'inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition-[transform,box-shadow] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] not-disabled:motion-safe:hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-55'
 
 export function buttonClasses(variant: ButtonVariant = 'outline', size: ButtonSize = 'md'): string {
   return `${BUTTON_BASE} ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]}`

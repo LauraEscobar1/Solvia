@@ -27,6 +27,8 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   tooltipHidden?: boolean
   tooltipSide?: 'top' | 'bottom'
   tooltipAlign?: 'center' | 'end'
+  spin?: boolean
+  onSpinCycle?: () => void
   ref?: Ref<HTMLButtonElement>
 }
 
@@ -39,6 +41,8 @@ export function IconButton({
   tooltipHidden = false,
   tooltipSide,
   tooltipAlign,
+  spin = false,
+  onSpinCycle,
   className = '',
   type = 'button',
   ...props
@@ -50,7 +54,11 @@ export function IconButton({
       className={`${BUTTON_BASE} ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...props}
     >
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon
+        className={`size-4 ${spin ? 'animate-spin' : ''}`}
+        aria-hidden="true"
+        onAnimationIteration={onSpinCycle}
+      />
     </button>
   )
   return tooltip ? (

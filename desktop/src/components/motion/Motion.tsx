@@ -1,4 +1,4 @@
-import { animate, motion, type Variants } from 'motion/react'
+import { animate, motion, useAnimate, type Variants } from 'motion/react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { SPRING } from './transitions'
@@ -104,4 +104,25 @@ export function CountUp({ value, format }: { value: number; format: (value: numb
   }, [value, reduced])
 
   return <>{format(reduced ? value : Math.round(shown))}</>
+}
+
+const REFRESH_FADE_SECONDS = 0.25
+
+export function RefreshFade({ token, children, className }: BoxProps & { token: number }) {
+  const reduced = useReducedMotion()
+  const [scope, run] = useAnimate<HTMLDivElement>()
+  const seen = useRef(token)
+
+  useEffect(() => {
+    if (seen.current === token) return
+    seen.current = token
+    if (reduced || !scope.current) return
+    void run(scope.current, { opacity: [0.5, 1] }, { duration: REFRESH_FADE_SECONDS, ease: 'easeOut' })
+  }, [token, reduced, run, scope])
+
+  return (
+    <div ref={scope} className={className}>
+      {children}
+    </div>
+  )
 }
