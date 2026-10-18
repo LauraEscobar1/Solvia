@@ -111,7 +111,7 @@ function DetailView({ detail }: { detail: RequestDetail }) {
           <PriorityBadge priority={detail.priority} />
           <SlaFlags request={detail} />
         </div>
-        <h2 className="text-xl font-semibold tracking-tight">{detail.title}</h2>
+        <h1 className="text-title-detail">{detail.title}</h1>
         <RequestActions detail={detail} actions={actions} />
       </header>
 

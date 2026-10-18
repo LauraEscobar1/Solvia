@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { alertParamsFromSearch, searchFromAlertParams } from '@/lib/alerts/filters'
 import { useAlerts, useMarkAllAlertsRead } from '@/lib/api/alerts'
@@ -103,7 +104,7 @@ function Chips<T extends string>({
 }
 
 export function AlertsPage() {
-  const { t } = useTranslation('alerts')
+  const { t } = useTranslation(['alerts', 'nav'])
   const translateError = useTranslateError()
   const [search, setSearch] = useSearchParams()
   const params = useMemo(() => alertParamsFromSearch(search), [search])
@@ -130,7 +131,8 @@ export function AlertsPage() {
   ]
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4">
+    <div className="mx-auto flex max-w-alerts flex-col gap-4">
+      <PageHeader title={t('nav:alerts')} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
         <div className="flex items-center gap-3">

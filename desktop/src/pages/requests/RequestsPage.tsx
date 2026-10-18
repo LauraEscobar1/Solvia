@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { useTranslateError } from '@/lib/api/errors'
 import { useRequests } from '@/lib/api/requests'
@@ -95,7 +96,7 @@ function TableView({
 }
 
 export function RequestsPage() {
-  const { t } = useTranslation('requests')
+  const { t } = useTranslation(['requests', 'nav'])
   const navigate = useNavigate()
   const [search, setSearch] = useSearchParams()
   const view = useRequestsViewStore((state) => state.view)
@@ -117,7 +118,8 @@ export function RequestsPage() {
   }, [params.size, setSearch])
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      <PageHeader title={t('nav:requests')} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ViewToggle />
         <Button

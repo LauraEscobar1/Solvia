@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import { Navigate, NavLink, Outlet } from 'react-router'
+import { PageHeader } from '@/components/ui/PageHeader'
 
-const TABS = ['areas', 'users', 'sla', 'ai'] as const
+const TABS = ['users', 'areas', 'sla', 'ai'] as const
 
 export function AdminLayout() {
-  const { t } = useTranslation('admin')
+  const { t } = useTranslation(['admin', 'nav'])
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t('nav:admin')} />
       <nav aria-label={t('sections')} className="flex gap-1 border-b">
         {TABS.map((tab) => (
           <NavLink
@@ -32,5 +34,5 @@ export function AdminLayout() {
 }
 
 export function AdminIndex() {
-  return <Navigate to="areas" replace />
+  return <Navigate to="users" replace />
 }

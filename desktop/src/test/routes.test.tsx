@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '@/lib/api/types'
@@ -32,11 +33,19 @@ function mainNavigation() {
   return within(screen.getByRole('navigation', { name: 'Navegación principal' }))
 }
 
+async function openAccountMenu() {
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Menú de la cuenta' }))
+  return within(screen.getByRole('menu', { name: 'Menú de la cuenta' }))
+}
+
 describe('protección de rutas', () => {
   beforeEach(() => {
     mockApi((request) => {
       if (request.path.startsWith('/api/v1/health')) return jsonResponse(HEALTH_OK)
       if (request.path.startsWith('/api/v1/sla-policies')) return jsonResponse([])
+      if (request.path.startsWith('/api/v1/dashboard')) {
+        return jsonResponse({ error: { code: 'common.internal_error', params: {} } }, 500)
+      }
       return jsonResponse(EMPTY_PAGE)
     })
   })
@@ -62,7 +71,9 @@ describe('protección de rutas', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Panel' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(mainNavigation().getByRole('link', { name: 'Solicitudes' })).toBeInTheDocument()
-    expect(mainNavigation().queryByRole('link', { name: 'Administración' })).toBeNull()
+    const menu = await openAccountMenu()
+    expect(menu.getByRole('menuitem', { name: 'Configuración' })).toBeInTheDocument()
+    expect(menu.queryByRole('group', { name: 'Administración' })).toBeNull()
   })
 
   it('el supervisor tampoco ve Administración', async () => {
@@ -71,16 +82,24 @@ describe('protección de rutas', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Panel' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
-    expect(mainNavigation().queryByRole('link', { name: 'Administración' })).toBeNull()
+    const menu = await openAccountMenu()
+    expect(menu.queryByRole('menuitem', { name: 'Usuarios' })).toBeNull()
   })
 
   it('permite al admin entrar a Administración', async () => {
     signInAs(makeUser({ role: 'admin' }))
-    renderAt('/admin')
+    const router = renderAt('/admin')
 
-    expect(await screen.findByRole('link', { name: 'Usuarios' })).toBeInTheDocument()
-    expect(mainNavigation().getByRole('link', { name: 'Administración' })).toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: /Nueva área/ })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Administración' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/admin/users')
+    expect(await screen.findByRole('button', { name: /Nuevo usuario/ })).toBeInTheDocument()
+    const admin = within((await openAccountMenu()).getByRole('group', { name: 'Administración' }))
+    expect(admin.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Usuarios',
+      'Áreas',
+      'SLA',
+      'IA',
+    ])
   })
 
   it('obliga a cambiar una contraseña temporal antes de continuar', async () => {

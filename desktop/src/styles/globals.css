@@ -140,6 +140,15 @@
   --text-code: 0.75rem;
   --text-code--line-height: 1.3;
 
+  --text-wordmark: 1.625rem;
+  --text-wordmark--line-height: 1;
+  --text-wordmark--letter-spacing: -0.04em;
+  --text-wordmark--font-weight: 700;
+
+  --container-page: 85rem;
+  --container-alerts: 61.25rem;
+  --container-settings: 55rem;
+
   --radius-feature: 2rem;
   --radius-card: 1.75rem;
   --radius-column: 1.5rem;

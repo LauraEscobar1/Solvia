@@ -3,9 +3,9 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AlertBell } from '@/components/alerts/AlertBell'
 import { CriticalAlertNotifier } from '@/components/alerts/CriticalAlertNotifier'
 import { NotificationSettings } from '@/components/alerts/NotificationSettings'
+import { TopBar } from '@/components/layout/TopBar'
 import type { Alert } from '@/lib/api/types'
 import { AlertsPage } from '@/pages/alerts/AlertsPage'
 import { useSessionStore } from '@/stores/session'
@@ -90,27 +90,27 @@ describe('alertas en la aplicación', () => {
     notifications.notify.mockReset()
   })
 
-  it('la campana muestra el contador de no leídas y lleva a las alertas sin leer', async () => {
+  it('la navegación muestra el contador de no leídas junto a Alertas', async () => {
     mockApi((request) =>
       request.path === '/api/v1/alerts/unread-count'
         ? jsonResponse({ count: 7 })
         : jsonResponse({ items: [], total: 0, page: 1, size: 20 }),
     )
-    renderWithRouter(<AlertBell />)
+    renderWithRouter(<TopBar />)
 
-    const bell = await screen.findByRole('link', { name: 'Alertas sin leer: 7' })
+    const link = await screen.findByRole('link', { name: 'Alertas (7 sin leer)' })
 
-    expect(within(bell).getByTestId('alert-bell-count')).toHaveTextContent('7')
-    expect(bell).toHaveAttribute('href', '/alerts?is_read=false')
+    expect(link).toHaveAttribute('href', '/alerts')
+    expect(link).toHaveAttribute('aria-current', 'page')
+    expect(within(link).getByText('7')).toBeInTheDocument()
   })
 
-  it('la campana no muestra contador sin alertas pendientes', async () => {
+  it('sin alertas pendientes no hay contador', async () => {
     mockApi(() => jsonResponse({ count: 0 }))
-    renderWithRouter(<AlertBell />)
+    renderWithRouter(<TopBar />)
 
-    await screen.findByRole('link', { name: 'Alertas sin leer: 0' })
-
-    expect(screen.queryByTestId('alert-bell-count')).toBeNull()
+    expect(await screen.findByRole('link', { name: 'Alertas' })).toBeInTheDocument()
+    expect(screen.queryByText(/sin leer/)).toBeNull()
   })
 
   it('construye el texto de cada alerta desde message_code y params', async () => {

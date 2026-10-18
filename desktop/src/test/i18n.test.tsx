@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event'
 import i18next from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Header } from '@/components/layout/Header'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { TopBar } from '@/components/layout/TopBar'
+import { LanguageSelector } from '@/components/LanguageSelector'
 import i18n, { i18nOptions, LANGUAGE_STORAGE_KEY } from '@/i18n'
 import { ApiError } from '@/lib/api/client'
 import { translateError } from '@/lib/api/errors'
@@ -15,20 +15,18 @@ describe('cambio de idioma', () => {
     const user = userEvent.setup()
     renderWithProviders(
       <>
-        <Header />
-        <Sidebar />
+        <TopBar />
+        <LanguageSelector />
       </>,
       { route: '/requests' },
     )
 
-    expect(screen.getByRole('link', { name: 'Solicitudes' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Solicitudes')
+    expect(screen.getByRole('link', { name: 'Solicitudes' })).toHaveAttribute('aria-current', 'page')
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Idioma' }), 'en')
 
-    expect(await screen.findByRole('link', { name: 'Requests' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Requests')
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Requests' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Insights' })).toBeInTheDocument()
     expect(document.documentElement.lang).toBe('en')
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('en')
   })

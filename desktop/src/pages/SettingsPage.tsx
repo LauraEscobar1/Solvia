@@ -5,6 +5,7 @@ import { ChangePasswordForm } from '@/components/ChangePasswordForm'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { SystemStatus } from '@/components/SystemStatus'
 import { ThemeSelector } from '@/components/ThemeSelector'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useSessionStore } from '@/stores/session'
 import { DEFAULT_API_BASE_URL, normalizeApiBaseUrl, useSettingsStore } from '@/stores/settings'
 
@@ -29,7 +30,7 @@ function Section({
 type SaveStatus = 'idle' | 'invalid' | 'saved'
 
 export function SettingsPage() {
-  const { t } = useTranslation(['settings', 'common'])
+  const { t } = useTranslation(['settings', 'common', 'nav'])
   const inputId = useId()
   const apiBaseUrl = useSettingsStore((state) => state.apiBaseUrl)
   const setApiBaseUrl = useSettingsStore((state) => state.setApiBaseUrl)
@@ -57,7 +58,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-settings flex-col gap-6">
+      <PageHeader title={t('nav:settings')} />
       <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
 
       <Section title={t('api.title')} description={t('api.description')}>

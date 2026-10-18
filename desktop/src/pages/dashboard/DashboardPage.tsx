@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { inputClass, selectClass } from '@/components/ui/styles'
 import { useAreaOptions } from '@/lib/api/admin'
 import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
@@ -112,7 +113,7 @@ function RangeLabel({ range }: { range: DateRange }) {
 }
 
 export function DashboardPage() {
-  const { t } = useTranslation('dashboard')
+  const { t } = useTranslation(['dashboard', 'nav'])
   const { dateTime } = useFormatters()
   const queryClient = useQueryClient()
   const role = useSessionStore((state) => state.user?.role)
@@ -123,7 +124,8 @@ export function DashboardPage() {
   const showsAI = role === 'admin' || role === 'supervisor'
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t('nav:dashboard')} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
