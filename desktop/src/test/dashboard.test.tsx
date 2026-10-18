@@ -145,7 +145,7 @@ describe('panel', () => {
     expect(open).toHaveTextContent('Abiertas')
     expect(open).toHaveTextContent('128')
     expect(open).toHaveTextContent('en 5 áreas')
-    expect(open).toHaveAttribute('href', '/requests?status=received&status=assigned&status=in_progress')
+    expect(open).toHaveAttribute('href', '/requests')
     expect(screen.getByTestId('kpi-overdue')).toHaveTextContent('+3 desde ayer')
     expect(screen.getByTestId('kpi-overdue')).toHaveAttribute('href', '/requests?overdue=true')
     expect(screen.getByTestId('kpi-dueSoon')).toHaveTextContent('6 con riesgo alto')

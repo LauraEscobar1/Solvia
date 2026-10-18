@@ -129,10 +129,10 @@ async function captureVariant(browser, variant, accounts) {
   await go(page, '#/requests')
   add(await shoot(page, folder, '03-solicitudes-lista'))
   if (wanted('04-solicitudes-tablero')) {
-    await page.getByRole('radio', { name: /Tablero|Board/ }).click()
+    await page.getByRole('radio', { name: /^(Tablero|Board)$/ }).click()
     await settle(page)
     add(await shoot(page, folder, '04-solicitudes-tablero'))
-    await page.getByRole('radio', { name: /Lista|Table|List/ }).click()
+    await page.getByRole('radio', { name: /^(Lista|List)$/ }).click()
   }
   await go(page, '#/analytics')
   add(await shoot(page, folder, '05-analisis'))

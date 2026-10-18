@@ -1,6 +1,7 @@
 import { CircleAlert, Clock3, Dot, Pause } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Pill, type PillTone } from '@/components/ui/Pill'
+import { Pill } from '@/components/ui/Pill'
+import { PILL_TONE_CLASSES, type PillTone } from '@/components/ui/pillStyles'
 import type { RequestPriority, RequestStatus } from '@/lib/api/types'
 import type { DueKind, DueRequest } from '@/lib/requests/due'
 import { useDueLabel } from '@/lib/requests/useDueLabel'
@@ -63,12 +64,15 @@ export function RiskPill({ score }: { score: number | null }) {
   const level = riskLevel(score)
   const { pill, inner } = RISK_TONES[level]
   return (
-    <Pill tone={pill} className="pr-0.5" title={t('risk.scoreTitle', { score })}>
+    <span
+      title={t('risk.scoreTitle', { score })}
+      className={`text-caption inline-flex h-6 shrink-0 items-center gap-1 rounded-full pr-0.5 pl-2.5 font-semibold whitespace-nowrap ${PILL_TONE_CLASSES[pill]}`}
+    >
       {t(`risk.levels.${level}`)}
-      <span className={`text-caption ml-1 inline-flex h-5 min-w-7 items-center justify-center rounded-full px-1.5 tabular-nums ${inner}`}>
+      <span className={`text-caption inline-flex h-5 min-w-7 items-center justify-center rounded-full px-1.5 tabular-nums ${inner}`}>
         {score}
       </span>
-    </Pill>
+    </span>
   )
 }
 

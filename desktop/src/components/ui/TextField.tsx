@@ -1,7 +1,7 @@
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react'
 import { type InputHTMLAttributes, type Ref, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { inputClass } from './styles'
+import { CONTROL_BASE } from './styles'
 
 interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: LucideIcon
@@ -30,7 +30,7 @@ export function TextField({
       )}
       <input
         type={effectiveType}
-        className={`${inputClass} h-12 ${Icon ? 'pl-11' : ''} ${revealable ? 'pr-12' : ''} ${className}`}
+        className={`${CONTROL_BASE} h-12 w-full rounded-full ${Icon ? 'pl-11' : 'pl-4'} ${revealable ? 'pr-12' : 'pr-4'} ${className}`}
         {...props}
       />
       {revealable && (

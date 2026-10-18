@@ -81,21 +81,23 @@ export function invalidateRequest(queryClient: QueryClient, id?: string): Promis
   )
 }
 
-export function useRequests(params: RequestListParams) {
+export function useRequests(params: RequestListParams, enabled = true) {
   return useQuery({
     queryKey: requestKeys.list(params),
     queryFn: ({ signal }) =>
       apiRequest<Page<RequestSummary>>(`/api/v1/requests?${apiQuery(params)}`, { signal }),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 
-export function useRequestBoard(filters: RequestFilters) {
+export function useRequestBoard(filters: RequestFilters, enabled = true) {
   return useQuery({
     queryKey: requestKeys.board(filters),
     queryFn: ({ signal }) =>
       apiRequest<RequestBoard>(`/api/v1/requests/board?${apiQuery(filters)}`, { signal }),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 

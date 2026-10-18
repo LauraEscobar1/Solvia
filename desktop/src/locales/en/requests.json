@@ -1,7 +1,7 @@
 {
   "views": {
     "label": "View",
-    "table": "Table",
+    "table": "List",
     "board": "Board"
   },
   "new": "New request",
@@ -24,10 +24,11 @@
     "area": "Area",
     "assignee": "Assignee",
     "priority": "Priority",
-    "status": "Status",
-    "due_at": "Due date",
-    "last_activity_at": "Last activity",
-    "risk_score": "Risk"
+    "status": "Stage",
+    "due_at": "Due",
+    "last_activity_at": "Activity",
+    "risk_score": "Risk",
+    "request": "Request"
   },
   "sortBy": "Sort by {{column}}",
   "unassigned": "Unassigned",
@@ -42,17 +43,29 @@
     "status": "Status",
     "priority": "Priority",
     "area": "Area",
-    "allAreas": "All areas",
+    "allAreas": "All",
     "assignee": "Assignee",
-    "anyAssignee": "Any assignee",
-    "overdue": "Overdue only",
+    "anyAssignee": "Anyone",
+    "overdue": "Overdue",
     "dueSoon": "Due soon",
     "stalled": "Stalled",
     "receivedFrom": "Received from",
     "receivedTo": "Received until",
     "completedFrom": "Completed from",
     "completedTo": "Completed until",
-    "clear": "Clear filters"
+    "clear": "Clear filters",
+    "title": "Filters",
+    "label": "Request filters",
+    "stage": "Stage",
+    "open": "Open",
+    "all": "All",
+    "selected": "{{count}} selected",
+    "onlyRisky": "At risk only",
+    "more": "More filters",
+    "sla": "Deadline",
+    "dates": "Dates",
+    "active_one": "{{count}} active filter",
+    "active_other": "{{count}} active filters"
   },
   "empty": "No requests match these filters.",
   "loading": "Loading requests…",
@@ -79,13 +92,17 @@
     "reopen": "Reopen"
   },
   "board": {
-    "showCancelled": "Show cancelled",
     "showing": "Showing {{count}} of {{total}}",
     "empty": "No requests",
     "moveTo": "Move {{code}} to…",
     "move": "Move to…",
     "notAllowed": "You cannot move {{code}} to “{{status}}”.",
-    "column": "{{status}} column"
+    "column": "{{status}} column",
+    "expand": "Show {{status}}",
+    "collapse": "Hide {{status}}",
+    "drag": "Drag {{code}}",
+    "moveMenu": "Move {{code}} to…",
+    "collapsedHint": "Drop here to move to {{status}}"
   },
   "transitionDialog": {
     "title": "{{action}} · {{code}}",
@@ -157,5 +174,11 @@
     "dueIn": "Due in {{time}}",
     "stalled": "Idle for {{time}}",
     "none": "No due date"
+  },
+  "count": {
+    "open_one": "{{value}} open",
+    "open_other": "{{value}} open",
+    "any_one": "{{value}} request",
+    "any_other": "{{value}} requests"
   }
 }

@@ -80,6 +80,8 @@ def _sla_conditions(filters: RequestFilters, rules: SlaRules) -> list[ColumnElem
     ]
     if filters.sla_status is not None:
         conditions.append(rules.status_is(filters.sla_status))
+    if filters.min_risk is not None:
+        conditions.append(RiskRules(rules).score >= filters.min_risk)
     return conditions
 
 

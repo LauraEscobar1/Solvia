@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { PILL_FIELD } from './SelectPill'
+import { PILL_FIELD_BASE } from './SelectPill'
 
 const DEBOUNCE_MS = 300
 
@@ -25,7 +25,7 @@ export function SearchInput({ value, label, onChange, className = '' }: SearchIn
   }, [draft, value, onChange])
 
   return (
-    <label className={`${PILL_FIELD} pr-4 ${className}`}>
+    <label className={`${PILL_FIELD_BASE} pr-4 ${className}`}>
       <span className="sr-only">{label}</span>
       <Search className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
       <input

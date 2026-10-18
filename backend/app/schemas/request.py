@@ -87,6 +87,7 @@ class RequestFilters(BaseModel):
     overdue: bool | None = None
     sla_status: SlaStatus | None = None
     stalled: bool | None = None
+    min_risk: int | None = Field(default=None, ge=0, le=100)
     received_from: date | None = None
     received_to: date | None = None
     completed_from: date | None = None

@@ -2,8 +2,10 @@ import { ChevronsUpDown } from 'lucide-react'
 import type { ReactNode, Ref, SelectHTMLAttributes } from 'react'
 import { Popover } from './Popover'
 
-export const PILL_FIELD =
-  'border-control-border bg-control text-body relative inline-flex h-10 items-center gap-2 rounded-full border pr-9 pl-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus'
+export const PILL_FIELD_BASE =
+  'border-control-border bg-control text-body relative inline-flex h-10 items-center gap-2 rounded-full border pl-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus'
+
+export const PILL_FIELD = `${PILL_FIELD_BASE} pr-9`
 
 interface SelectPillProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string

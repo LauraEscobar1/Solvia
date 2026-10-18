@@ -1,7 +1,7 @@
 {
   "views": {
     "label": "Vista",
-    "table": "Tabla",
+    "table": "Lista",
     "board": "Tablero"
   },
   "new": "Nueva solicitud",
@@ -24,10 +24,11 @@
     "area": "Área",
     "assignee": "Responsable",
     "priority": "Prioridad",
-    "status": "Estado",
-    "due_at": "Fecha límite",
-    "last_activity_at": "Última actividad",
-    "risk_score": "Riesgo"
+    "status": "Etapa",
+    "due_at": "Vencimiento",
+    "last_activity_at": "Actividad",
+    "risk_score": "Riesgo",
+    "request": "Solicitud"
   },
   "sortBy": "Ordenar por {{column}}",
   "unassigned": "Sin asignar",
@@ -42,17 +43,29 @@
     "status": "Estado",
     "priority": "Prioridad",
     "area": "Área",
-    "allAreas": "Todas las áreas",
+    "allAreas": "Todas",
     "assignee": "Responsable",
-    "anyAssignee": "Cualquier responsable",
-    "overdue": "Solo vencidas",
+    "anyAssignee": "Todos",
+    "overdue": "Vencidas",
     "dueSoon": "Por vencer",
     "stalled": "Sin movimiento",
     "receivedFrom": "Recibidas desde",
     "receivedTo": "Recibidas hasta",
     "completedFrom": "Completadas desde",
     "completedTo": "Completadas hasta",
-    "clear": "Limpiar filtros"
+    "clear": "Limpiar filtros",
+    "title": "Filtros",
+    "label": "Filtros de solicitudes",
+    "stage": "Etapa",
+    "open": "Abiertas",
+    "all": "Todas",
+    "selected": "{{count}} seleccionadas",
+    "onlyRisky": "Solo en riesgo",
+    "more": "Más filtros",
+    "sla": "Plazo",
+    "dates": "Fechas",
+    "active_one": "{{count}} filtro activo",
+    "active_other": "{{count}} filtros activos"
   },
   "empty": "No hay solicitudes con estos filtros.",
   "loading": "Cargando solicitudes…",
@@ -79,13 +92,17 @@
     "reopen": "Reabrir"
   },
   "board": {
-    "showCancelled": "Mostrar canceladas",
     "showing": "Mostrando {{count}} de {{total}}",
     "empty": "Sin solicitudes",
     "moveTo": "Mover {{code}} a…",
     "move": "Mover a…",
     "notAllowed": "No puedes mover {{code}} a «{{status}}».",
-    "column": "Columna {{status}}"
+    "column": "Columna {{status}}",
+    "expand": "Mostrar {{status}}",
+    "collapse": "Ocultar {{status}}",
+    "drag": "Arrastrar {{code}}",
+    "moveMenu": "Mover {{code}} a…",
+    "collapsedHint": "Suelta aquí para mover a {{status}}"
   },
   "transitionDialog": {
     "title": "{{action}} · {{code}}",
@@ -157,5 +174,11 @@
     "dueIn": "Vence en {{time}}",
     "stalled": "Sin movimiento {{time}}",
     "none": "Sin fecha límite"
+  },
+  "count": {
+    "open_one": "{{value}} abierta",
+    "open_other": "{{value}} abiertas",
+    "any_one": "{{value}} solicitud",
+    "any_other": "{{value}} solicitudes"
   }
 }
