@@ -46,6 +46,7 @@ class Settings(BaseSettings):
         "http://localhost:1420",
         "tauri://localhost",
         "http://tauri.localhost",
+        "https://tauri.localhost",
     ]
 
     jwt_secret: SecretStr = SecretStr(DEFAULT_JWT_SECRET)
@@ -96,6 +97,17 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _async_driver(cls, value: object) -> object:
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if not isinstance(raw, str):
+            return value
+        for plain in ("postgresql://", "postgres://"):
+            if raw.startswith(plain):
+                return f"postgresql+asyncpg://{raw.removeprefix(plain)}"
+        return raw
 
     @field_validator("organization_name", mode="before")
     @classmethod

@@ -129,3 +129,35 @@ def test_bottleneck_minimum_count_defaults_to_three_and_reads_the_environment(
 def test_bottleneck_minimum_count_must_be_positive() -> None:
     with pytest.raises(ValidationError):
         make_settings(bottleneck_min_count=0)
+
+
+@pytest.mark.parametrize(
+    "given",
+    [
+        "postgresql://u:p@host:5432/db",
+        "postgres://u:p@host:5432/db",
+        "postgresql+asyncpg://u:p@host:5432/db",
+    ],
+)
+def test_database_url_always_uses_the_async_driver(
+    monkeypatch: pytest.MonkeyPatch, given: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", given)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.database_url.get_secret_value() == "postgresql+asyncpg://u:p@host:5432/db"
+
+
+def test_production_starts_with_tauri_origins_and_no_docs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("JWT_SECRET", STRONG_SECRET)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.is_production
+    assert {"tauri://localhost", "http://tauri.localhost", "https://tauri.localhost"} <= set(
+        settings.cors_origins
+    )
