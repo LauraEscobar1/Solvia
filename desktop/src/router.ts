@@ -9,6 +9,7 @@ import { AreasPage } from '@/pages/admin/AreasPage'
 import { SlaPage } from '@/pages/admin/SlaPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
 import { AlertsPage } from '@/pages/alerts/AlertsPage'
+import { AnalyticsPage } from '@/pages/analytics/AnalyticsPage'
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -29,6 +30,7 @@ export const routes: RouteObject[] = [
           { index: true, Component: DashboardPage },
           { path: 'requests', Component: RequestsPage },
           { path: 'requests/:requestId', Component: RequestDetailPage },
+          { path: 'analytics', Component: AnalyticsPage },
           { path: 'alerts', Component: AlertsPage },
           { path: 'settings', Component: SettingsPage },
           {
@@ -39,8 +41,8 @@ export const routes: RouteObject[] = [
                 Component: AdminLayout,
                 children: [
                   { index: true, Component: AdminIndex },
-                  { path: 'areas', Component: AreasPage },
                   { path: 'users', Component: UsersPage },
+                  { path: 'areas', Component: AreasPage },
                   { path: 'sla', Component: SlaPage },
                   { path: 'ai', Component: AIStatusPage },
                 ],

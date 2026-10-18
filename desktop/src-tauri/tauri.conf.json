@@ -16,8 +16,8 @@
         "title": "Solvia",
         "width": 1280,
         "height": 800,
-        "minWidth": 960,
-        "minHeight": 640,
+        "minWidth": 1024,
+        "minHeight": 700,
         "center": true,
         "resizable": true
       }

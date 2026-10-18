@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { Dialog } from '@/components/ui/Dialog'
+import { Select } from '@/components/ui/Select'
+import { InlineAlert } from '@/components/ui/States'
+import { TextArea } from '@/components/ui/TextArea'
 import { useAssignableUsers } from '@/lib/api/requests'
 import type { AllowedTransition, AreaRef, RequestStatus } from '@/lib/api/types'
 import { transitionAction } from '@/lib/requests/transitions'
@@ -68,7 +70,7 @@ export function TransitionDialog({
   })
 
   return (
-    <Modal title={title ?? t('transitionDialog.title', { action, code })} onClose={onCancel}>
+    <Dialog title={title ?? t('transitionDialog.title', { action, code })} onClose={onCancel}>
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4">
         {transition.requires_assignee && (
           <FormField
@@ -76,10 +78,9 @@ export function TransitionDialog({
             htmlFor={ids.assignee}
             error={errors.assignee_id?.message}
           >
-            <select
+            <Select
               id={ids.assignee}
               aria-invalid={Boolean(errors.assignee_id)}
-              className={selectClass}
               {...register('assignee_id')}
             >
               <option value="">{t('transitionDialog.selectAssignee')}</option>
@@ -90,7 +91,7 @@ export function TransitionDialog({
                     : t('transitionDialog.otherArea', { name: user.full_name })}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
         )}
         <FormField
@@ -102,26 +103,21 @@ export function TransitionDialog({
           htmlFor={ids.comment}
           error={errors.comment?.message}
         >
-          <textarea
+          <TextArea
             id={ids.comment}
             rows={3}
             aria-invalid={Boolean(errors.comment)}
-            className={inputClass}
             {...register('comment')}
           />
         </FormField>
-        {error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {error}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
+        {error && <InlineAlert tone="error">{error}</InlineAlert>}
+        <div className="mt-2 flex justify-end gap-2">
           <Button onClick={onCancel}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={pending}>
+          <Button type="submit" variant="solid" loading={pending}>
             {pending ? t('common:actions.saving') : t('transitionDialog.confirm')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

@@ -1,173 +1,126 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw } from 'lucide-react'
-import { lazy, Suspense } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Plus, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
+import { RefreshFade, Stagger, StaggerItem } from '@/components/motion/Motion'
 import { Button } from '@/components/ui/Button'
-import { inputClass, selectClass } from '@/components/ui/styles'
-import { useAreaOptions } from '@/lib/api/admin'
+import { IconButton } from '@/components/ui/IconButton'
 import { dashboardKeys, useDashboardSummary } from '@/lib/api/dashboard'
-import type { DashboardQuery, DateRange } from '@/lib/api/types'
+import { requestKeys } from '@/lib/api/requests'
 import { useFormatters } from '@/lib/format'
+import { useCompleteSpin } from '@/lib/useCompleteSpin'
 import { useSessionStore } from '@/stores/session'
-import { AIRecommendations } from './AIRecommendations'
-import { BottleneckHeatmap } from './BottleneckHeatmap'
-import { BlockSkeleton } from './DashboardBlock'
-import { useDashboardQuery } from './dashboardQuery'
-import { AtRiskList, StalledList } from './HighlightList'
-import { SummaryCards } from './SummaryCards'
-
-const StatusChart = lazy(() =>
-  import('./StatusChart').then((module) => ({ default: module.StatusChart })),
-)
-const TrendChart = lazy(() =>
-  import('./TrendChart').then((module) => ({ default: module.TrendChart })),
-)
-
-const RANGE_DAY: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeZone: 'UTC' }
-
-interface FiltersProps {
-  query: DashboardQuery
-  onChange: (changes: Partial<DashboardQuery>) => void
-}
-
-function AreaFilter({ query, onChange }: FiltersProps) {
-  const { t } = useTranslation('dashboard')
-  const areas = useAreaOptions()
-
-  return (
-    <label className="flex w-52 flex-col gap-1 text-xs">
-      <span className="text-muted-foreground font-medium">{t('filters.area')}</span>
-      <select
-        value={query.area_id ?? ''}
-        onChange={(event) => {
-          onChange({ area_id: event.target.value || undefined })
-        }}
-        className={selectClass}
-      >
-        <option value="">{t('filters.allAreas')}</option>
-        {areas.data?.map((area) => (
-          <option key={area.id} value={area.id}>
-            {area.name}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
-function DashboardFilters({ query, onChange, isAdmin }: FiltersProps & { isAdmin: boolean }) {
-  const { t } = useTranslation('dashboard')
-  const hasRange = Boolean(query.date_from ?? query.date_to)
-
-  return (
-    <div role="group" aria-label={t('filters.label')} className="flex flex-wrap items-end gap-3">
-      {isAdmin && <AreaFilter query={query} onChange={onChange} />}
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground font-medium">{t('filters.from')}</span>
-        <input
-          type="date"
-          value={query.date_from ?? ''}
-          max={query.date_to}
-          onChange={(event) => {
-            onChange({ date_from: event.target.value || undefined })
-          }}
-          className={`${inputClass} w-auto`}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground font-medium">{t('filters.to')}</span>
-        <input
-          type="date"
-          value={query.date_to ?? ''}
-          min={query.date_from}
-          onChange={(event) => {
-            onChange({ date_to: event.target.value || undefined })
-          }}
-          className={`${inputClass} w-auto`}
-        />
-      </label>
-      {hasRange && (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            onChange({ date_from: undefined, date_to: undefined })
-          }}
-        >
-          {t('filters.reset')}
-        </Button>
-      )}
-    </div>
-  )
-}
-
-function RangeLabel({ range }: { range: DateRange }) {
-  const { t } = useTranslation('dashboard')
-  const { dateTime } = useFormatters()
-  const day = (value: string) => dateTime(`${value}T00:00:00Z`, RANGE_DAY)
-  return (
-    <p className="text-muted-foreground text-xs">
-      {t('range', { from: day(range.date_from), to: day(range.date_to), timezone: range.timezone })}
-    </p>
-  )
-}
+import { CreateRequestDialog } from '../requests/CreateRequestDialog'
+import { AIBanner } from './AIBanner'
+import { AreaFilter } from './AreaFilter'
+import { useDashboardArea } from './dashboardQuery'
+import { MyRequests } from './MyRequests'
+import { RiskSpotlight } from './RiskSpotlight'
+import { StatusOverview } from './StatusOverview'
 
 export function DashboardPage() {
-  const { t } = useTranslation('dashboard')
+  const { t } = useTranslation(['dashboard', 'requests'])
   const { dateTime } = useFormatters()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const role = useSessionStore((state) => state.user?.role)
-  const [query, setQuery] = useDashboardQuery()
-  const summary = useDashboardSummary(query)
-  const isAdmin = role === 'admin'
-  const showsBottlenecks = role !== undefined && role !== 'requester'
-  const showsAI = role === 'admin' || role === 'supervisor'
+  const user = useSessionStore((state) => state.user)
+  const [areaId, setAreaId] = useDashboardArea()
+  const [creating, setCreating] = useState(false)
+  const isAdmin = user?.role === 'admin'
+  const oversees = isAdmin || user?.role === 'supervisor'
+  const summaryQuery = { area_id: areaId }
+  const summary = useDashboardSummary(summaryQuery)
+  const refreshing = useCompleteSpin(summary.isFetching)
+  const firstName = user?.full_name.trim().split(/\s+/)[0] ?? ''
+  const attention = summary.data?.high_risk ?? 0
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+    void queryClient.invalidateQueries({ queryKey: requestKeys.all })
+  }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
-          {summary.data && <RangeLabel range={summary.data.range} />}
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <DashboardFilters query={query} onChange={setQuery} isAdmin={isAdmin} />
-          <div className="flex flex-col items-end gap-1">
-            {summary.dataUpdatedAt > 0 && (
-              <span className="text-muted-foreground text-xs">
-                {t('updatedAt', { time: dateTime(summary.dataUpdatedAt, { timeStyle: 'short' }) })}
-              </span>
-            )}
-            <Button
-              onClick={() => void queryClient.invalidateQueries({ queryKey: dashboardKeys.all })}
-              disabled={summary.isFetching}
-            >
-              <RefreshCw
-                className={`size-4 ${summary.isFetching ? 'animate-spin' : ''}`}
-                aria-hidden="true"
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-greeting">
+            {t('greeting', { name: firstName })} <span aria-hidden="true">{t('greetingEmoji')}</span>
+          </h1>
+          <p className="text-body text-muted-foreground flex items-center gap-2">
+            <span aria-hidden="true" className="bg-accent-line size-2 shrink-0 rounded-full" />
+            <span>
+              <Trans
+                i18nKey="attention"
+                ns="dashboard"
+                count={attention}
+                components={{ brand: <strong className="text-foreground font-semibold" />, emphasis: <strong className="text-foreground font-semibold" /> }}
               />
-              {t('refresh')}
-            </Button>
-          </div>
+            </span>
+          </p>
         </div>
-      </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="accent"
+            onClick={() => {
+              setCreating(true)
+            }}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {t('requests:new')}
+          </Button>
+          {isAdmin && (
+            <AreaFilter value={areaId} onChange={setAreaId} />
+          )}
+          <IconButton
+            variant="glass"
+            icon={RefreshCw}
+            label={
+              summary.dataUpdatedAt > 0
+                ? t('refreshedAt', { time: dateTime(summary.dataUpdatedAt, { timeStyle: 'short' }) })
+                : t('refresh')
+            }
+            tooltipAlign="end"
+            spin={refreshing.spinning}
+            onSpinCycle={refreshing.onCycle}
+            disabled={summary.isFetching || refreshing.spinning}
+            onClick={refresh}
+          />
+        </div>
+      </header>
 
-      <SummaryCards query={query} summary={summary.data} state={summary} />
+      <RefreshFade token={summary.dataUpdatedAt}>
+      <Stagger className="flex flex-col gap-6">
+        {oversees && (
+          <StaggerItem>
+            <AIBanner areaId={areaId} />
+          </StaggerItem>
+        )}
+        <StaggerItem>
+          <StatusOverview summary={summary} query={summaryQuery} scoped={!oversees} />
+        </StaggerItem>
+        <StaggerItem>
+          <RiskSpotlight areaId={areaId} />
+        </StaggerItem>
+        {!oversees && (
+          <StaggerItem>
+            <MyRequests />
+          </StaggerItem>
+        )}
+      </Stagger>
+      </RefreshFade>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Suspense fallback={<BlockSkeleton rows={6} />}>
-          <StatusChart query={query} />
-          <TrendChart query={query} />
-        </Suspense>
-      </div>
-
-      {showsBottlenecks && <BottleneckHeatmap query={query} />}
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <AtRiskList query={query} />
-        <StalledList query={query} />
-      </div>
-
-      {showsAI && <AIRecommendations areaId={isAdmin ? query.area_id : undefined} canRegenerate />}
+      {creating && (
+        <CreateRequestDialog
+          onClose={() => {
+            setCreating(false)
+          }}
+          onCreated={(request) => {
+            setCreating(false)
+            void navigate(`/requests/${request.id}`)
+          }}
+        />
+      )}
     </div>
   )
 }

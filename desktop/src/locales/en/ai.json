@@ -23,7 +23,12 @@
     "aiScore": "Risk estimated by AI: {{score}} out of 100",
     "causes": "Causes",
     "actions": "Suggested actions",
-    "noInsight": "There is no analysis of this request yet."
+    "noInsight": "There is no analysis of this request yet.",
+    "scoreTitle": "Risk {{score}} out of 100",
+    "cardTitle": "Delay risk",
+    "levelScore": "{{level}} · {{score}}/100",
+    "breakdown": "Factor breakdown",
+    "aiTitle": "AI analysis"
   },
   "factors": {
     "stage_delay": "Time in stage",
@@ -66,6 +71,21 @@
       "workload": "Workload",
       "trend": "Trend",
       "sla": "SLA"
+    },
+    "panel": {
+      "badge": "AI analysis",
+      "close": "Close",
+      "dueTitle": "Forecast due dates · next 5 days",
+      "dueTotal": "{{count}} in total",
+      "dueDay": "{{day}}: {{count}} due",
+      "today": "Today",
+      "view": "View",
+      "reassign": "Reassign",
+      "basedOn": "Based on times from {{count}} past requests",
+      "recommendation": "Recommendation {{index}}",
+      "feedback": "Rate the recommendations",
+      "more": "Show more",
+      "less": "Show less"
     }
   },
   "feedback": {
@@ -155,5 +175,18 @@
     "lastDaily": "Last daily analysis",
     "lastDailyValue": "{{time}} · {{source}} · {{tokens}} tokens",
     "never": "It has not run yet"
+  },
+  "banner": {
+    "title": "Solvia AI",
+    "updated": "Updated · {{time}}",
+    "analyzing": "Analyzing…",
+    "none": "No analysis yet",
+    "view_zero": "View recommendations",
+    "view_one": "View {{count}} recommendation",
+    "view_other": "View {{count}} recommendations",
+    "slides": "Findings",
+    "slide": "Finding {{index}} of {{total}}",
+    "pause": "Pause rotation",
+    "play": "Resume rotation"
   }
 }

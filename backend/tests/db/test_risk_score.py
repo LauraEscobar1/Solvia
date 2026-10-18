@@ -267,3 +267,45 @@ async def test_list_exposes_and_sorts_by_risk(
     assert items[0]["risk_score"] > items[1]["risk_score"] > 0
     assert items[2]["risk_score"] is None
     assert [item["id"] for item in items[:2]] == [str(urgent.id), str(calm.id)]
+
+
+async def test_min_risk_filters_the_list_and_the_board(
+    db_client: httpx2.AsyncClient, factory: Factory, setup: Setup
+) -> None:
+    admin = await factory.user(UserRole.ADMIN)
+    headers = factory.auth_headers(admin)
+    await factory.request(
+        area=setup.support,
+        requester=setup.requester,
+        title="Tranquila",
+        priority=RequestPriority.MEDIUM,
+        received_at=NOW - timedelta(hours=1),
+        due_at=NOW + timedelta(hours=191),
+    )
+    await factory.request(
+        area=setup.support,
+        requester=setup.requester,
+        title="Urgente",
+        priority=RequestPriority.HIGH,
+        received_at=NOW - timedelta(hours=150),
+        due_at=NOW - timedelta(hours=46),
+    )
+    await factory.request(
+        area=setup.support,
+        requester=setup.requester,
+        title="Cerrada",
+        status=RequestStatus.COMPLETED,
+    )
+
+    listed = await db_client.get("/api/v1/requests", headers=headers, params={"min_risk": 70})
+    board = await db_client.get("/api/v1/requests/board", headers=headers, params={"min_risk": 70})
+    invalid = await db_client.get("/api/v1/requests", headers=headers, params={"min_risk": 101})
+
+    items = listed.json()["items"]
+    assert [item["title"] for item in items] == ["Urgente"]
+    assert items[0]["risk_score"] >= 70
+    columns = {column["status"]: column for column in board.json()["columns"]}
+    assert [card["title"] for card in columns["received"]["items"]] == ["Urgente"]
+    assert columns["received"]["total"] == 1
+    assert columns["completed"]["total"] == 0
+    assert invalid.status_code == 422

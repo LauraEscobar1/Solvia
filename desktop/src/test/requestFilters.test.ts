@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { formatRelativeTime } from '@/lib/format'
 import {
+  activeFilterCount,
   apiQuery,
   boardFilters,
+  boardStatuses,
   DEFAULT_SORT,
   filtersFromSearch,
   hasActiveFilters,
+  OPEN_STATUSES,
   requestsPath,
   searchFromFilters,
 } from '@/lib/requests/filters'
@@ -45,6 +48,34 @@ describe('filtros de solicitudes en la URL', () => {
 
     expect(searchFromFilters(params).toString()).toBe('')
     expect(hasActiveFilters(params)).toBe(false)
+  })
+})
+
+describe('etapa por defecto, todas y riesgo', () => {
+  it('sin etapa en la URL usa las abiertas y «all» significa todas', () => {
+    expect(filtersFromSearch(new URLSearchParams()).status).toEqual(OPEN_STATUSES)
+    const all = filtersFromSearch(new URLSearchParams('status=all'))
+
+    expect(all.status).toEqual([])
+    expect(searchFromFilters(all).toString()).toBe('status=all')
+    expect(apiQuery(all)).not.toContain('status=')
+    expect(activeFilterCount(all)).toBe(1)
+  })
+
+  it('lee y escribe min_risk e ignora valores fuera de rango', () => {
+    const risky = filtersFromSearch(new URLSearchParams('min_risk=70'))
+
+    expect(risky.min_risk).toBe(70)
+    expect(searchFromFilters(risky).toString()).toBe('min_risk=70')
+    expect(apiQuery(boardFilters(risky))).toContain('min_risk=70')
+    expect(filtersFromSearch(new URLSearchParams('min_risk=150')).min_risk).toBeUndefined()
+    expect(filtersFromSearch(new URLSearchParams('min_risk=alto')).min_risk).toBeUndefined()
+  })
+
+  it('el tablero agrega completadas a las abiertas y respeta una selección propia', () => {
+    expect(boardStatuses([...OPEN_STATUSES])).toEqual(['received', 'assigned', 'in_progress', 'completed'])
+    expect(boardStatuses([])).toEqual(['received', 'assigned', 'in_progress', 'completed', 'cancelled'])
+    expect(boardStatuses(['cancelled', 'received'])).toEqual(['received', 'cancelled'])
   })
 })
 

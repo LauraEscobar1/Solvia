@@ -142,6 +142,28 @@ export interface RequestEvent {
   created_at: string
 }
 
+export interface StageTime {
+  status: RequestStatus
+  hours: number
+  entered_at: string
+  visits: number
+}
+
+export interface RequestStages {
+  current: RequestStatus
+  stages: StageTime[]
+}
+
+export interface AssignmentSuggestion {
+  assignee: UserRef
+  open_count: number
+  current_open_count: number | null
+}
+
+export interface AssignmentSuggestionRead {
+  suggestion: AssignmentSuggestion | null
+}
+
 export interface BoardCard extends RequestSummary {
   allowed_transitions: AllowedTransition[]
 }
@@ -173,6 +195,12 @@ export interface DateRange {
   timezone: string
 }
 
+export interface StageCounts {
+  received: number
+  assigned: number
+  in_progress: number
+}
+
 export interface DashboardSummary {
   open: number
   due_soon: number
@@ -181,32 +209,15 @@ export interface DashboardSummary {
   completed_last_7_days: number
   completed_since: string
   avg_resolution_hours: number | null
+  open_areas: number
+  overdue_change: number
+  high_risk: number
+  due_soon_high_risk: number
+  stalled_forgotten: number
+  open_by_stage: StageCounts
+  due_by_day: { day: string; count: number }[]
+  baseline_requests: number
   range: DateRange
-}
-
-export interface StatusBreakdown {
-  items: { status: RequestStatus; count: number }[]
-  range: DateRange
-}
-
-export interface DashboardRequestItem {
-  id: string
-  code: string
-  title: string
-  area: AreaRef
-  assignee: UserRef | null
-  priority: RequestPriority
-  status: RequestStatus
-  due_at: string | null
-  last_activity_at: string
-  sla_status: SlaStatus | null
-  consumed_pct: number | null
-  idle_hours: number
-  inactivity_hours: number | null
-}
-
-export interface RequestHighlights {
-  items: DashboardRequestItem[]
 }
 
 export type BottleneckReason = 'count_above_median' | 'avg_above_sla'
@@ -236,6 +247,17 @@ export interface TrendPoint {
 export interface TrendSeries {
   days: TrendPoint[]
   range: DateRange
+}
+
+export interface StageFlowItem {
+  status: SlaStage
+  count: number
+  median_hours: number | null
+  target_hours: number | null
+}
+
+export interface StageFlow {
+  stages: StageFlowItem[]
 }
 
 export const ALERT_TYPES = ['due_soon', 'overdue', 'stalled', 'bottleneck', 'ai_risk'] as const
@@ -349,6 +371,7 @@ export interface RecommendationTarget {
 }
 
 export interface OverviewInsightContent {
+  headline?: AIMessage | null
   summary: AIMessage
   findings: {
     type: FindingType

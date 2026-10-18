@@ -20,6 +20,28 @@ OptionalComment = Annotated[str, StringConstraints(strip_whitespace=True, max_le
 Version = Annotated[int, Field(ge=1)]
 
 
+class StageTime(BaseModel):
+    status: RequestStatus
+    hours: float
+    entered_at: datetime
+    visits: int
+
+
+class RequestStages(BaseModel):
+    current: RequestStatus
+    stages: list[StageTime]
+
+
+class AssignmentSuggestion(BaseModel):
+    assignee: UserRef
+    open_count: int
+    current_open_count: int | None
+
+
+class AssignmentSuggestionRead(BaseModel):
+    suggestion: AssignmentSuggestion | None
+
+
 class RequestCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -77,6 +99,7 @@ class RequestFilters(BaseModel):
     overdue: bool | None = None
     sla_status: SlaStatus | None = None
     stalled: bool | None = None
+    min_risk: int | None = Field(default=None, ge=0, le=100)
     received_from: date | None = None
     received_to: date | None = None
     completed_from: date | None = None

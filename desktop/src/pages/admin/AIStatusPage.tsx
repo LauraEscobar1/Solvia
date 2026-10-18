@@ -1,32 +1,33 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SectionCard } from '@/components/ui/Card'
+import { ErrorState, LoadingState, SkeletonRows } from '@/components/ui/States'
 import { useAIStatus } from '@/lib/api/ai'
-import { useTranslateError } from '@/lib/api/errors'
 import { useFormatters } from '@/lib/format'
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 border-b py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-      <dt className="text-muted-foreground text-sm">{label}</dt>
-      <dd className="text-sm font-medium">{children}</dd>
+    <div className="border-divider flex flex-col gap-0.5 border-t py-3 sm:flex-row sm:items-center sm:justify-between">
+      <dt className="text-caption text-muted-foreground font-semibold">{label}</dt>
+      <dd className="text-body font-semibold">{children}</dd>
     </div>
   )
 }
 
 export function AIStatusPage() {
   const { t } = useTranslation('ai')
-  const translateError = useTranslateError()
   const { number, dateTime } = useFormatters()
   const status = useAIStatus()
 
-  if (status.isPending) {
-    return <p className="text-muted-foreground text-sm">{t('analyzing')}</p>
-  }
+  if (status.isPending) return <LoadingState label={t('analyzing')} skeleton={<SkeletonRows rows={6} />} />
   if (status.isError) {
     return (
-      <p role="alert" className="text-danger text-sm">
-        {translateError(status.error)}
-      </p>
+      <ErrorState
+        error={status.error}
+        onRetry={() => {
+          void status.refetch()
+        }}
+      />
     )
   }
 
@@ -35,14 +36,10 @@ export function AIStatusPage() {
   const last = data.last_daily_run
 
   return (
-    <section className="bg-surface flex flex-col gap-4 rounded-xl border p-6 shadow-xs">
-      <header>
-        <h2 className="font-semibold">{t('admin.title')}</h2>
-        <p className="text-muted-foreground text-sm">{t('admin.description')}</p>
-      </header>
+    <SectionCard title={t('admin.title')} description={t('admin.description')}>
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">{t('admin.usage')}</span>
+        <div className="text-body flex items-center justify-between gap-3">
+          <span className="font-semibold">{t('admin.usage')}</span>
           <span data-testid="ai-usage">
             {t('admin.usageValue', {
               used: number(data.tokens_used_today),
@@ -56,15 +53,15 @@ export function AIStatusPage() {
           aria-valuemin={0}
           aria-valuemax={data.daily_token_budget}
           aria-valuenow={data.tokens_used_today}
-          className="bg-surface-muted h-2 overflow-hidden rounded-full"
+          className="bg-surface-sunken h-2 overflow-hidden rounded-full"
         >
           <div
-            className={`h-full rounded-full ${data.budget_exceeded ? 'bg-danger' : 'bg-primary'}`}
+            className={`h-full rounded-full ${data.budget_exceeded ? 'bg-danger' : 'bg-accent-line'}`}
             style={{ width: `${Math.min(100, Math.round(share * 100))}%` }}
           />
         </div>
         {data.budget_exceeded && (
-          <p role="status" className="text-danger text-xs">
+          <p role="status" className="text-caption text-danger-text font-medium">
             {t('admin.budgetExceeded')}
           </p>
         )}
@@ -95,6 +92,6 @@ export function AIStatusPage() {
             : t('admin.never')}
         </Row>
       </dl>
-    </section>
+    </SectionCard>
   )
 }

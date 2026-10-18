@@ -1,41 +1,18 @@
-import { useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router'
-import type { DashboardQuery } from '@/lib/api/types'
+import { useCallback } from 'react'
+import { useDashboardAreaStore } from '@/stores/dashboardArea'
+import { useSessionStore } from '@/stores/session'
 
-const QUERY_KEYS = ['area_id', 'date_from', 'date_to'] as const
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
-export function useDashboardQuery(): [DashboardQuery, (changes: Partial<DashboardQuery>) => void] {
-  const [search, setSearch] = useSearchParams()
-  const query = useMemo(() => {
-    const result: DashboardQuery = {}
-    for (const key of QUERY_KEYS) {
-      const value = search.get(key)?.trim()
-      if (!value) continue
-      if (key !== 'area_id' && !DATE_PATTERN.test(value)) continue
-      result[key] = value
-    }
-    return result
-  }, [search])
+export function useDashboardArea(): [string | undefined, (areaId: string | undefined) => void] {
+  const user = useSessionStore((state) => state.user)
+  const stored = useDashboardAreaStore((state) => (state.userId === user?.id ? state.areaId : undefined))
+  const setArea = useDashboardAreaStore((state) => state.setArea)
 
   const update = useCallback(
-    (changes: Partial<DashboardQuery>) => {
-      setSearch(
-        (current) => {
-          const next = new URLSearchParams(current)
-          for (const key of QUERY_KEYS) {
-            if (!(key in changes)) continue
-            const value = changes[key]
-            if (value) next.set(key, value)
-            else next.delete(key)
-          }
-          return next
-        },
-        { replace: true },
-      )
+    (areaId: string | undefined) => {
+      if (user) setArea(user.id, areaId)
     },
-    [setSearch],
+    [user, setArea],
   )
 
-  return [query, update]
+  return [user?.role === 'admin' ? stored : undefined, update]
 }

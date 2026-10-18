@@ -25,9 +25,14 @@ class AIProviderHealth(BaseModel):
     configured: bool
 
 
+class OrganizationInfo(BaseModel):
+    name: str | None
+
+
 class HealthResponse(BaseModel):
     status: HealthStatus
     version: str
     environment: Environment
     database: DatabaseHealth
     ai: AIProviderHealth
+    organization: OrganizationInfo

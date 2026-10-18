@@ -20,6 +20,17 @@ class DateRangeRead(BaseModel):
     timezone: str
 
 
+class StageCounts(BaseModel):
+    received: int
+    assigned: int
+    in_progress: int
+
+
+class DueDay(BaseModel):
+    day: date
+    count: int
+
+
 class DashboardSummary(BaseModel):
     open: int
     due_soon: int
@@ -28,6 +39,14 @@ class DashboardSummary(BaseModel):
     completed_last_7_days: int
     completed_since: date
     avg_resolution_hours: float | None
+    open_areas: int
+    overdue_change: int
+    high_risk: int
+    due_soon_high_risk: int
+    stalled_forgotten: int
+    open_by_stage: StageCounts
+    due_by_day: list[DueDay]
+    baseline_requests: int
     range: DateRangeRead
 
 
@@ -86,6 +105,17 @@ class TrendPoint(BaseModel):
 class TrendSeries(BaseModel):
     days: list[TrendPoint]
     range: DateRangeRead
+
+
+class StageFlowItem(BaseModel):
+    status: RequestStatus
+    count: int
+    median_hours: float | None
+    target_hours: float | None
+
+
+class StageFlow(BaseModel):
+    stages: list[StageFlowItem]
 
 
 class AreaMetrics(BaseModel):

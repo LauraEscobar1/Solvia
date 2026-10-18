@@ -1,142 +1,123 @@
-import { LayoutGrid, Plus, Rows3 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
-import { useTranslateError } from '@/lib/api/errors'
-import { useRequests } from '@/lib/api/requests'
+import { Pill } from '@/components/ui/Pill'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { useRequestBoard, useRequests } from '@/lib/api/requests'
+import { useFormatters } from '@/lib/format'
 import {
   boardFilters,
   DEFAULT_SORT,
+  defaultFilters,
   filtersFromSearch,
+  isOpenSelection,
   type RequestListParams,
   searchFromFilters,
 } from '@/lib/requests/filters'
-import { REQUEST_VIEWS, type RequestView, useRequestsViewStore } from '@/stores/requestsView'
+import { REQUEST_VIEWS, useRequestsViewStore } from '@/stores/requestsView'
 import { CreateRequestDialog } from './CreateRequestDialog'
 import { RequestBoardView } from './RequestBoardView'
 import { RequestFiltersBar } from './RequestFiltersBar'
 import { RequestTable } from './RequestTable'
 
-const VIEW_ICONS = { table: Rows3, board: LayoutGrid } satisfies Record<RequestView, unknown>
-
-function ViewToggle() {
-  const { t } = useTranslation('requests')
-  const view = useRequestsViewStore((state) => state.view)
-  const setView = useRequestsViewStore((state) => state.setView)
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label={t('views.label')}
-      className="bg-surface-muted flex items-center gap-0.5 rounded-lg border p-0.5"
-    >
-      {REQUEST_VIEWS.map((option) => {
-        const Icon = VIEW_ICONS[option]
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={view === option}
-            onClick={() => {
-              setView(option)
-            }}
-            className={[
-              'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm transition-colors',
-              view === option
-                ? 'bg-surface text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ].join(' ')}
-          >
-            <Icon className="size-4" aria-hidden="true" />
-            {t(`views.${option}`)}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function TableView({
-  params,
-  onChange,
-}: {
-  params: RequestListParams
-  onChange: (changes: Partial<RequestListParams>) => void
-}) {
-  const translateError = useTranslateError()
-  const requests = useRequests(params)
-
-  return (
-    <>
-      <RequestTable
-        items={requests.data?.items}
-        loading={requests.isPending}
-        error={requests.isError ? translateError(requests.error) : null}
-        sort={params.sort}
-        onSort={(sort) => {
-          onChange({ sort })
-        }}
-      />
-      {requests.data && (
-        <Pagination
-          page={params.page}
-          size={params.size}
-          total={requests.data.total}
-          onPageChange={(page) => {
-            onChange({ page })
-          }}
-        />
-      )}
-    </>
-  )
-}
-
 export function RequestsPage() {
-  const { t } = useTranslation('requests')
+  const { t } = useTranslation(['requests', 'nav'])
+  const { number } = useFormatters()
   const navigate = useNavigate()
   const [search, setSearch] = useSearchParams()
   const view = useRequestsViewStore((state) => state.view)
+  const setView = useRequestsViewStore((state) => state.setView)
   const [creating, setCreating] = useState(false)
   const params = useMemo(() => filtersFromSearch(search), [search])
+  const board = useMemo(() => boardFilters(params), [params])
+  const list = useRequests(params, view === 'table')
+  const boardQuery = useRequestBoard(board, view === 'board')
 
   const update = useCallback(
     (changes: Partial<RequestListParams>) => {
-      const next = { ...params, page: 1, ...changes }
-      setSearch(searchFromFilters(next), { replace: true })
+      setSearch(searchFromFilters({ ...params, page: 1, ...changes }), { replace: true })
     },
     [params, setSearch],
   )
 
   const clear = useCallback(() => {
-    setSearch(searchFromFilters({ status: [], priority: [], page: 1, size: params.size, sort: DEFAULT_SORT }), {
+    setSearch(searchFromFilters({ ...defaultFilters(), page: 1, size: params.size, sort: DEFAULT_SORT }), {
       replace: true,
     })
   }, [params.size, setSearch])
 
+  const total =
+    view === 'table'
+      ? list.data?.total
+      : boardQuery.data?.columns
+          .filter((column) => params.status.length === 0 || params.status.includes(column.status))
+          .reduce((sum, column) => sum + column.total, 0)
+  const countKey = isOpenSelection(params.status) ? 'count.open' : 'count.any'
+
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <ViewToggle />
-        <Button
-          variant="primary"
-          onClick={() => {
-            setCreating(true)
-          }}
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          {t('new')}
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={t('nav:requests')}
+        count={
+          total !== undefined && (
+            <Pill tone="solid" size="lg">
+              <span data-testid="requests-count">{t(countKey, { count: total, value: number(total) })}</span>
+            </Pill>
+          )
+        }
+        actions={
+          <>
+            <SegmentedControl
+              label={t('views.label')}
+              value={view}
+              onChange={setView}
+              options={REQUEST_VIEWS.map((option) => ({ value: option, label: t(`views.${option}`) }))}
+            />
+            <Button
+              variant="accent"
+              onClick={() => {
+                setCreating(true)
+              }}
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              {t('new')}
+            </Button>
+          </>
+        }
+      />
 
       <RequestFiltersBar params={params} onChange={update} onClear={clear} />
 
       {view === 'table' ? (
-        <TableView params={params} onChange={update} />
+        <RequestTable
+          items={list.data?.items}
+          loading={list.isPending}
+          error={list.isError ? list.error : null}
+          onRetry={() => void list.refetch()}
+          sort={params.sort}
+          onSort={(sort) => {
+            update({ sort })
+          }}
+          footer={
+            list.data &&
+            list.data.total > 0 && (
+              <Pagination
+                page={params.page}
+                size={params.size}
+                total={list.data.total}
+                onPageChange={(page) => {
+                  update({ page })
+                }}
+              />
+            )
+          }
+        />
       ) : (
-        <RequestBoardView filters={boardFilters(params)} />
+        <RequestBoardView board={boardQuery} filters={board} />
       )}
 
       {creating && (

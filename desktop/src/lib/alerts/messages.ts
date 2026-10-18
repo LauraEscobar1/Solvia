@@ -18,13 +18,15 @@ export function alertStage(alert: Alert): RequestStatus | null {
     : null
 }
 
-export function useAlertMessage(): (alert: Alert) => string {
+const INLINE_PREFIX = 'inline.'
+
+export function useAlertMessage(): (alert: Alert, options?: { inline?: boolean }) => string {
   const { t, i18n } = useTranslation(['alerts', 'requests', 'common'])
   const { relative } = useFormatters()
   const duration = useDurationFormatter()
 
   return useCallback(
-    (alert: Alert) => {
+    (alert: Alert, { inline = false }: { inline?: boolean } = {}) => {
       const { params } = alert
       const stage = alertStage(alert)
       const hours = (value: unknown) => {
@@ -46,11 +48,13 @@ export function useAlertMessage(): (alert: Alert) => string {
         avg: hours(params.avg_hours),
         risk: amount(params.risk_score) ?? 0,
       }
-      return i18n.t(alert.message_code, {
+      const full = i18n.t(alert.message_code, {
         ...values,
         ns: 'alerts',
         defaultValue: t('alerts:unknownMessage', { code: alert.message_code }),
       })
+      if (!inline || !alert.request) return full
+      return i18n.t(alert.message_code.replace(/^alert\./, INLINE_PREFIX), { ...values, ns: 'alerts', defaultValue: full })
     },
     [duration, i18n, relative, t],
   )

@@ -3,7 +3,9 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
+import { useRequestBoard } from '@/lib/api/requests'
 import type { BoardCard, RequestBoard } from '@/lib/api/types'
+import type { RequestFilters } from '@/lib/requests/filters'
 import { RequestBoardView } from '@/pages/requests/RequestBoardView'
 import { useSessionStore } from '@/stores/session'
 import { errorResponse, jsonResponse, makeTokens, makeUser, mockApi } from './fixtures'
@@ -49,14 +51,26 @@ function board(cards: BoardCard[]): RequestBoard {
   }
 }
 
+const FILTERS: RequestFilters = { status: ['received', 'assigned', 'in_progress', 'completed'], priority: [] }
+
+function Harness() {
+  const query = useRequestBoard(FILTERS)
+  return <RequestBoardView board={query} filters={FILTERS} />
+}
+
 function renderBoard() {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter>
-        <RequestBoardView filters={{ status: [], priority: [] }} />
+        <Harness />
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+async function moveWithMenu(user: ReturnType<typeof userEvent.setup>, action: string) {
+  await user.click(await screen.findByRole('button', { name: 'Mover SOL-0001 a…' }))
+  await user.click(screen.getByRole('menuitem', { name: action }))
 }
 
 function column(name: string) {
@@ -81,10 +95,7 @@ describe('tablero kanban', () => {
     renderBoard()
 
     await screen.findByRole('region', { name: 'Columna Asignada' })
-    await user.selectOptions(
-      column('Asignada').getByRole('combobox', { name: 'Mover SOL-0001 a…' }),
-      'in_progress',
-    )
+    await moveWithMenu(user, 'Iniciar')
 
     expect(await column('En proceso').findByText('SOL-0001')).toBeInTheDocument()
     expect(column('Asignada').queryByText('SOL-0001')).toBeNull()
@@ -109,10 +120,7 @@ describe('tablero kanban', () => {
     const user = userEvent.setup()
     renderBoard()
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Mover SOL-0001 a…' }),
-      'received',
-    )
+    await moveWithMenu(user, 'Devolver')
     const dialog = within(await screen.findByRole('dialog', { name: 'Devolver · SOL-0001' }))
     await user.click(dialog.getByRole('button', { name: 'Confirmar' }))
     expect(await dialog.findByText('Este campo es obligatorio.')).toBeInTheDocument()
@@ -128,5 +136,24 @@ describe('tablero kanban', () => {
         comment: 'No es de mi área',
       })
     })
+  })
+
+  it('las completadas empiezan colapsadas y cada tarjeta tiene un asa para moverla con el teclado', async () => {
+    useSessionStore.getState().setSession(makeTokens(makeUser({ role: 'assignee' })), false)
+    mockApi(() => jsonResponse(board([card({}), card({ id: 'card-2', code: 'SOL-0002', status: 'completed', allowed_transitions: [] })])))
+    const user = userEvent.setup()
+    renderBoard()
+
+    const completed = await screen.findByRole('region', { name: 'Columna Completada' })
+    expect(within(completed).queryByText('SOL-0002')).toBeNull()
+    const toggle = within(completed).getByRole('button', { name: 'Mostrar Completada' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+    expect(within(completed).getByText('SOL-0002')).toBeInTheDocument()
+    expect(within(completed).queryByRole('button', { name: 'Arrastrar SOL-0002' })).toBeNull()
+
+    const handle = column('Asignada').getByRole('button', { name: 'Arrastrar SOL-0001' })
+    expect(handle).toHaveAttribute('aria-roledescription', 'draggable')
+    expect(column('Asignada').getByRole('link', { name: 'Impresora sin papel' }).closest('[role="button"]')).toBeNull()
   })
 })

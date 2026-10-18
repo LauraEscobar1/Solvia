@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.risk_model import BASELINE_WINDOW_DAYS
 from app.core.errors import ErrorCode, UnprocessableError
 from app.core.time import Clock, day_end, day_start, local_date, utcnow
 from app.models.enums import RequestStatus, UserRole
@@ -22,7 +23,11 @@ from app.schemas.dashboard import (
     DashboardRequestItem,
     DashboardSummary,
     DateRangeRead,
+    DueDay,
     RequestHighlights,
+    StageCounts,
+    StageFlow,
+    StageFlowItem,
     StatusBreakdown,
     StatusCount,
     TrendPoint,
@@ -36,6 +41,9 @@ DEFAULT_RANGE_DAYS = 30
 MAX_RANGE_DAYS = 366
 RECENT_COMPLETION_DAYS = 7
 HIGHLIGHT_LIMIT = 20
+OVERDUE_CHANGE_WINDOW = timedelta(hours=24)
+DUE_FORECAST_DAYS = 5
+FIRST_WEEKEND_DAY = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,12 +78,23 @@ class DashboardService:
         rules = SlaRules(self._clock())
         period = self._period(query, rules.now)
         completed_since = period.today - timedelta(days=RECENT_COMPLETION_DAYS - 1)
+        target = self._filter(actor, query)
+        yesterday = rules.now - OVERDUE_CHANGE_WINDOW
+        overdue_before = await self._repository.overdue_at(target, yesterday)
         row = await self._repository.summary(
-            self._filter(actor, query),
+            target,
             rules,
             completed_since=day_start(completed_since, self._timezone),
             start=period.start,
             end=period.end,
+        )
+        forecast = self._forecast_days(period.today)
+        due_counts = await self._repository.due_per_day(
+            target,
+            rules,
+            self._timezone.key,
+            start=day_start(forecast[0], self._timezone),
+            end=day_end(forecast[-1], self._timezone),
         )
         return DashboardSummary(
             open=row.open,
@@ -85,6 +104,20 @@ class DashboardService:
             completed_last_7_days=row.completed_recently,
             completed_since=completed_since,
             avg_resolution_hours=_round(row.avg_resolution_hours),
+            open_areas=row.open_areas,
+            overdue_change=row.overdue - overdue_before,
+            high_risk=row.high_risk,
+            due_soon_high_risk=row.due_soon_high_risk,
+            stalled_forgotten=row.stalled_forgotten,
+            open_by_stage=StageCounts(
+                received=row.open_by_stage[RequestStatus.RECEIVED],
+                assigned=row.open_by_stage[RequestStatus.ASSIGNED],
+                in_progress=row.open_by_stage[RequestStatus.IN_PROGRESS],
+            ),
+            baseline_requests=await self._repository.baseline_requests(
+                target, rules.now - timedelta(days=BASELINE_WINDOW_DAYS)
+            ),
+            due_by_day=[DueDay(day=day, count=due_counts.get(day, 0)) for day in forecast],
             range=self._range(period),
         )
 
@@ -144,6 +177,20 @@ class DashboardService:
                 for day in (period.date_from + timedelta(days=offset) for offset in range(days))
             ],
             range=self._range(period),
+        )
+
+    async def stage_flow(self, actor: User, query: DashboardQuery) -> StageFlow:
+        rows = await self._repository.stage_flow(self._filter(actor, query), self._clock())
+        return StageFlow(
+            stages=[
+                StageFlowItem(
+                    status=row.status,
+                    count=row.count,
+                    median_hours=_round(row.median_hours),
+                    target_hours=_round(row.target_hours),
+                )
+                for row in rows
+            ]
         )
 
     async def by_area(self, actor: User, query: DashboardQuery) -> AreaBreakdown:
@@ -206,6 +253,16 @@ class DashboardService:
         if area_id is not None and area_id != actor.area_id:
             return []
         return [actor.area_id]
+
+    @staticmethod
+    def _forecast_days(today: date) -> list[date]:
+        days: list[date] = []
+        cursor = today
+        while len(days) < DUE_FORECAST_DAYS:
+            if cursor.weekday() < FIRST_WEEKEND_DAY:
+                days.append(cursor)
+            cursor += timedelta(days=1)
+        return days
 
     def _period(self, query: DashboardQuery, now: datetime) -> _Period:
         today = local_date(now, self._timezone)

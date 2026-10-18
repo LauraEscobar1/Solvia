@@ -279,9 +279,7 @@ class AIInsightService:
         target = self._overview_target(actor, area_id)
         wanted = language or actor.language
         scope = InsightScope.AREA if target else InsightScope.GLOBAL
-        insight = await self._insights.latest(
-            scope, target, language=wanted
-        ) or await self._insights.latest(scope, target)
+        insight = await self._insights.latest(scope, target, language=wanted)
         return OverviewRead(
             area_id=target,
             insight=await self._overview_read(insight, actor, cached=False) if insight else None,

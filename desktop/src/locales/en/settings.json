@@ -1,5 +1,8 @@
 {
-  "subtitle": "Application preferences",
+  "profile": {
+    "title": "Profile",
+    "allAreas": "All areas"
+  },
   "api": {
     "title": "API connection",
     "description": "Address of the Solvia server this application connects to.",
@@ -10,12 +13,13 @@
   },
   "appearance": {
     "title": "Appearance",
-    "description": "Interface theme and language.",
     "syncNote": "While signed in, theme and language are saved to your profile."
   },
   "security": {
     "title": "Security",
-    "description": "Change your account password."
+    "description": "Change your account password.",
+    "change": "Change password",
+    "changed": "Password updated."
   },
   "health": {
     "title": "System status",

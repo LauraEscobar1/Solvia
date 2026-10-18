@@ -11,6 +11,8 @@ import { alertKeys } from './alerts'
 import { apiRequest } from './client'
 import { dashboardKeys } from './dashboard'
 import type {
+  AssignmentSuggestionRead,
+  RequestStages,
   BoardCard,
   DueEstimate,
   Page,
@@ -33,6 +35,8 @@ export const requestKeys = {
   boards: () => [...requestKeys.all, 'board'] as const,
   board: (filters: RequestFilters) => [...requestKeys.boards(), filters] as const,
   detail: (id: string) => [...requestKeys.all, 'detail', id] as const,
+  suggestion: (id: string) => [...requestKeys.all, 'suggestion', id] as const,
+  stages: (id: string) => [...requestKeys.all, 'stages', id] as const,
   events: (id: string) => [...requestKeys.all, 'events', id] as const,
   dueEstimates: () => [...requestKeys.all, 'due-estimates'] as const,
   assignees: (areaId: string | undefined) => [...requestKeys.all, 'assignees', areaId] as const,
@@ -73,27 +77,29 @@ export function invalidateRequest(queryClient: QueryClient, id?: string): Promis
     alertKeys.all,
     dashboardKeys.all,
   ]
-  if (id) keys.push(requestKeys.detail(id), requestKeys.events(id))
+  if (id) keys.push(requestKeys.detail(id), requestKeys.events(id), requestKeys.suggestion(id), requestKeys.stages(id))
   return Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))).then(
     () => undefined,
   )
 }
 
-export function useRequests(params: RequestListParams) {
+export function useRequests(params: RequestListParams, enabled = true) {
   return useQuery({
     queryKey: requestKeys.list(params),
     queryFn: ({ signal }) =>
       apiRequest<Page<RequestSummary>>(`/api/v1/requests?${apiQuery(params)}`, { signal }),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 
-export function useRequestBoard(filters: RequestFilters) {
+export function useRequestBoard(filters: RequestFilters, enabled = true) {
   return useQuery({
     queryKey: requestKeys.board(filters),
     queryFn: ({ signal }) =>
       apiRequest<RequestBoard>(`/api/v1/requests/board?${apiQuery(filters)}`, { signal }),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 
@@ -101,6 +107,23 @@ export function useRequest(id: string) {
   return useQuery({
     queryKey: requestKeys.detail(id),
     queryFn: ({ signal }) => apiRequest<RequestDetail>(`/api/v1/requests/${id}`, { signal }),
+  })
+}
+
+export function useRequestStages(id: string) {
+  return useQuery({
+    queryKey: requestKeys.stages(id),
+    queryFn: ({ signal }) => apiRequest<RequestStages>(`/api/v1/requests/${id}/stages`, { signal }),
+  })
+}
+
+export function useAssignmentSuggestion(id: string) {
+  return useQuery({
+    queryKey: requestKeys.suggestion(id),
+    queryFn: ({ signal }) =>
+      apiRequest<AssignmentSuggestionRead>(`/api/v1/requests/${id}/assignment-suggestion`, {
+        signal,
+      }),
   })
 }
 

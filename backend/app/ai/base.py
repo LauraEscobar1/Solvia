@@ -13,6 +13,7 @@ Language = Literal["es", "en"]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 Detail = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
+Headline = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Summary = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=800)]
 
 MAX_CAUSES = 3
@@ -77,6 +78,7 @@ class Recommendation(_Output):
 
 
 class OverviewAnalysis(_Output):
+    headline: Headline | None = None
     summary: Summary
     findings: list[Finding] = Field(default_factory=list, max_length=MAX_FINDINGS)
     recommendations: list[Recommendation] = Field(

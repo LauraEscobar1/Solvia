@@ -1,7 +1,6 @@
 {
   "appName": "Solvia",
   "tagline": "Smart request management",
-  "comingSoon": "This section will be available soon.",
   "loading": "Loading…",
   "theme": {
     "label": "Theme",
@@ -29,6 +28,34 @@
   },
   "duration": {
     "hours": "{{value}} h",
-    "days": "{{value}} d"
+    "days": "{{value}} d",
+    "minutes": "{{value}} min",
+    "lessThanHour": "under 1 h",
+    "longHours": "{{value}} h",
+    "longDays_one": "{{value}} day",
+    "longDays_other": "{{value}} days"
+  },
+  "noValue": "—",
+  "breadcrumbs": "Breadcrumb",
+  "states": {
+    "loading": "Loading…",
+    "error": "This information couldn't be loaded."
+  },
+  "pagination": {
+    "label": "Pagination",
+    "showing": "Showing {{count}} of {{total}}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}}"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "durationUnit": {
+    "minutes": "min",
+    "hours": "h",
+    "days_one": "day",
+    "days_other": "days"
   }
 }

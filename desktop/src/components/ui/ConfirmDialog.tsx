@@ -1,14 +1,18 @@
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, type ButtonVariant } from './Button'
-import { Modal } from './Modal'
+import { Dialog } from './Dialog'
+import { InlineAlert } from './States'
 
 interface ConfirmDialogProps {
   title: string
-  message: string
+  message: ReactNode
   confirmLabel: string
+  cancelLabel?: string
   variant?: ButtonVariant
   pending?: boolean
   error?: string | null
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -17,28 +21,35 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel,
   variant = 'danger',
   pending = false,
   error = null,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   const { t } = useTranslation()
 
   return (
-    <Modal title={title} onClose={onCancel}>
-      <p className="text-muted-foreground text-sm">{message}</p>
-      {error && (
-        <p role="alert" className="bg-danger-soft text-danger mt-4 rounded-lg px-3 py-2 text-sm">
-          {error}
-        </p>
-      )}
-      <div className="mt-6 flex justify-end gap-2">
-        <Button onClick={onCancel}>{t('actions.cancel')}</Button>
-        <Button variant={variant} disabled={pending} onClick={onConfirm}>
-          {pending ? t('actions.saving') : confirmLabel}
-        </Button>
+    <Dialog
+      title={title}
+      description={message}
+      size="sm"
+      onClose={onCancel}
+      footer={
+        <>
+          <Button onClick={onCancel}>{cancelLabel ?? t('actions.cancel')}</Button>
+          <Button variant={variant} loading={pending} onClick={onConfirm}>
+            {pending ? t('actions.saving') : confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {children}
+        {error && <InlineAlert tone="error">{error}</InlineAlert>}
       </div>
-    </Modal>
+    </Dialog>
   )
 }

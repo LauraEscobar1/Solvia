@@ -2,19 +2,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type {
-  BottleneckMatrix,
-  DashboardSummary,
-  RequestHighlights,
-  StatusBreakdown,
-  TrendSeries,
-  User,
-} from '@/lib/api/types'
+import { describe, expect, it, vi } from 'vitest'
+import type { RequestAnalysis, RequestDetail, RequestSummary, User } from '@/lib/api/types'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { RequestsPage } from '@/pages/requests/RequestsPage'
 import { useSessionStore } from '@/stores/session'
-import { EMPTY_PAGE, jsonResponse, makeTokens, makeUser, mockApi } from './fixtures'
+import { expectNoA11yViolations } from './a11y'
+import {
+  EMPTY_PAGE,
+  jsonResponse,
+  makeRequest,
+  makeSummary,
+  makeTokens,
+  makeUser,
+  mockApi,
+  type RecordedRequest,
+} from './fixtures'
 
 vi.mock('@/lib/secureStore', () => ({
   saveRefreshToken: vi.fn(() => Promise.resolve()),
@@ -22,124 +24,99 @@ vi.mock('@/lib/secureStore', () => ({
   clearRefreshToken: vi.fn(() => Promise.resolve()),
 }))
 
-const RANGE = { date_from: '2026-09-16', date_to: '2026-10-15', timezone: 'America/Bogota' }
-
-const SUMMARY: DashboardSummary = {
-  open: 36,
-  due_soon: 4,
-  overdue: 5,
-  stalled: 7,
-  completed_last_7_days: 17,
-  completed_since: '2026-10-09',
-  avg_resolution_hours: 61.4,
-  range: RANGE,
-}
-
-const BY_STATUS: StatusBreakdown = {
-  items: [
-    { status: 'received', count: 10 },
-    { status: 'assigned', count: 10 },
-    { status: 'in_progress', count: 16 },
-    { status: 'completed', count: 58 },
-    { status: 'cancelled', count: 12 },
-  ],
-  range: RANGE,
-}
-
-const TRENDS: TrendSeries = {
-  days: [
-    { day: '2026-10-14', created: 4, completed: 3 },
-    { day: '2026-10-15', created: 6, completed: 2 },
-  ],
-  range: RANGE,
-}
-
 const SUPPORT = { id: 'area-1', name: 'Soporte TI' }
+const LAURA = { id: 'user-9', full_name: 'Laura Méndez' }
 
-const BOTTLENECKS: BottleneckMatrix = {
-  cells: [
-    {
-      area: SUPPORT,
-      status: 'received',
-      count: 7,
-      avg_hours: 89.9,
-      median_count: 3,
-      median_avg_hours: 88.4,
-      sla_max_hours: 20.6,
-      is_bottleneck: true,
-      reasons: ['count_above_median', 'avg_above_sla'],
+const RISKY: RequestSummary[] = [
+  makeRequest({
+    id: 'req-81',
+    code: 'SOL-2481',
+    title: 'Reembolso de matrícula por doble cobro',
+    status: 'assigned',
+    assignee: LAURA,
+    sla_status: 'overdue',
+    due_at: '2026-10-01T10:00:00Z',
+    risk_score: 91,
+  }),
+  makeRequest({ id: 'req-77', code: 'SOL-2477', title: 'Acceso VPN', risk_score: 78, sla_status: 'at_risk', due_at: '2099-01-01T00:00:00Z' }),
+  makeRequest({ id: 'req-63', code: 'SOL-2463', title: 'Aire acondicionado', risk_score: 64 }),
+  makeRequest({ id: 'req-10', code: 'SOL-2410', title: 'Sin riesgo', risk_score: 12 }),
+]
+
+function insight(id: string): RequestAnalysis {
+  return {
+    request_id: id,
+    notice: null,
+    insight: null,
+    risk: {
+      score: 91,
+      factors: [
+        { factor: 'stage_delay', value: 144, reference: 24, reference_kind: 'p90_area_stage_priority', normalized: 1, weight: 0.25, points: 25 },
+        { factor: 'sla_consumed', value: 1.4, reference: null, reference_kind: null, normalized: 0.93, weight: 0.3, points: 28 },
+        { factor: 'inactivity', value: 140, reference: 12, reference_kind: null, normalized: 1, weight: 0.2, points: 20 },
+        { factor: 'priority', value: 'high', reference: null, reference_kind: null, normalized: 0.7, weight: 0.15, points: 10.5 },
+        { factor: 'assignee_load', value: 14, reference: null, reference_kind: null, normalized: 1, weight: 0.1, points: 10 },
+      ],
     },
-    {
-      area: SUPPORT,
-      status: 'assigned',
-      count: 4,
-      avg_hours: 5.5,
-      median_count: 4.5,
-      median_avg_hours: 47.6,
-      sla_max_hours: 34,
-      is_bottleneck: false,
-      reasons: [],
-    },
-    {
-      area: SUPPORT,
-      status: 'in_progress',
-      count: 9,
-      avg_hours: 44,
-      median_count: 10,
-      median_avg_hours: 110.5,
-      sla_max_hours: 149.3,
-      is_bottleneck: false,
-      reasons: [],
-    },
-  ],
+  }
 }
 
-const AT_RISK: RequestHighlights = {
-  items: [
-    {
-      id: 'req-9',
-      code: 'SOL-0092',
-      title: 'Acceso VPN',
-      area: SUPPORT,
-      assignee: null,
-      priority: 'critical',
-      status: 'received',
-      due_at: '2026-10-14T10:00:00Z',
-      last_activity_at: '2026-10-15T10:00:00Z',
-      sla_status: 'overdue',
-      consumed_pct: 156,
-      idle_hours: 2,
-      inactivity_hours: 2,
-    },
-  ],
+function detail(id: string): RequestDetail {
+  const summary = RISKY.find((item) => item.id === id) ?? makeRequest({ id })
+  return {
+    ...summary,
+    version: 7,
+    description: 'Detalle',
+    created_at: summary.received_at,
+    updated_at: summary.received_at,
+    allowed_transitions: [],
+    permissions: { editable_fields: [], can_assign: true, can_comment: true },
+  }
 }
 
-const RESOURCES: Record<string, unknown> = {
-  summary: SUMMARY,
-  'by-status': BY_STATUS,
-  trends: TRENDS,
-  bottlenecks: BOTTLENECKS,
-  'at-risk': AT_RISK,
-  stalled: { items: [] },
+interface MockOptions {
+  summaryStatus?: number
+  suggestion?: boolean
 }
 
-function mockDashboard() {
+function mockPanel({ summaryStatus = 200, suggestion = true }: MockOptions = {}): RecordedRequest[] {
   return mockApi((request) => {
-    const match = /^\/api\/v1\/dashboard\/([a-z-]+)/.exec(request.path)
-    if (match?.[1] && match[1] in RESOURCES) return jsonResponse(RESOURCES[match[1]])
-    if (request.path.startsWith('/api/v1/areas')) {
-      return jsonResponse({ ...EMPTY_PAGE, items: [{ ...SUPPORT, is_active: true }] })
+    const path = request.path
+    if (path.startsWith('/api/v1/dashboard/summary')) {
+      return summaryStatus === 200
+        ? jsonResponse(makeSummary())
+        : jsonResponse({ error: { code: 'common.internal_error', params: {} } }, summaryStatus)
     }
+    if (path.startsWith('/api/v1/ai/overview')) return jsonResponse({ area_id: null, insight: null, notice: null })
+    const insightMatch = /^\/api\/v1\/ai\/requests\/([^/]+)\/insight/.exec(path)
+    if (insightMatch?.[1]) return jsonResponse(insight(insightMatch[1]))
+    const suggestionMatch = /^\/api\/v1\/requests\/([^/]+)\/assignment-suggestion/.exec(path)
+    if (suggestionMatch) {
+      return jsonResponse({
+        suggestion: suggestion
+          ? { assignee: { id: 'user-5', full_name: 'Pablo Ortiz' }, open_count: 5, current_open_count: 14 }
+          : null,
+      })
+    }
+    const assignMatch = /^\/api\/v1\/requests\/([^/]+)\/assign$/.exec(path)
+    if (assignMatch?.[1] && request.method === 'POST') return jsonResponse(detail(assignMatch[1]))
+    const detailMatch = /^\/api\/v1\/requests\/(req-[^/?]+)$/.exec(path)
+    if (detailMatch?.[1]) return jsonResponse(detail(detailMatch[1]))
+    if (path.startsWith('/api/v1/requests?')) {
+      return jsonResponse({ ...EMPTY_PAGE, items: path.includes('risk_score') ? RISKY : RISKY.slice(0, 2), total: 4 })
+    }
+    if (path.startsWith('/api/v1/areas')) return jsonResponse({ ...EMPTY_PAGE, items: [{ ...SUPPORT, is_active: true }] })
     return jsonResponse(EMPTY_PAGE)
   })
 }
 
-function renderDashboard(user: User = makeUser()) {
+function renderPanel(user: User = makeUser({ full_name: 'Sofía Escobar', role: 'supervisor', area: SUPPORT })) {
   useSessionStore.getState().setSession(makeTokens(user), false)
   const router = createMemoryRouter(
     [
       { path: '/', Component: DashboardPage },
-      { path: '/requests', Component: RequestsPage },
+      { path: '/requests', element: <p>lista</p> },
+      { path: '/requests/:id', element: <p>detalle</p> },
     ],
     { initialEntries: ['/'] },
   )
@@ -151,169 +128,139 @@ function renderDashboard(user: User = makeUser()) {
   return router
 }
 
-class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
+describe('panel', () => {
+  it('saluda por el nombre y cuenta las solicitudes que necesitan atención', async () => {
+    mockPanel()
+    renderPanel()
 
-describe('panel de control', () => {
-  beforeEach(() => {
-    vi.stubGlobal('ResizeObserver', ResizeObserverStub)
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      DOMRect.fromRect({ width: 640, height: 240 }),
-    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hola, Sofía')
+    expect(await screen.findByText('3 necesitan tu atención hoy')).toBeInTheDocument()
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it('muestra las cifras de hoy con sus etiquetas y enlaces a la lista filtrada', async () => {
+    mockPanel()
+    renderPanel()
+
+    const open = await screen.findByTestId('kpi-open')
+    expect(open).toHaveTextContent('Abiertas')
+    expect(open).toHaveTextContent('128')
+    expect(open).toHaveTextContent('en 5 áreas')
+    expect(open).toHaveAttribute('href', '/requests')
+    expect(screen.getByTestId('kpi-overdue')).toHaveTextContent('+3 desde ayer')
+    expect(screen.getByTestId('kpi-overdue')).toHaveAttribute('href', '/requests?overdue=true')
+    expect(screen.getByTestId('kpi-dueSoon')).toHaveTextContent('6 con riesgo alto')
+    expect(screen.getByTestId('kpi-dueSoon')).toHaveAttribute('href', '/requests?sla_status=at_risk')
+    expect(screen.getByTestId('kpi-stalled')).toHaveTextContent('2 posiblemente olvidadas')
+    expect(screen.getByRole('link', { name: 'Vencidas 9 +3 desde ayer Ver solicitudes' })).toBeInTheDocument()
+    const stages = screen.getByRole('list', { name: 'Abiertas por etapa' })
+    expect(within(stages).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Recibida · 34',
+      'Asignada · 41',
+      'En proceso · 53',
+    ])
   })
 
-  it('muestra los totales del resumen', async () => {
-    mockDashboard()
-    renderDashboard()
-
-    expect(await screen.findByTestId('summary-open')).toHaveTextContent('36')
-    expect(screen.getByTestId('summary-due_soon')).toHaveTextContent('4')
-    expect(screen.getByTestId('summary-overdue')).toHaveTextContent('5')
-    expect(screen.getByTestId('summary-stalled')).toHaveTextContent('7')
-    expect(screen.getByTestId('summary-completed')).toHaveTextContent('17')
-    expect(screen.getByTestId('summary-resolution')).toHaveTextContent('2,6 d')
-  })
-
-  it('cada tarjeta abre la lista con su filtro', async () => {
-    const requests = mockDashboard()
+  it('lista las solicitudes con más riesgo y muestra el detalle de la seleccionada', async () => {
+    mockPanel()
     const user = userEvent.setup()
-    const router = renderDashboard()
+    renderPanel()
 
-    await user.click(await screen.findByRole('link', { name: 'Ver solicitudes: Vencidas' }))
+    const list = await screen.findByRole('tablist', { name: 'Solicitudes con más riesgo' })
+    const tabs = within(list).getAllByRole('tab')
+    expect(tabs).toHaveLength(3)
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    expect(tabs[0]).toHaveTextContent('SOL-2481')
+    expect(tabs[0]).toHaveTextContent('Alto')
+    expect(tabs[0]).toHaveTextContent('91')
+    const panel = screen.getByRole('tabpanel')
+    expect(within(panel).getByText('Reembolso de matrícula por doble cobro')).toBeInTheDocument()
+    const idle = (await within(panel).findByText('sin movimiento')).parentElement as HTMLElement
+    expect(idle).toHaveTextContent('6días')
+    expect(idle).toHaveTextContent('11,7×')
+    const reference = within(panel).getByText('referencia: P90 del área').parentElement as HTMLElement
+    expect(reference).toHaveTextContent('1día')
+    expect(reference).toHaveTextContent('6×')
+    const load = within(panel).getByText('abiertas tiene su responsable').parentElement as HTMLElement
+    expect(load).toHaveTextContent('14')
+    expect(load).toHaveTextContent('1,4×')
+    expect(await within(panel).findByText('Reasignar a Pablo Ortiz, con 5 abiertas.')).toBeInTheDocument()
 
-    expect(router.state.location.pathname).toBe('/requests')
-    expect(router.state.location.search).toBe('?overdue=true')
-    expect(await screen.findByLabelText('Solo vencidas')).toBeChecked()
-    const list = requests.filter((request) => request.path.startsWith('/api/v1/requests?')).at(-1)
-    expect(list?.path).toContain('overdue=true')
+    tabs[0]?.focus()
+    await user.keyboard('{ArrowDown}')
+    expect(within(list).getAllByRole('tab')[1]).toHaveFocus()
+    expect(within(list).getAllByRole('tab')[1]).toHaveAttribute('aria-selected', 'true')
+    expect(within(screen.getByRole('tabpanel')).getByText('Acceso VPN')).toBeInTheDocument()
   })
 
-  it.each([
-    ['Abiertas', '?status=received&status=assigned&status=in_progress'],
-    ['Próximas a vencer', '?sla_status=at_risk'],
-    ['Sin movimiento', '?stalled=true'],
-    ['Completadas · 7 días', '?status=completed&completed_from=2026-10-09'],
-    [
-      'Resolución promedio',
-      '?status=completed&completed_from=2026-09-16&completed_to=2026-10-15',
-    ],
-  ])('la tarjeta «%s» enlaza a %s', async (label, search) => {
-    mockDashboard()
-    renderDashboard()
+  it('reasigna con la sugerencia después de confirmar', async () => {
+    const requests = mockPanel()
+    const user = userEvent.setup()
+    renderPanel()
 
-    const link = await screen.findByRole('link', { name: `Ver solicitudes: ${label}` })
+    const panel = await screen.findByRole('tabpanel')
+    await user.click(await within(panel).findByRole('button', { name: 'Reasignar ahora' }))
+    const dialog = screen.getByRole('dialog', { name: 'Reasignar SOL-2481' })
+    expect(dialog).toHaveAccessibleDescription('SOL-2481 pasará a Pablo Ortiz, que tiene 5 solicitudes abiertas.')
+    await user.click(within(dialog).getByRole('button', { name: 'Reasignar' }))
 
-    expect(link).toHaveAttribute('href', `/requests${search}`)
-  })
-
-  it('pinta las barras por estado con los colores del tema activo', async () => {
-    document.documentElement.style.setProperty('--success', 'rgb(1, 150, 80)')
-    document.documentElement.style.setProperty('--warning', 'rgb(220, 160, 0)')
-    document.documentElement.style.setProperty('--muted-foreground', 'rgb(110, 110, 120)')
-    mockDashboard()
-    renderDashboard()
-
-    await screen.findByTestId('summary-open')
-    const chart = screen.getByRole('region', { name: 'Solicitudes por estado' })
     await vi.waitFor(() => {
-      expect(chart.querySelector('[data-status="completed"]')).not.toBeNull()
+      expect(screen.queryByRole('dialog')).toBeNull()
     })
-    expect(chart.querySelector('[data-status="completed"]')).toHaveAttribute(
-      'fill',
-      'rgb(1, 150, 80)',
-    )
-    expect(chart.querySelector('[data-status="in_progress"]')).toHaveAttribute(
-      'fill',
-      'rgb(220, 160, 0)',
-    )
-    expect(chart.querySelector('[data-status="received"]')).toHaveAttribute(
-      'fill',
-      'rgb(110, 110, 120)',
-    )
+    const assign = requests.find((request) => request.path === '/api/v1/requests/req-81/assign')
+    expect(assign?.body).toEqual({ assignee_id: 'user-5', version: 7 })
   })
 
-  it('resalta los cuellos de botella y enlaza a la lista por área y etapa', async () => {
-    mockDashboard()
-    renderDashboard()
+  it('sin sugerencia solo ofrece abrir la solicitud', async () => {
+    mockPanel({ suggestion: false })
+    renderPanel()
 
-    const heatmap = await screen.findByRole('region', { name: 'Cuellos de botella' })
-    const cell = await within(heatmap).findByRole('link', {
-      name: 'Ver solicitudes de Soporte TI en «Recibida»',
-    })
-
-    expect(cell).toHaveAttribute('data-bottleneck', 'true')
-    expect(cell).toHaveAttribute('href', '/requests?status=received&area_id=area-1')
-    expect(cell).toHaveAccessibleDescription(/Cuello de botella crítico/)
-    expect(
-      within(heatmap).getByRole('link', { name: 'Ver solicitudes de Soporte TI en «Asignada»' }),
-    ).toHaveAttribute('data-bottleneck', 'false')
+    const panel = await screen.findByRole('tabpanel')
+    expect(await within(panel).findByText('Sin sugerencia de reasignación.')).toBeInTheDocument()
+    expect(within(panel).getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/requests/req-81')
+    expect(within(panel).queryByRole('button', { name: 'Reasignar ahora' })).toBeNull()
   })
 
-  it('lista las solicitudes en riesgo con enlace al detalle y estados vacíos por bloque', async () => {
-    mockDashboard()
-    renderDashboard()
+  it('un error del resumen no rompe el resto del panel', async () => {
+    mockPanel({ summaryStatus: 500 })
+    renderPanel()
 
-    const atRisk = await screen.findByRole('region', { name: 'En riesgo' })
-    const link = await within(atRisk).findByRole('link', { name: /SOL-0092/ })
-
-    expect(link).toHaveAttribute('href', '/requests/req-9')
-    expect(within(atRisk).getByText('156 % del SLA')).toBeInTheDocument()
-    expect(
-      await screen.findByText('Todas las solicitudes abiertas tienen actividad reciente.'),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Recomendaciones de IA' })).toBeInTheDocument()
+    const status = await screen.findByRole('region', { name: 'Estado actual' })
+    expect(await within(status).findByRole('alert')).toHaveTextContent('No se pudo cargar esta información.')
+    expect(within(status).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
+    expect(await screen.findByRole('tablist')).toBeInTheDocument()
   })
 
-  it('muestra el error de un bloque sin romper el resto', async () => {
-    mockApi((request) => {
-      if (request.path.startsWith('/api/v1/dashboard/trends')) {
-        return jsonResponse({ error: { code: 'common.internal_error', params: {} } }, 500)
-      }
-      const match = /^\/api\/v1\/dashboard\/([a-z-]+)/.exec(request.path)
-      if (match?.[1] && match[1] in RESOURCES) return jsonResponse(RESOURCES[match[1]])
-      return jsonResponse(EMPTY_PAGE)
-    })
-    renderDashboard()
-
-    const trends = await screen.findByRole('region', { name: 'Creadas y completadas' })
-
-    expect(await within(trends).findByRole('alert')).toHaveTextContent(
-      'No se pudo cargar este bloque.',
-    )
-    expect(await screen.findByTestId('summary-open')).toHaveTextContent('36')
-  })
-
-  it('el solicitante no ve la matriz de cuellos de botella ni el filtro de área', async () => {
-    mockDashboard()
-    renderDashboard(makeUser({ role: 'requester' }))
-
-    await screen.findByTestId('summary-open')
-
-    expect(screen.queryByRole('region', { name: 'Cuellos de botella' })).toBeNull()
-    expect(screen.queryByLabelText('Área')).toBeNull()
-  })
-
-  it('el filtro de área del admin se envía a todos los bloques', async () => {
-    const requests = mockDashboard()
+  it('el admin filtra por área todo el panel', async () => {
+    const requests = mockPanel()
     const user = userEvent.setup()
-    renderDashboard()
+    renderPanel(makeUser({ full_name: 'Ana Admin' }))
 
-    const select = await screen.findByLabelText('Área')
+    const select = await screen.findByRole('combobox', { name: 'Área' })
     await within(select).findByRole('option', { name: 'Soporte TI' })
     await user.selectOptions(select, 'area-1')
 
     await vi.waitFor(() => {
-      const summary = requests.filter((request) => request.path.includes('/dashboard/summary'))
-      expect(summary.at(-1)?.path).toContain('area_id=area-1')
+      expect(requests.some((request) => request.path === '/api/v1/dashboard/summary?area_id=area-1')).toBe(true)
     })
-    const atRisk = requests.filter((request) => request.path.includes('/dashboard/at-risk'))
-    expect(atRisk.at(-1)?.path).toContain('area_id=area-1')
+    expect(requests.some((request) => request.path.startsWith('/api/v1/requests?') && request.path.includes('area_id=area-1'))).toBe(true)
+  })
+
+  it.each(['assignee', 'requester'] as const)('el rol %s ve sus solicitudes sin IA ni cifras globales', async (role) => {
+    mockPanel()
+    renderPanel(makeUser({ full_name: 'Carlos Solicitante', role, area: role === 'assignee' ? SUPPORT : null }))
+
+    expect(await screen.findByRole('region', { name: 'Mis solicitudes' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Recomendaciones de IA' })).toBeNull()
+    expect(await screen.findByTestId('kpi-open')).toHaveTextContent('en tu alcance')
+    expect(screen.queryByRole('combobox', { name: 'Área' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Estado de mis solicitudes' })).toBeInTheDocument()
+  })
+
+  it('no tiene infracciones de axe', async () => {
+    mockPanel()
+    renderPanel()
+
+    await screen.findByText('Reasignar a Pablo Ortiz, con 5 abiertas.')
+    await expectNoA11yViolations()
   })
 })

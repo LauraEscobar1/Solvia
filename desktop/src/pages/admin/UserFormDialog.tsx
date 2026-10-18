@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { Dialog } from '@/components/ui/Dialog'
+import { Select } from '@/components/ui/Select'
+import { InlineAlert } from '@/components/ui/States'
+import { inputClass } from '@/components/ui/styles'
 import { type UserInput, useAreaOptions, useSaveUser } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
 import { type User, USER_ROLES } from '@/lib/api/types'
@@ -84,7 +86,7 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
   })
 
   return (
-    <Modal title={user ? t('users.edit') : t('users.new')} onClose={onClose}>
+    <Dialog title={user ? t('users.edit') : t('users.new')} onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -113,16 +115,16 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label={t('users.role')} htmlFor={ids.role}>
-            <select id={ids.role} className={selectClass} {...register('role')}>
+            <Select id={ids.role} {...register('role')}>
               {USER_ROLES.map((role) => (
                 <option key={role} value={role}>
                   {t(`auth:roles.${role}`)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label={t('users.area')} htmlFor={ids.area}>
-            <select id={ids.area} className={selectClass} {...register('area_id')}>
+            <Select id={ids.area} {...register('area_id')}>
               <option value="">{t('users.noArea')}</option>
               {user?.area && !areas.data?.some((area) => area.id === user.area?.id) && (
                 <option value={user.area.id}>{user.area.name}</option>
@@ -132,18 +134,18 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
                   {area.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
         </div>
         {!user && (
           <FormField label={t('users.language')} htmlFor={ids.language}>
-            <select id={ids.language} className={selectClass} {...register('language')}>
+            <Select id={ids.language} {...register('language')}>
               {SUPPORTED_LANGUAGES.map((language) => (
                 <option key={language} value={language}>
                   {t(`common:language.${language}`)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
         )}
         <FormField
@@ -161,18 +163,14 @@ export function UserFormDialog({ user, onClose }: UserFormDialogProps) {
             {...register('temporary_password')}
           />
         </FormField>
-        {save.error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {translateError(save.error)}
-          </p>
-        )}
+        {save.error && <InlineAlert tone="error">{translateError(save.error)}</InlineAlert>}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={save.isPending}>
+          <Button type="submit" variant="solid" loading={save.isPending}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

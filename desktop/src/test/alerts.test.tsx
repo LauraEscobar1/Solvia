@@ -3,13 +3,14 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AlertBell } from '@/components/alerts/AlertBell'
 import { CriticalAlertNotifier } from '@/components/alerts/CriticalAlertNotifier'
 import { NotificationSettings } from '@/components/alerts/NotificationSettings'
+import { TopBar } from '@/components/layout/TopBar'
 import type { Alert } from '@/lib/api/types'
 import { AlertsPage } from '@/pages/alerts/AlertsPage'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
+import { expectNoA11yViolations } from './a11y'
 import { jsonResponse, makeTokens, makeUser, mockApi } from './fixtures'
 
 const notifications = vi.hoisted(() => ({
@@ -90,27 +91,27 @@ describe('alertas en la aplicación', () => {
     notifications.notify.mockReset()
   })
 
-  it('la campana muestra el contador de no leídas y lleva a las alertas sin leer', async () => {
+  it('la navegación muestra el contador de no leídas junto a Alertas', async () => {
     mockApi((request) =>
       request.path === '/api/v1/alerts/unread-count'
         ? jsonResponse({ count: 7 })
         : jsonResponse({ items: [], total: 0, page: 1, size: 20 }),
     )
-    renderWithRouter(<AlertBell />)
+    renderWithRouter(<TopBar />)
 
-    const bell = await screen.findByRole('link', { name: 'Alertas sin leer: 7' })
+    const link = await screen.findByRole('link', { name: 'Alertas (7 sin leer)' })
 
-    expect(within(bell).getByTestId('alert-bell-count')).toHaveTextContent('7')
-    expect(bell).toHaveAttribute('href', '/alerts?is_read=false')
+    expect(link).toHaveAttribute('href', '/alerts')
+    expect(link).toHaveAttribute('aria-current', 'page')
+    expect(within(link).getByText('7')).toBeInTheDocument()
   })
 
-  it('la campana no muestra contador sin alertas pendientes', async () => {
+  it('sin alertas pendientes no hay contador', async () => {
     mockApi(() => jsonResponse({ count: 0 }))
-    renderWithRouter(<AlertBell />)
+    renderWithRouter(<TopBar />)
 
-    await screen.findByRole('link', { name: 'Alertas sin leer: 0' })
-
-    expect(screen.queryByTestId('alert-bell-count')).toBeNull()
+    expect(await screen.findByRole('link', { name: 'Alertas' })).toBeInTheDocument()
+    expect(screen.queryByText(/sin leer/)).toBeNull()
   })
 
   it('construye el texto de cada alerta desde message_code y params', async () => {
@@ -118,15 +119,21 @@ describe('alertas en la aplicación', () => {
     renderWithRouter(<AlertsPage />)
 
     expect(
-      await screen.findByText(
-        'SOL-0042 no tiene actividad desde hace 3 horas en «En proceso» (umbral: 2 h).',
-      ),
+      await screen.findByText('Sin actividad desde hace 3 horas en «En proceso» (umbral: 2 h).'),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
         'Cuello de botella en Soporte TI · Recibida: 7 solicitudes con 3,7 d de promedio en la etapa.',
       ),
     ).toBeInTheDocument()
+    const [stalled, bottleneck] = within(screen.getByRole('list', { name: 'Alertas' })).getAllByRole('listitem') as [
+      HTMLElement,
+      HTMLElement,
+    ]
+    expect(stalled).toHaveTextContent('CríticaSOL-0042· Sin movimientoNueva')
+    expect(bottleneck).toHaveTextContent('AdvertenciaSoporte TI· Cuello de botella')
+    expect(within(bottleneck).queryByText('Nueva')).toBeNull()
+    expect(within(bottleneck).queryByRole('button', { name: 'Marcar como leída' })).toBeNull()
   })
 
   it('usa el idioma activo para los mensajes', async () => {
@@ -166,7 +173,7 @@ describe('alertas en la aplicación', () => {
     renderWithRouter(<AlertsPage />)
 
     await user.click(await screen.findByRole('button', { name: 'Marcar como leída' }))
-    await user.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }))
+    await user.click(screen.getByRole('button', { name: 'Marcar todo como leído' }))
 
     expect(await screen.findByText('3 alertas marcadas como leídas.')).toBeInTheDocument()
     expect(requests.some((request) => request.method === 'PATCH' && request.path === '/api/v1/alerts/alert-1/read')).toBe(true)
@@ -178,10 +185,12 @@ describe('alertas en la aplicación', () => {
     const user = userEvent.setup()
     const { router } = renderWithRouter(<AlertsPage />)
 
-    await user.click(await screen.findByRole('button', { name: 'Cuello de botella' }))
-    await user.click(screen.getByRole('button', { name: 'Crítica' }))
-    await user.click(screen.getByRole('radio', { name: 'Resueltas' }))
-    await user.click(screen.getByRole('radio', { name: 'No leídas' }))
+    await user.click(await screen.findByRole('button', { name: 'Más filtros' }))
+    const panel = screen.getByRole('dialog', { name: 'Más filtros' })
+    await user.click(within(panel).getByRole('checkbox', { name: 'Cuello de botella' }))
+    await user.click(within(panel).getByRole('checkbox', { name: 'Crítica' }))
+    await user.click(within(panel).getByRole('radio', { name: 'Resueltas' }))
+    await user.click(within(panel).getByRole('radio', { name: 'No leídas' }))
 
     const last = requests.at(-1)
     expect(last?.path).toContain('type=bottleneck')
@@ -189,6 +198,38 @@ describe('alertas en la aplicación', () => {
     expect(last?.path).toContain('state=resolved')
     expect(last?.path).toContain('is_read=false')
     expect(router.state.location.search).toContain('state=resolved')
+    const quick = screen.getByRole('radiogroup', { name: 'Mostrar' })
+    expect(within(quick).queryByRole('radio', { checked: true })).toBeNull()
+    expect(screen.getByRole('button', { name: /Más filtros/ })).toHaveTextContent('3')
+
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+    expect(router.state.location.search).toBe('')
+    expect(within(quick).getByRole('radio', { name: 'Todas' })).toBeChecked()
+  })
+
+  it('la página de alertas no tiene problemas de accesibilidad', async () => {
+    mockApi(() => jsonResponse({ items: [makeAlert(), BOTTLENECK], total: 2, page: 1, size: 20 }))
+    renderWithRouter(<AlertsPage />)
+
+    await screen.findByRole('list', { name: 'Alertas' })
+    await expectNoA11yViolations(document.body)
+  })
+
+  it('los atajos Sin leer y Críticas filtran por lectura y severidad', async () => {
+    const requests = mockApi(() => jsonResponse({ items: [], total: 0, page: 1, size: 20 }))
+    const user = userEvent.setup()
+    const { router } = renderWithRouter(<AlertsPage />)
+
+    expect(await screen.findByText('No hay alertas con estos filtros.')).toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Sin leer' }))
+    expect(router.state.location.search).toBe('?is_read=false')
+    await user.click(screen.getByRole('radio', { name: 'Críticas' }))
+    expect(router.state.location.search).toBe('?severity=critical')
+    await vi.waitFor(() => {
+      expect(requests.at(-1)?.path).toContain('severity=critical')
+    })
+    expect(requests.at(-1)?.path).not.toContain('is_read')
   })
 
   it('notifica solo las alertas críticas nuevas cuando el usuario lo activa', async () => {

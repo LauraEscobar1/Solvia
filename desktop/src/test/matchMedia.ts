@@ -10,7 +10,7 @@ export function installMatchMediaMock(): void {
     ({
       media: query,
       get matches() {
-        return query.includes('dark') && prefersDark
+        return query.includes('reduce') || (query.includes('dark') && prefersDark)
       },
       onchange: null,
       addEventListener: (_type: string, listener: Listener) => listeners.add(listener),

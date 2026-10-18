@@ -1,8 +1,6 @@
 {
-  "subtitle": "Avisos de SLA, inactividad y cuellos de botella",
   "bell": "Alertas sin leer: {{count}}",
   "filters": {
-    "label": "Filtros de alertas",
     "state": "Estado",
     "open": "Abiertas",
     "resolved": "Resueltas",
@@ -12,7 +10,15 @@
     "read": "Lectura",
     "unread": "No leídas",
     "readOnly": "Leídas",
-    "anyRead": "Todas"
+    "anyRead": "Todas",
+    "more": "Más filtros",
+    "clear": "Limpiar filtros"
+  },
+  "quick": {
+    "label": "Mostrar",
+    "all": "Todas",
+    "unread": "Sin leer",
+    "critical": "Críticas"
   },
   "types": {
     "due_soon": "Por vencer",
@@ -34,19 +40,26 @@
     "bottleneck_other": "Cuello de botella en {{area}} · {{status}}: {{count}} solicitudes con {{avg}} de promedio en la etapa.",
     "ai_risk": "La IA estima un riesgo de {{risk}} sobre 100 para {{code}}."
   },
+  "inline": {
+    "due_soon": "Vence {{due}}.",
+    "overdue": "Venció {{due}}.",
+    "stalled": "Sin actividad desde {{since}} en «{{status}}» (umbral: {{threshold}}).",
+    "ai_risk": "La IA estima un riesgo de {{risk}} sobre 100."
+  },
   "unknownMessage": "Alerta {{code}}",
   "unread": "Sin leer",
   "markRead": "Marcar como leída",
-  "markAllRead": "Marcar todas como leídas",
+  "markAllRead": "Marcar todo como leído",
   "markedAll_one": "{{count}} alerta marcada como leída.",
   "markedAll_other": "{{count}} alertas marcadas como leídas.",
-  "detectedAt": "Detectada {{time}}",
   "resolvedAt": "Resuelta {{time}}",
   "viewRequest": "Ver solicitud",
   "viewRequests": "Ver solicitudes",
   "empty": "No hay alertas con estos filtros.",
-  "loading": "Cargando alertas…",
   "notification": {
     "title": "Alerta crítica en Solvia"
-  }
+  },
+  "new": "Nueva",
+  "list": "Alertas",
+  "loading": "Cargando alertas…"
 }

@@ -8,6 +8,7 @@ export interface HealthResponse {
   environment: 'development' | 'test' | 'production'
   database: { status: 'ok' | 'unavailable' }
   ai: { provider: 'none' | 'deepseek'; model: string | null; configured: boolean }
+  organization?: { name: string | null }
 }
 
 export const HEALTH_PATH = '/api/v1/health'

@@ -43,7 +43,8 @@ stage load versus the 30-day median, stage times, weekly trends and the highest-
 Find the most important problems and recommend actions. Only reference area ids and request
 codes that appear in the input.
 Reply ONLY with a json object with exactly these keys:
-{{"summary": "<max 3 sentences>",
+{{"headline": "<one sentence, max 15 words, naming the key stage or area>",
+ "summary": "<max 3 sentences>",
  "findings": [{{"type": "bottleneck|delay|workload|trend|sla", "area_id": "<id or null>",
                "status": "<received|assigned|in_progress or null>", "evidence": "..."}}],
  "recommendations": [{{"title": "...", "detail": "...", "priority": "high|medium|low",
@@ -51,7 +52,7 @@ Reply ONLY with a json object with exactly these keys:
                                 {{"area_id": "...", "status": "..."}} or null}}]}}
 Use at most 6 findings and 5 recommendations.
 Example json output:
-{{"summary": "...", "findings": [{{"type": "bottleneck", "area_id": "...",
+{{"headline": "...", "summary": "...", "findings": [{{"type": "bottleneck", "area_id": "...",
  "status": "received", "evidence": "..."}}],
  "recommendations": [{{"title": "...", "detail": "...", "priority": "high",
  "target": {{"area_id": "...", "status": "received"}}}}]}}"""

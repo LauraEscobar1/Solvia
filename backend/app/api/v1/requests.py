@@ -7,6 +7,7 @@ from app.api.deps import CurrentUserDep, RequestServiceDep
 from app.schemas.common import Page
 from app.schemas.request import (
     AssignInput,
+    AssignmentSuggestionRead,
     CommentInput,
     DueEstimate,
     EventListQuery,
@@ -16,6 +17,7 @@ from app.schemas.request import (
     RequestEventRead,
     RequestFilters,
     RequestListQuery,
+    RequestStages,
     RequestSummary,
     RequestUpdate,
     TransitionInput,
@@ -55,6 +57,23 @@ async def get_request(
     request_id: uuid.UUID, actor: CurrentUserDep, service: RequestServiceDep
 ) -> RequestDetail:
     return await service.get(actor, request_id)
+
+
+@router.get("/{request_id}/stages", summary="Tiempo acumulado en cada etapa según el historial")
+async def request_stages(
+    request_id: uuid.UUID, actor: CurrentUserDep, service: RequestServiceDep
+) -> RequestStages:
+    return await service.stages(actor, request_id)
+
+
+@router.get(
+    "/{request_id}/assignment-suggestion",
+    summary="Responsable del área con menos solicitudes abiertas para reasignar",
+)
+async def assignment_suggestion(
+    request_id: uuid.UUID, actor: CurrentUserDep, service: RequestServiceDep
+) -> AssignmentSuggestionRead:
+    return await service.assignment_suggestion(actor, request_id)
 
 
 @router.patch("/{request_id}", summary="Edita título, descripción, prioridad o fecha límite")

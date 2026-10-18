@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
-import { inputClass, selectClass } from '@/components/ui/styles'
+import { Dialog } from '@/components/ui/Dialog'
+import { Select } from '@/components/ui/Select'
+import { InlineAlert } from '@/components/ui/States'
+import { inputClass } from '@/components/ui/styles'
 import { useManagerOptions, useSaveArea } from '@/lib/api/admin'
 import { useTranslateError } from '@/lib/api/errors'
 import type { Area } from '@/lib/api/types'
@@ -56,7 +58,7 @@ export function AreaFormDialog({ area, onClose }: AreaFormDialogProps) {
   })
 
   return (
-    <Modal title={area ? t('areas.edit') : t('areas.new')} onClose={onClose}>
+    <Dialog title={area ? t('areas.edit') : t('areas.new')} onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => void onSubmit(event).catch(() => undefined)}
@@ -84,7 +86,7 @@ export function AreaFormDialog({ area, onClose }: AreaFormDialogProps) {
           />
         </FormField>
         <FormField label={t('areas.manager')} htmlFor={ids.manager}>
-          <select id={ids.manager} className={selectClass} {...register('manager_id')}>
+          <Select id={ids.manager} {...register('manager_id')}>
             <option value="">{t('areas.noManager')}</option>
             {area?.manager && !managers.data?.some((user) => user.id === area.manager?.id) && (
               <option value={area.manager.id}>{area.manager.full_name}</option>
@@ -94,20 +96,16 @@ export function AreaFormDialog({ area, onClose }: AreaFormDialogProps) {
                 {user.full_name}
               </option>
             ))}
-          </select>
+          </Select>
         </FormField>
-        {save.error && (
-          <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-            {translateError(save.error)}
-          </p>
-        )}
+        {save.error && <InlineAlert tone="error">{translateError(save.error)}</InlineAlert>}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t('common:actions.cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={save.isPending}>
+          <Button type="submit" variant="solid" loading={save.isPending}>
             {save.isPending ? t('common:actions.saving') : t('common:actions.save')}
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

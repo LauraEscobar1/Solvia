@@ -45,12 +45,13 @@ SEED_DEMO_PASSWORD=<mínimo 12 caracteres>
 ```
 
 Si tu `.env` viene de una versión anterior, copia también las variables nuevas de
-`.env.example` (`REFRESH_TOKEN_DAYS`, `LOGIN_RATE_LIMIT_*`, `SEED_*`, `ORGANIZATION_TIMEZONE`,
-`ALERTS_JOB_*`, `BOTTLENECK_MIN_COUNT`) y cambia `JWT_SECRET`: un secreto de menos de 32
+`.env.example` (`REFRESH_TOKEN_DAYS`, `LOGIN_RATE_LIMIT_*`, `SEED_*`, `ORGANIZATION_NAME`,
+`ORGANIZATION_TIMEZONE`, `ALERTS_JOB_*`, `BOTTLENECK_MIN_COUNT`) y cambia `JWT_SECRET`: un secreto de menos de 32
 caracteres hace que PyJWT muestre avisos.
 
 | Variable | Por defecto | Uso |
 | --- | --- | --- |
+| `ORGANIZATION_NAME` | vacío | Nombre de la organización que la app muestra en el login (lo expone `GET /api/v1/health`); vacío no muestra nada |
 | `ORGANIZATION_TIMEZONE` | `America/Bogota` | Zona IANA con la que se agrupan los días del panel y se leen los filtros por fecha; la base de datos guarda siempre UTC |
 | `ALERTS_JOB_ENABLED` | `true` | Activa el job de alertas dentro de la API |
 | `ALERTS_JOB_INTERVAL_MINUTES` | `15` | Cada cuánto evalúa el job |
@@ -238,20 +239,33 @@ horas calendario) para poder pasar a horario laboral más adelante.
   de la organización y medianas calculadas en SQL. El tiempo en la etapa cuenta desde que la
   solicitud entró en ella; una reasignación dentro de la misma etapa no lo reinicia.
 
-### Panel y alertas en la app
+### Panel, análisis y alertas en la app
+
+La navegación superior tiene **Panel**, **Solicitudes**, **Análisis** y **Alertas** (con el
+contador de no leídas); el menú ☰ abre **Configuración**, **Administración** (admin) y
+**Cerrar sesión**.
 
 - **Panel** (inicio):
-  - Tarjetas de abiertas, próximas a vencer, vencidas, sin movimiento, completadas en 7 días y
-    resolución promedio; cada una abre la lista con su filtro.
-  - Barras por estado y líneas de creadas frente a completadas, con los colores del tema activo.
-  - Mapa de calor área × etapa, con los cuellos de botella resaltados y el detalle al pasar el
-    cursor.
-  - Listas «En riesgo» y «Sin movimiento».
-  - Recomendaciones de IA (ver [Inteligencia artificial](#inteligencia-artificial)).
-  - Filtro de área (admin) y de fechas, y refresco automático cada 60 s.
-- **Campana** en el encabezado con las alertas abiertas sin leer, y página **Alertas** con
-  filtros, marcar como leídas y enlace a la solicitud. En un cuello de botella, el enlace lleva
-  a la lista filtrada por área y etapa.
+  - Saludo con las solicitudes de tu alcance que tienen riesgo de 70 o más.
+  - Banner **Solvia IA** con el análisis global (admin y supervisor).
+  - Estado actual: abiertas, vencidas (con el cambio desde ayer), por vencer y sin movimiento,
+    cada una enlazada a la lista filtrada, y la barra de abiertas por etapa.
+  - «En riesgo de retraso»: las 5 abiertas con más riesgo, con su detalle y la sugerencia de
+    reasignación por reglas (confirmada antes de asignar).
+  - Responsables y solicitantes ven sus solicitudes, sin IA ni cifras globales.
+  - Filtro de área (admin), compartido con Análisis, y refresco automático cada 60 s.
+- **Análisis**: periodo de 7 días, 30 días o trimestre (90 días).
+  - «Entrada vs. cierre»: creadas y completadas por día, con las completadas y la resolución
+    promedio del periodo. **Descargar CSV** genera el archivo con los datos ya cargados; en la
+    app de escritorio se guarda en la carpeta Descargas sin sobrescribir otro archivo.
+  - «Flujo por etapa»: abiertas, mediana de tiempo y objetivo (máximo SLA) de cada etapa, con
+    «Acumula N× su objetivo» cuando la mediana lo supera.
+  - «Cuellos de botella» (admin, supervisor y responsable): promedio en la etapa ÷ mediana
+    histórica por área. Rojo solo si el sistema marca la celda como cuello de botella; ámbar
+    desde 1,3× sin estarlo.
+- **Alertas**: atajos Todas / Sin leer / Críticas y «Más filtros» (estado, lectura, severidad y
+  tipo); cada alerta se marca como leída por separado o todas a la vez y enlaza a su solicitud.
+  En un cuello de botella, el enlace lleva a la lista filtrada por área y etapa.
 - **Notificaciones del sistema** para alertas críticas nuevas: se activan en
   **Configuración › Notificaciones** (desactivadas por defecto) y solo funcionan en la app de
   escritorio.
@@ -357,8 +371,8 @@ debajo de US$1 al mes. Precios de referencia en <https://api-docs.deepseek.com/q
 | Áreas | `GET /areas` · `POST /areas` · `GET /areas/{id}` · `PATCH /areas/{id}` · `POST /areas/{id}/deactivate` · `POST /areas/{id}/activate` |
 | Usuarios | `GET /users` · `POST /users` · `GET /users/{id}` · `PATCH /users/{id}` · `POST /users/{id}/deactivate` · `POST /users/{id}/activate` |
 | SLA | `GET /sla-policies` · `PUT /sla-policies` |
-| Solicitudes | `GET /requests` · `GET /requests/board` · `GET /requests/due-estimates` · `POST /requests` · `GET /requests/{id}` · `PATCH /requests/{id}` · `POST /requests/{id}/transition` · `POST /requests/{id}/assign` · `POST /requests/{id}/comments` · `GET /requests/{id}/events` |
-| Panel | `GET /dashboard/summary` · `GET /dashboard/by-status` · `GET /dashboard/at-risk` · `GET /dashboard/stalled` · `GET /dashboard/bottlenecks` · `GET /dashboard/trends` · `GET /dashboard/by-area` |
+| Solicitudes | `GET /requests` · `GET /requests/board` · `GET /requests/due-estimates` · `POST /requests` · `GET /requests/{id}` · `PATCH /requests/{id}` · `POST /requests/{id}/transition` · `POST /requests/{id}/assign` · `POST /requests/{id}/comments` · `GET /requests/{id}/events` · `GET /requests/{id}/stages` · `GET /requests/{id}/assignment-suggestion` |
+| Panel | `GET /dashboard/summary` · `GET /dashboard/by-status` · `GET /dashboard/at-risk` · `GET /dashboard/stalled` · `GET /dashboard/bottlenecks` · `GET /dashboard/trends` · `GET /dashboard/stage-flow` · `GET /dashboard/by-area` |
 | Alertas | `GET /alerts` · `GET /alerts/unread-count` · `PATCH /alerts/{id}/read` · `POST /alerts/read-all` · `POST /alerts/evaluate` (admin) |
 | IA | `POST /ai/requests/{id}/analyze` · `GET /ai/requests/{id}/insight` · `POST /ai/overview/analyze` · `GET /ai/overview` · `GET /ai/status` (admin) · `POST /ai/insights/{id}/feedback` |
 | Estado | `GET /health` |
@@ -367,9 +381,13 @@ Las listas se paginan con `?page=1&size=20&q=texto` y responden `{items, total, 
 (`size` máximo 100). `GET /requests` admite además `status` y `priority` repetibles,
 `area_id`, `assignee_id`, `requester_id`, `overdue=true`, `sla_status`
 (`on_track`, `at_risk` u `overdue`), `stalled=true`, `received_from`, `received_to`,
-`completed_from`, `completed_to` (fechas en la zona de la organización) y `sort` (por ejemplo
-`-due_at` o `-risk_score`), y siempre aplica el alcance del rol. Cada solicitud abierta trae
-su `risk_score` del nivel 1.
+`completed_from`, `completed_to` (fechas en la zona de la organización), `min_risk` (0–100,
+también en `/requests/board`) y `sort` (por ejemplo `-due_at` o `-risk_score`), y siempre aplica
+el alcance del rol. Cada solicitud abierta trae su `risk_score` del nivel 1.
+`GET /requests/{id}/stages` devuelve las horas acumuladas en cada etapa según el historial, y
+`GET /requests/{id}/assignment-suggestion` propone, a quien puede asignar, el responsable activo
+del área con menos abiertas (o `null`). `GET /dashboard/stage-flow` devuelve, por etapa, las
+abiertas, la mediana de horas en ella y el promedio del máximo SLA aplicable.
 
 El panel acepta `area_id`, `date_from` y `date_to` (por defecto, los últimos 30 días). Las
 métricas de estado actual ignoran el rango y aplican el mismo alcance por rol que la lista. La
@@ -413,11 +431,11 @@ indicadores: rojo vencida, ámbar por vencer y reloj sin movimiento.
    repetirla al momento, llama a `POST /api/v1/alerts/evaluate` como admin.
 2. **Admin**: el panel muestra 36 abiertas, de ellas 4 próximas a vencer, 5 vencidas y 7 sin
    movimiento. Pulsa cada tarjeta: la lista se abre con el filtro correspondiente y con el
-   mismo total. En el mapa de calor, *Soporte TI · Recibida* aparece como cuello de botella
-   crítico y alguna otra celda puede aparecer como advertencia (varía un poco según la hora,
-   porque las medianas usan una foto al cierre de cada día). Pasa el cursor para ver la cantidad, la
-   mediana de 30 días y el máximo SLA, y pulsa la celda para ver esas solicitudes. Filtra por
-   área o cambia el rango de fechas: todos los bloques se actualizan.
+   mismo total. En **Análisis › Cuellos de botella**, *Soporte TI · Recibida* aparece en rojo y
+   alguna otra celda puede aparecer en ámbar (varía un poco según la hora, porque las medianas
+   usan una foto al cierre de cada día). Pasa el cursor para ver la cantidad, la mediana
+   histórica y el máximo SLA, y pulsa la celda para ver esas solicitudes. Filtra por área o
+   cambia el periodo: los bloques se actualizan.
 3. **Supervisor** (`supervisor@example.com`): ve solo Soporte TI en el panel y en la matriz, y
    la campana cuenta sus alertas sin leer. Al marcar una como leída, la del admin no cambia.
 4. **Solicitante** (`solicitante1@example.com`): ve sus propias cifras, sin matriz de cuellos de
@@ -448,7 +466,14 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npx playwright install chromium   # solo la primera vez
+npm run test:a11y                 # axe sobre cada pantalla en español claro y oscuro, con la API simulada
 ```
+
+Las capturas de todas las pantallas se generan con `npm run screenshots` desde `desktop/`:
+levanta Vite, usa la API real de desarrollo con la semilla `--demo` (lee del `.env` solo las
+contraseñas semilla) y guarda los PNG en `docs/design/screenshots/<idioma>-<tema>/`, que no se
+sube a Git. `SCREENSHOT_VARIANT=es-light` limita la corrida a una variante.
 
 Si `postgres-test` no está levantado, las pruebas de base de datos se omiten (en CI fallan,
 porque se define `REQUIRE_TEST_DB=1`). Para usar otra base, define `TEST_DATABASE_URL`. Las
@@ -529,14 +554,18 @@ backend/
 desktop/
   src/
     components/    layout, guards de rutas, UI compartida, selectores
-    pages/         login, panel (con recomendaciones de IA), solicitudes (lista con riesgo,
-                   tablero y detalle con tarjeta de riesgo), alertas, administración (con IA),
-                   configuración
+    pages/         login, panel (con el banner de IA), solicitudes (lista con riesgo, tablero
+                   y detalle con paso a paso y tarjeta de riesgo), análisis, alertas,
+                   administración (con IA) y configuración
+    styles/        tokens de color claro y oscuro, fuentes empaquetadas y utilidades
     lib/           cliente de API con refresco automático, sesión, llavero, formato, colores
                    del tema, mensajes y notificaciones de alertas
     stores/        Zustand (sesión en memoria, tema, configuración)
     locales/       traducciones es/en por módulo
-  src-tauri/       contenedor nativo (Rust) con el plugin secure-store y el de notificaciones
+  e2e/             prueba de accesibilidad con Playwright y axe (API simulada)
+  scripts/         capturas de pantalla con Playwright
+  src-tauri/       contenedor nativo (Rust) con los plugins secure-store, exports (CSV) y
+                   notificaciones
 ```
 
 ## Errores de la API

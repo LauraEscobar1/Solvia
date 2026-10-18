@@ -1,5 +1,8 @@
 {
-  "subtitle": "Preferencias de la aplicación",
+  "profile": {
+    "title": "Perfil",
+    "allAreas": "Todas las áreas"
+  },
   "api": {
     "title": "Conexión con la API",
     "description": "Dirección del servidor de Solvia al que se conecta esta aplicación.",
@@ -10,12 +13,13 @@
   },
   "appearance": {
     "title": "Apariencia",
-    "description": "Tema e idioma de la interfaz.",
     "syncNote": "Con la sesión iniciada, el tema y el idioma se guardan en tu perfil."
   },
   "security": {
     "title": "Seguridad",
-    "description": "Cambia la contraseña de tu cuenta."
+    "description": "Cambia la contraseña de tu cuenta.",
+    "change": "Cambiar contraseña",
+    "changed": "Contraseña actualizada."
   },
   "health": {
     "title": "Estado del sistema",

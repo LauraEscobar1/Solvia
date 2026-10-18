@@ -8,16 +8,27 @@ import type {
   AIStatus,
   OverviewAnalysis,
   RequestAnalysis,
+  RequestDetail,
   RiskRead,
   User,
 } from '@/lib/api/types'
 import { AIStatusPage } from '@/pages/admin/AIStatusPage'
-import { AIRecommendations } from '@/pages/dashboard/AIRecommendations'
+import { AIBanner } from '@/pages/dashboard/AIBanner'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { RiskCard } from '@/pages/requests/detail/RiskCard'
 import { RequestTable } from '@/pages/requests/RequestTable'
 import { useSessionStore } from '@/stores/session'
-import { EMPTY_PAGE, jsonResponse, makeRequest, makeTokens, makeUser, mockApi } from './fixtures'
+import {
+  EMPTY_PAGE,
+  errorResponse,
+  jsonResponse,
+  makeRequest,
+  makeSummary,
+  makeTokens,
+  makeUser,
+  mockApi,
+  type RecordedRequest,
+} from './fixtures'
 
 vi.mock('@/lib/secureStore', () => ({
   saveRefreshToken: vi.fn(() => Promise.resolve()),
@@ -160,43 +171,137 @@ function renderInRouter(element: ReactElement, user: User = makeUser()) {
   )
 }
 
-describe('recomendaciones de IA en el panel', () => {
-  it('muestra resumen, hallazgos y recomendaciones con enlaces y la etiqueta de verificación', async () => {
-    mockApi(() => jsonResponse(AI_OVERVIEW))
-    renderInRouter(<AIRecommendations canRegenerate />)
+const OVERVIEW_INSIGHT = AI_OVERVIEW.insight as NonNullable<typeof AI_OVERVIEW.insight>
 
-    const block = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
-    expect(await within(block).findByTestId('overview-summary')).toHaveTextContent(
+function panelApi(overview: unknown) {
+  return (request: RecordedRequest) => {
+    const path = request.path
+    if (path.startsWith('/api/v1/ai/overview')) return jsonResponse(overview)
+    if (path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+    if (path.endsWith('/assignment-suggestion')) {
+      return jsonResponse({ suggestion: { assignee: { id: 'user-5', full_name: 'Pablo Ortiz' }, open_count: 5, current_open_count: 14 } })
+    }
+    if (path === '/api/v1/requests/req-106') {
+      return jsonResponse({ ...makeRequest({ id: 'req-106', code: 'SOL-0106' }), description: 'x', created_at: '2026-10-10T10:00:00Z', updated_at: '2026-10-10T10:00:00Z', allowed_transitions: [], permissions: { editable_fields: [], can_assign: true, can_comment: true } })
+    }
+    return errorResponse('common.not_found', 404)
+  }
+}
+
+describe('banner de IA en el panel', () => {
+  it('rota los hallazgos y abre las recomendaciones con enlaces y la etiqueta de verificación', async () => {
+    mockApi(panelApi(AI_OVERVIEW))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+
+    const banner = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
+    expect(await within(banner).findByTestId('ai-banner-text')).toHaveTextContent(
       'Soporte TI acumula solicitudes recibidas. <b>sin HTML</b>',
     )
-    expect(block.querySelector('b')).toBeNull()
-    expect(within(block).getByText('7 solicitudes frente a una mediana de 2.')).toBeInTheDocument()
-    expect(within(block).getByRole('link', { name: 'Ver SOL-0106' })).toHaveAttribute(
-      'href',
-      '/requests/req-106',
-    )
-    expect(within(block).getByRole('link', { name: 'Ver solicitudes' })).toHaveAttribute(
+    expect(banner.querySelector('b')).toBeNull()
+    await user.click(within(banner).getByRole('button', { name: 'Hallazgo 2 de 2' }))
+    expect(within(banner).getByTestId('ai-banner-text')).toHaveTextContent('7 solicitudes frente a una mediana de 2.')
+    expect(within(banner).getByRole('button', { name: 'Reanudar la rotación' })).toBeInTheDocument()
+
+    await user.click(within(banner).getByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByTestId('overview-summary')).toHaveTextContent('Soporte TI acumula solicitudes recibidas.')
+    expect(within(sheet).getByRole('link', { name: 'Ver SOL-0106' })).toHaveAttribute('href', '/requests/req-106')
+    expect(within(sheet).getByRole('link', { name: 'Ver' })).toHaveAttribute(
       'href',
       '/requests?status=received&area_id=area-1',
     )
-    expect(within(block).getByText('IA')).toBeInTheDocument()
-    expect(within(block).getByText('Generado por IA: verifica antes de actuar')).toBeInTheDocument()
+    expect(within(sheet).getByRole('region', { name: 'Vencimientos previstos · próximos 5 días' })).toBeInTheDocument()
+    expect(within(sheet).getByLabelText('Hoy: 3 por vencer')).toBeInTheDocument()
+    expect(within(sheet).getByLabelText('vie: 5 por vencer')).toBeInTheDocument()
+    expect(within(sheet).getByText('15 en total')).toBeInTheDocument()
+    expect(within(sheet).getByText(/Basado en tiempos de 1\.?240 solicitudes previas/)).toBeInTheDocument()
+    expect(await within(sheet).findByRole('button', { name: 'Reasignar' })).toBeInTheDocument()
+    expect(within(sheet).getByText('Generado por IA: verifica antes de actuar')).toBeInTheDocument()
+  })
+
+  it('el titular grande usa headline y, sin él, la primera frase recortada del resumen', async () => {
+    const withHeadline = {
+      ...AI_OVERVIEW,
+      insight: { ...OVERVIEW_INSIGHT, content: { ...OVERVIEW_INSIGHT.content, headline: text('La etapa Asignada acumula retraso en Finanzas.') } },
+    }
+    mockApi(panelApi(withHeadline))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByTestId('overview-headline')).toHaveTextContent('La etapa Asignada acumula retraso en Finanzas.')
+    expect(within(sheet).getByTestId('overview-summary')).toHaveTextContent('Soporte TI acumula solicitudes recibidas.')
+    expect(within(sheet).getByText('Asignada')).toHaveClass('text-accent')
+  })
+
+  it('recorta el titular de respaldo a 15 palabras y ofrece «Ver más» en resúmenes largos', async () => {
+    const long = 'Uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciséis diecisiete. '.repeat(3)
+    mockApi(panelApi({ ...AI_OVERVIEW, insight: { ...OVERVIEW_INSIGHT, content: { ...OVERVIEW_INSIGHT.content, summary: text(long) } } }))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByTestId('overview-headline')).toHaveTextContent('Uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince…')
+    const more = within(sheet).getByRole('button', { name: 'Ver más' })
+    await user.click(more)
+    expect(more).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('no muestra un análisis de otro idioma: lo genera en el idioma activo', async () => {
+    const { default: i18n } = await import('@/i18n')
+    await i18n.changeLanguage('en')
+    const requests = mockApi((request) => {
+      if (request.method === 'POST' && request.path.startsWith('/api/v1/ai/overview/analyze')) {
+        return jsonResponse({ ...AI_OVERVIEW, insight: { ...OVERVIEW_INSIGHT, language: 'en' } })
+      }
+      if (request.path.startsWith('/api/v1/ai/overview')) return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+      return errorResponse('common.not_found', 404)
+    })
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: /View/ }))
+
+    await screen.findByTestId('overview-headline')
+    expect(requests.filter((request) => request.method === 'POST').map((request) => request.path)).toEqual([
+      '/api/v1/ai/overview/analyze?language=en',
+    ])
+    expect(requests.some((request) => request.path === '/api/v1/ai/overview?language=en')).toBe(true)
+  })
+
+  it('sin datos de vencimientos muestra los 5 días hábiles con 0', async () => {
+    mockApi((request) =>
+      request.path.startsWith('/api/v1/dashboard/summary')
+        ? jsonResponse(makeSummary({ due_by_day: [] }))
+        : panelApi(AI_OVERVIEW)(request),
+    )
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
+    await user.click(await screen.findByRole('button', { name: 'Ver 2 recomendaciones' }))
+    const forecast = within(screen.getByRole('dialog', { name: 'Análisis IA' })).getByRole('region', {
+      name: 'Vencimientos previstos · próximos 5 días',
+    })
+
+    expect(await within(forecast).findByText('0 en total')).toBeInTheDocument()
+    expect(within(forecast).getAllByLabelText(/: 0 por vencer$/)).toHaveLength(5)
+    expect(within(forecast).getByLabelText('Hoy: 0 por vencer')).toBeInTheDocument()
   })
 
   it('en respaldo traduce el análisis por reglas y muestra el aviso', async () => {
-    mockApi(() => jsonResponse(RULE_OVERVIEW))
-    renderInRouter(<AIRecommendations canRegenerate />)
+    mockApi(panelApi(RULE_OVERVIEW))
+    const user = userEvent.setup()
+    renderInRouter(<AIBanner />)
 
-    const block = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
-    expect(await within(block).findByTestId('overview-summary')).toHaveTextContent(
+    const banner = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
+    expect(await within(banner).findByTestId('ai-banner-text')).toHaveTextContent(
       'Hay 36 solicitudes abiertas: 5 vencidas, 4 por vencer y 7 sin movimiento.',
     )
-    expect(within(block).getByText('Aliviar Soporte TI · Recibida')).toBeInTheDocument()
-    expect(within(block).getByText('Reglas')).toBeInTheDocument()
-    expect(within(block).getByRole('status')).toHaveTextContent(
-      'Se agotó el presupuesto diario de IA.',
-    )
-    expect(within(block).queryByText('Generado por IA: verifica antes de actuar')).toBeNull()
+    await user.click(within(banner).getByRole('button', { name: 'Ver 1 recomendación' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    expect(within(sheet).getByText('Aliviar Soporte TI · Recibida')).toBeInTheDocument()
+    expect(within(sheet).getByRole('status')).toHaveTextContent('Se agotó el presupuesto diario de IA.')
+    expect(within(sheet).queryByText('Generado por IA: verifica antes de actuar')).toBeNull()
   })
 
   it('regenera el análisis y marca recomendaciones como útiles', async () => {
@@ -205,15 +310,20 @@ describe('recomendaciones de IA en el panel', () => {
         return jsonResponse(AI_OVERVIEW)
       }
       if (request.path.includes('/feedback')) return new Response(null, { status: 204 })
-      return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/ai/overview')) return jsonResponse({ area_id: null, insight: null, notice: null })
+      if (request.path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
+      return errorResponse('common.not_found', 404)
     })
     const user = userEvent.setup()
-    renderInRouter(<AIRecommendations canRegenerate />)
+    renderInRouter(<AIBanner />)
 
-    expect(await screen.findByText('Todavía no hay un análisis.')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Regenerar' }))
-    await screen.findByTestId('overview-summary')
-    await user.click(screen.getAllByRole('button', { name: 'Útil' })[0] as HTMLElement)
+    const banner = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
+    expect(await within(banner).findByText('Todavía no hay un análisis.')).toBeInTheDocument()
+    await user.click(within(banner).getByRole('button', { name: 'Ver recomendaciones' }))
+    const sheet = screen.getByRole('dialog', { name: 'Análisis IA' })
+    await user.click(within(sheet).getByRole('button', { name: 'Regenerar' }))
+    await within(sheet).findByTestId('overview-summary')
+    await user.click(within(sheet).getAllByRole('button', { name: 'Útil' })[0] as HTMLElement)
 
     expect(requests.some((request) => request.method === 'POST' && request.path === '/api/v1/ai/overview/analyze?language=es')).toBe(true)
     const feedback = requests.find((request) => request.path.includes('/feedback'))
@@ -226,42 +336,47 @@ describe('recomendaciones de IA en el panel', () => {
     ['supervisor', true],
     ['assignee', false],
     ['requester', false],
-  ] as const)('el rol %s ve el bloque de IA: %s', async (role, visible) => {
+  ] as const)('el rol %s ve el banner de IA: %s', async (role, visible) => {
     mockApi((request) => {
       if (request.path.startsWith('/api/v1/ai/overview')) return jsonResponse(AI_OVERVIEW)
-      if (request.path.startsWith('/api/v1/dashboard/summary')) {
-        return jsonResponse({
-          open: 1,
-          due_soon: 0,
-          overdue: 0,
-          stalled: 0,
-          completed_last_7_days: 0,
-          completed_since: '2026-10-09',
-          avg_resolution_hours: null,
-          range: { date_from: '2026-09-16', date_to: '2026-10-15', timezone: 'America/Bogota' },
-        })
-      }
+      if (request.path.startsWith('/api/v1/dashboard/summary')) return jsonResponse(makeSummary())
       return jsonResponse(EMPTY_PAGE)
     })
     renderInRouter(<DashboardPage />, makeUser({ role, area: { id: 'area-1', name: 'Soporte TI' } }))
 
-    await screen.findByText('Solicitudes, SLA y alertas de un vistazo')
+    await screen.findByTestId('kpi-open')
     if (visible) {
-      const block = await screen.findByRole('region', { name: 'Recomendaciones de IA' })
-      expect(within(block).getByRole('button', { name: 'Regenerar' })).toBeInTheDocument()
+      expect(await screen.findByRole('region', { name: 'Recomendaciones de IA' })).toBeInTheDocument()
     } else {
       expect(screen.queryByRole('region', { name: 'Recomendaciones de IA' })).toBeNull()
     }
   })
 })
 
+function riskDetail(): RequestDetail {
+  return {
+    ...makeRequest({ id: 'req-106', code: 'SOL-0106', status: 'received' }),
+    description: 'Detalle',
+    created_at: '2026-10-10T10:00:00Z',
+    updated_at: '2026-10-10T10:00:00Z',
+    allowed_transitions: [],
+    permissions: { editable_fields: [], can_assign: true, can_comment: true },
+  }
+}
+
 describe('tarjeta de riesgo', () => {
   it('muestra el puntaje, los factores y el análisis de la IA como texto plano', async () => {
     mockApi(() => jsonResponse(analysis()))
-    renderInRouter(<RiskCard requestId="req-106" />)
+    const user = userEvent.setup()
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
-    const card = await screen.findByRole('region', { name: 'Riesgo' })
-    expect(within(card).getByText('76')).toHaveAttribute('data-risk-tone', 'danger')
+    const card = await screen.findByRole('region', { name: 'Riesgo de retraso' })
+    expect(await within(card).findByText('Alto · 76/100')).toBeInTheDocument()
+    expect(within(card).getByRole('meter', { name: 'Riesgo 76 de 100' })).toHaveAttribute('aria-valuenow', '76')
+    const toggle = within(card).getByRole('button', { name: 'Desglose de factores' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
     const stage = card.querySelector('[data-factor="stage_delay"]') as HTMLElement
     expect(within(stage).getByText('Tiempo en la etapa')).toBeInTheDocument()
     expect(within(stage).getByText('25 pts')).toBeInTheDocument()
@@ -285,13 +400,13 @@ describe('tarjeta de riesgo', () => {
       return jsonResponse(analysis({ insight: null }))
     })
     const user = userEvent.setup()
-    renderInRouter(<RiskCard requestId="req-106" />)
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
     expect(await screen.findByText('Aún no hay un análisis de esta solicitud.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Analizar con IA' }))
 
     expect(await screen.findByText('Resultado en caché')).toBeInTheDocument()
-    expect(requests.at(-1)?.path).toBe('/api/v1/ai/requests/req-106/analyze?language=es')
+    expect(requests.some((request) => request.method === 'POST' && request.path === '/api/v1/ai/requests/req-106/analyze?language=es')).toBe(true)
   })
 
   it('con la IA apagada muestra el nivel 1 y un aviso discreto', async () => {
@@ -322,10 +437,10 @@ describe('tarjeta de riesgo', () => {
         }),
       ),
     )
-    renderInRouter(<RiskCard requestId="req-106" />)
+    renderInRouter(<RiskCard detail={riskDetail()} />)
 
-    const card = await screen.findByRole('region', { name: 'Riesgo' })
-    expect(within(card).getByRole('status')).toHaveTextContent('La IA está desactivada.')
+    const card = await screen.findByRole('region', { name: 'Riesgo de retraso' })
+    expect(await within(card).findByRole('status')).toHaveTextContent('La IA está desactivada.')
     expect(within(card).getByTestId('insight-summary')).toHaveTextContent(
       'SOL-0106 tiene un riesgo de 76 sobre 100; el factor principal es sla consumido.',
     )
@@ -349,8 +464,8 @@ describe('riesgo en la lista y estado de la IA', () => {
       />,
     )
 
-    expect(await screen.findByText('76')).toHaveAttribute('data-risk-tone', 'danger')
-    expect(screen.getByText('20')).toHaveAttribute('data-risk-tone', 'success')
+    expect(await screen.findByTitle('Riesgo 76 de 100')).toHaveTextContent('Alto76')
+    expect(screen.getByTitle('Riesgo 20 de 100')).toHaveTextContent('Bajo20')
     await user.click(screen.getByRole('button', { name: 'Ordenar por Riesgo' }))
 
     expect(onSort).toHaveBeenCalledWith('risk_score')

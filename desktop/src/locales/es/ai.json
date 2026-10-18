@@ -23,7 +23,12 @@
     "aiScore": "Riesgo estimado por la IA: {{score}} de 100",
     "causes": "Causas",
     "actions": "Acciones sugeridas",
-    "noInsight": "Aún no hay un análisis de esta solicitud."
+    "noInsight": "Aún no hay un análisis de esta solicitud.",
+    "scoreTitle": "Riesgo {{score}} de 100",
+    "cardTitle": "Riesgo de retraso",
+    "levelScore": "{{level}} · {{score}}/100",
+    "breakdown": "Desglose de factores",
+    "aiTitle": "Análisis con IA"
   },
   "factors": {
     "stage_delay": "Tiempo en la etapa",
@@ -66,6 +71,21 @@
       "workload": "Carga",
       "trend": "Tendencia",
       "sla": "SLA"
+    },
+    "panel": {
+      "badge": "Análisis IA",
+      "close": "Cerrar",
+      "dueTitle": "Vencimientos previstos · próximos 5 días",
+      "dueTotal": "{{count}} en total",
+      "dueDay": "{{day}}: {{count}} por vencer",
+      "today": "Hoy",
+      "view": "Ver",
+      "reassign": "Reasignar",
+      "basedOn": "Basado en tiempos de {{count}} solicitudes previas",
+      "recommendation": "Recomendación {{index}}",
+      "feedback": "Valorar las recomendaciones",
+      "more": "Ver más",
+      "less": "Ver menos"
     }
   },
   "feedback": {
@@ -155,5 +175,18 @@
     "lastDaily": "Último análisis diario",
     "lastDailyValue": "{{time}} · {{source}} · {{tokens}} tokens",
     "never": "Todavía no se ha ejecutado"
+  },
+  "banner": {
+    "title": "Solvia IA",
+    "updated": "Actualizado · {{time}}",
+    "analyzing": "Analizando…",
+    "none": "Sin análisis todavía",
+    "view_zero": "Ver recomendaciones",
+    "view_one": "Ver {{count}} recomendación",
+    "view_other": "Ver {{count}} recomendaciones",
+    "slides": "Hallazgos",
+    "slide": "Hallazgo {{index}} de {{total}}",
+    "pause": "Pausar la rotación",
+    "play": "Reanudar la rotación"
   }
 }

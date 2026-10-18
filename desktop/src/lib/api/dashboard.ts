@@ -1,17 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { apiRequest } from './client'
-import type {
-  BottleneckMatrix,
-  DashboardQuery,
-  DashboardSummary,
-  RequestHighlights,
-  StatusBreakdown,
-  TrendSeries,
-} from './types'
+import type { BottleneckMatrix, DashboardQuery, DashboardSummary, StageFlow, TrendSeries } from './types'
 
 export const DASHBOARD_REFRESH_MS = 60_000
 
-type DashboardResource = 'summary' | 'by-status' | 'at-risk' | 'stalled' | 'bottlenecks' | 'trends'
+type DashboardResource = 'summary' | 'bottlenecks' | 'trends' | 'stage-flow'
 
 export const dashboardKeys = {
   all: ['dashboard'] as const,
@@ -44,22 +37,14 @@ export function useDashboardSummary(query: DashboardQuery) {
   return useDashboardResource<DashboardSummary>('summary', query)
 }
 
-export function useStatusBreakdown(query: DashboardQuery) {
-  return useDashboardResource<StatusBreakdown>('by-status', query)
-}
-
-export function useAtRiskRequests(query: DashboardQuery) {
-  return useDashboardResource<RequestHighlights>('at-risk', query)
-}
-
-export function useStalledRequests(query: DashboardQuery) {
-  return useDashboardResource<RequestHighlights>('stalled', query)
-}
-
 export function useBottlenecks(query: DashboardQuery) {
   return useDashboardResource<BottleneckMatrix>('bottlenecks', query)
 }
 
 export function useTrends(query: DashboardQuery) {
   return useDashboardResource<TrendSeries>('trends', query)
+}
+
+export function useStageFlow(query: DashboardQuery) {
+  return useDashboardResource<StageFlow>('stage-flow', query)
 }

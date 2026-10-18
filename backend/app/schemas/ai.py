@@ -49,6 +49,7 @@ class RecommendationRead(BaseModel):
 
 
 class OverviewInsightContent(BaseModel):
+    headline: Message | None = None
     summary: Message
     findings: list[FindingRead]
     recommendations: list[RecommendationRead]

@@ -17,6 +17,8 @@ from app.schemas.common import Page
 from app.schemas.request import (
     AllowedTransitionRead,
     AssignInput,
+    AssignmentSuggestion,
+    AssignmentSuggestionRead,
     BoardCard,
     BoardColumn,
     CommentInput,
@@ -29,8 +31,10 @@ from app.schemas.request import (
     RequestFilters,
     RequestListQuery,
     RequestPermissions,
+    RequestStages,
     RequestSummary,
     RequestUpdate,
+    StageTime,
     TransitionInput,
 )
 from app.schemas.user import AreaRef
@@ -143,6 +147,61 @@ class RequestService:
                 "allowed_transitions": transitions,
                 "permissions": permissions,
             }
+        )
+
+    async def stages(self, actor: User, request_id: uuid.UUID) -> RequestStages:
+        request = await self._requests.get(request_id)
+        if request is None or not RequestPolicy(actor).can(Capability.VIEW, request):
+            raise NotFoundError(ErrorCode.REQUEST_NOT_FOUND)
+        changes = await self._events.status_changes(request_id) or [
+            (request.status, request.received_at)
+        ]
+        now = self._clock()
+        stages: dict[RequestStatus, StageTime] = {}
+        for index, (status, entered) in enumerate(changes):
+            if index + 1 < len(changes):
+                left = changes[index + 1][1]
+            else:
+                left = entered if status in CLOSED_STATUSES else now
+            hours = max((left - entered).total_seconds(), 0.0) / 3600
+            known = stages.get(status)
+            if known is None:
+                stages[status] = StageTime(status=status, hours=hours, entered_at=entered, visits=1)
+            else:
+                known.hours += hours
+                known.visits += 1
+        for stage in stages.values():
+            stage.hours = round(stage.hours, 1)
+        return RequestStages(current=request.status, stages=list(stages.values()))
+
+    async def assignment_suggestion(
+        self, actor: User, request_id: uuid.UUID
+    ) -> AssignmentSuggestionRead:
+        request = await self._requests.get(request_id)
+        policy = RequestPolicy(actor)
+        if request is None or not policy.can(Capability.VIEW, request):
+            raise NotFoundError(ErrorCode.REQUEST_NOT_FOUND)
+        if request.status in CLOSED_STATUSES or not policy.can(Capability.ASSIGN, request):
+            return AssignmentSuggestionRead(suggestion=None)
+        candidates = [
+            (user, count)
+            for user, count in await self._requests.assignee_loads(request.area_id)
+            if user.id != request.assignee_id
+        ]
+        if not candidates:
+            return AssignmentSuggestionRead(suggestion=None)
+        user, count = min(candidates, key=lambda item: item[1])
+        current = (
+            None
+            if request.assignee_id is None
+            else await self._requests.open_count_for(request.assignee_id)
+        )
+        if current is not None and count >= current:
+            return AssignmentSuggestionRead(suggestion=None)
+        return AssignmentSuggestionRead(
+            suggestion=AssignmentSuggestion(
+                assignee=UserRef.model_validate(user), open_count=count, current_open_count=current
+            )
         )
 
     async def create(self, actor: User, data: RequestCreate) -> RequestDetail:

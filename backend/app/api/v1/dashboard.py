@@ -9,6 +9,7 @@ from app.schemas.dashboard import (
     DashboardQuery,
     DashboardSummary,
     RequestHighlights,
+    StageFlow,
     StatusBreakdown,
     TrendSeries,
 )
@@ -58,6 +59,13 @@ async def trends(
     query: QueryDep, actor: CurrentUserDep, service: DashboardServiceDep
 ) -> TrendSeries:
     return await service.trends(actor, query)
+
+
+@router.get("/stage-flow", summary="Abiertas por etapa con su tiempo mediano y el objetivo de SLA")
+async def stage_flow(
+    query: QueryDep, actor: CurrentUserDep, service: DashboardServiceDep
+) -> StageFlow:
+    return await service.stage_flow(actor, query)
 
 
 @router.get("/by-area", summary="Abiertas, vencidas y resolución promedio por área")

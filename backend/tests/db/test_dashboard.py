@@ -13,6 +13,7 @@ from tests.db.conftest import Factory
 
 NOW = datetime(2026, 10, 15, 20, 0, tzinfo=UTC)
 HIGH_HOURS = (8, 24, 72)
+HIGH_RISK = 70
 RANGE = {"date_from": "2026-09-16", "date_to": "2026-10-15", "timezone": "America/Bogota"}
 
 
@@ -114,6 +115,8 @@ async def test_summary_has_known_values(
     db_client: httpx2.AsyncClient, factory: Factory, data: Data
 ) -> None:
     summary = await _get(db_client, "summary", data.headers(factory, "admin"))
+    for derived in ("high_risk", "due_soon_high_risk", "stalled_forgotten"):
+        summary.pop(derived)
 
     assert summary == {
         "open": 3,
@@ -123,8 +126,97 @@ async def test_summary_has_known_values(
         "completed_last_7_days": 1,
         "completed_since": "2026-10-09",
         "avg_resolution_hours": 144.0,
+        "open_areas": 1,
+        "overdue_change": 1,
+        "open_by_stage": {"received": 1, "assigned": 1, "in_progress": 1},
+        "baseline_requests": 2,
+        "due_by_day": [
+            {"day": "2026-10-15", "count": 2},
+            {"day": "2026-10-16", "count": 0},
+            {"day": "2026-10-19", "count": 1},
+            {"day": "2026-10-20", "count": 0},
+            {"day": "2026-10-21", "count": 0},
+        ],
         "range": RANGE,
     }
+
+
+async def test_due_by_day_skips_weekends_and_respects_role_scope(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    own = await _get(db_client, "summary", data.headers(factory, "diego"))
+
+    assert [(item["day"], item["count"]) for item in own["due_by_day"]] == [
+        ("2026-10-15", 1),
+        ("2026-10-16", 0),
+        ("2026-10-19", 0),
+        ("2026-10-20", 0),
+        ("2026-10-21", 0),
+    ]
+
+
+async def test_baseline_requests_counts_completed_inside_the_reference_window(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    await factory.request(
+        area=data.finance,
+        requester=data.people["carla"],
+        status=RequestStatus.COMPLETED,
+        received_at=NOW - timedelta(days=130),
+        completed_at=NOW - timedelta(days=120),
+    )
+
+    summary = await _get(db_client, "summary", data.headers(factory, "admin"))
+    own = await _get(db_client, "summary", data.headers(factory, "diego"))
+
+    assert summary["baseline_requests"] == 2
+    assert own["baseline_requests"] == 1
+
+
+async def test_summary_risk_counts_match_the_request_list(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    headers = data.headers(factory, "admin")
+    summary = await _get(db_client, "summary", headers)
+    response = await db_client.get("/api/v1/requests", headers=headers, params={"size": 100})
+    items = [item for item in response.json()["items"] if item["risk_score"] is not None]
+    high = [item for item in items if item["risk_score"] >= HIGH_RISK]
+
+    assert summary["high_risk"] == len(high) >= 1
+    assert summary["due_soon_high_risk"] == sum(item["sla_status"] == "at_risk" for item in high)
+    assert summary["stalled_forgotten"] == sum(
+        item["is_stalled"] and (item["assignee"] is None or item["risk_score"] >= HIGH_RISK)
+        for item in items
+    )
+    assert summary["stalled_forgotten"] >= 1
+
+
+async def test_overdue_change_uses_the_status_history(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    received = NOW - timedelta(days=5)
+    closed = await factory.request(
+        area=data.support,
+        requester=data.people["carla"],
+        priority=RequestPriority.HIGH,
+        status=RequestStatus.COMPLETED,
+        received_at=received,
+        due_at=NOW - timedelta(days=3),
+        completed_at=NOW - timedelta(hours=2),
+    )
+    await factory.stage_change(closed, to_status=RequestStatus.RECEIVED, at=received)
+    await factory.stage_change(
+        closed,
+        from_status=RequestStatus.RECEIVED,
+        to_status=RequestStatus.COMPLETED,
+        at=NOW - timedelta(hours=2),
+    )
+    headers = data.headers(factory, "admin")
+
+    summary = await _get(db_client, "summary", headers)
+
+    assert summary["overdue"] == 1
+    assert summary["overdue_change"] == 0
 
 
 @pytest.mark.parametrize(
@@ -268,6 +360,76 @@ async def test_by_area_reports_open_overdue_and_resolution(
             "avg_resolution_hours": None,
         },
     ]
+
+
+async def test_stage_flow_reports_open_count_median_and_sla_target(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    flow = await _get(db_client, "stage-flow", data.headers(factory, "admin"))
+
+    assert flow == {
+        "stages": [
+            {"status": "received", "count": 1, "median_hours": 2.0, "target_hours": 8.0},
+            {"status": "assigned", "count": 1, "median_hours": 50.0, "target_hours": 24.0},
+            {"status": "in_progress", "count": 1, "median_hours": 100.0, "target_hours": 72.0},
+        ]
+    }
+
+
+async def test_stage_flow_respects_role_scope_and_area_filter(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    own = await _get(db_client, "stage-flow", data.headers(factory, "carla"))
+    finance = await _get(
+        db_client,
+        "stage-flow",
+        data.headers(factory, "admin"),
+        {"area_id": str(data.finance.id)},
+    )
+
+    assert [(item["status"], item["count"], item["median_hours"]) for item in own["stages"]] == [
+        ("received", 1, 2.0),
+        ("assigned", 1, 50.0),
+        ("in_progress", 0, None),
+    ]
+    assert [(item["count"], item["target_hours"]) for item in finance["stages"]] == [
+        (0, None),
+        (0, None),
+        (0, None),
+    ]
+
+
+async def test_stage_flow_measures_time_since_entering_the_stage(
+    db_client: httpx2.AsyncClient, factory: Factory, data: Data
+) -> None:
+    await factory.sla_matrix({RequestPriority.MEDIUM: (4, 12, 36)})
+    entries = [(RequestPriority.HIGH, 4), (RequestPriority.MEDIUM, 10)]
+    for priority, hours in entries:
+        request = await factory.request(
+            area=data.support,
+            requester=data.people["diego"],
+            status=RequestStatus.ASSIGNED,
+            priority=priority,
+            received_at=NOW - timedelta(hours=30),
+        )
+        await factory.stage_change(
+            request, to_status=RequestStatus.RECEIVED, at=NOW - timedelta(hours=30)
+        )
+        await factory.stage_change(
+            request,
+            from_status=RequestStatus.RECEIVED,
+            to_status=RequestStatus.ASSIGNED,
+            at=NOW - timedelta(hours=hours),
+        )
+
+    flow = await _get(db_client, "stage-flow", data.headers(factory, "admin"))
+
+    assert flow["stages"][1] == {
+        "status": "assigned",
+        "count": 3,
+        "median_hours": 10.0,
+        "target_hours": 20.0,
+    }
 
 
 async def test_trends_group_days_in_the_organization_timezone_near_midnight(

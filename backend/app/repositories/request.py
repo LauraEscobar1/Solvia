@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased, selectinload
 
 from app.core.time import day_end, day_start
 from app.models.area import Area
-from app.models.enums import RequestPriority, RequestStatus, SlaStatus
+from app.models.enums import CLOSED_STATUSES, RequestPriority, RequestStatus, SlaStatus, UserRole
 from app.models.request import ServiceRequest
 from app.models.user import User
 from app.repositories.base import BaseRepository, contains_text
@@ -80,6 +80,8 @@ def _sla_conditions(filters: RequestFilters, rules: SlaRules) -> list[ColumnElem
     ]
     if filters.sla_status is not None:
         conditions.append(rules.status_is(filters.sla_status))
+    if filters.min_risk is not None:
+        conditions.append(RiskRules(rules).score >= filters.min_risk)
     return conditions
 
 
@@ -122,6 +124,32 @@ class RequestRepository(BaseRepository[ServiceRequest]):
             )
         ).first()
         return None if row is None else _with_sla(row)
+
+    async def assignee_loads(self, area_id: uuid.UUID) -> list[tuple[User, int]]:
+        open_count = (
+            select(func.count())
+            .where(
+                ServiceRequest.assignee_id == User.id,
+                ServiceRequest.status.not_in(CLOSED_STATUSES),
+            )
+            .correlate(User)
+            .scalar_subquery()
+        )
+        rows = await self._session.execute(
+            select(User, open_count)
+            .where(User.role == UserRole.ASSIGNEE, User.is_active, User.area_id == area_id)
+            .order_by(User.full_name, User.id)
+        )
+        return [(user, count) for user, count in rows]
+
+    async def open_count_for(self, user_id: uuid.UUID) -> int:
+        total = await self._session.scalar(
+            select(func.count()).where(
+                ServiceRequest.assignee_id == user_id,
+                ServiceRequest.status.not_in(CLOSED_STATUSES),
+            )
+        )
+        return total or 0
 
     async def get_for_update(self, request_id: uuid.UUID) -> ServiceRequest | None:
         return await self._session.scalar(

@@ -8,6 +8,7 @@
   "permissions": [
     "core:default",
     "secure-store:default",
+    "exports:default",
     "notification:default"
   ]
 }

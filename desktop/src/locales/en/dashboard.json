@@ -1,71 +1,129 @@
 {
-  "subtitle": "Requests, SLA and alerts at a glance",
-  "updatedAt": "Updated at {{time}}",
   "refresh": "Refresh",
-  "range": "From {{from}} to {{to}} · {{timezone}}",
+  "range": {
+    "label": "Period",
+    "days7": "7 days",
+    "days30": "30 days",
+    "quarter": "Quarter"
+  },
   "filters": {
-    "label": "Dashboard filters",
     "area": "Area",
-    "allAreas": "All areas",
-    "from": "From",
-    "to": "To",
-    "reset": "Last 30 days"
-  },
-  "cards": {
-    "label": "Summary",
-    "open": "Open",
-    "due_soon": "Due soon",
-    "overdue": "Overdue",
-    "stalled": "Stalled",
-    "completed": "Completed · 7 days",
-    "resolution": "Average resolution",
-    "noValue": "—",
-    "viewList": "View requests: {{label}}"
-  },
-  "byStatus": {
-    "title": "Requests by status",
-    "description": "Received in the range, by current status",
-    "count": "Requests"
+    "allAreas": "All areas"
   },
   "trends": {
-    "title": "Created and completed",
-    "description": "Per day, in the organization's time zone",
+    "title": "Intake vs. closure",
+    "legend": "Chart series",
     "created": "Created",
-    "completed": "Completed"
+    "completed": "Completed",
+    "day": "Date",
+    "completedTotal": "Completed",
+    "avgResolution": "Average resolution",
+    "netUp_one": "+{{count}} pending",
+    "netUp_other": "+{{count}} pending",
+    "netDown_one": "−{{count}} pending",
+    "netDown_other": "−{{count}} pending",
+    "netEven": "No change in pending",
+    "table": "Requests created and completed per day",
+    "download": "Download CSV",
+    "fileName": "solvia-intake-vs-closure",
+    "saved": "CSV saved to {{path}}",
+    "exportError": "The CSV could not be saved.",
+    "empty": "No requests were created or completed in this period."
+  },
+  "flow": {
+    "title": "Flow by stage",
+    "description": "Open requests and median time in each stage",
+    "median": "Median {{value}}",
+    "medianTarget": "Median {{value}} · target {{target}}",
+    "noOpen": "None open",
+    "count_one": "{{count}} open",
+    "count_other": "{{count}} open",
+    "over": "Running at {{value}} its target"
   },
   "bottlenecks": {
     "title": "Bottlenecks",
-    "description": "Current load per area and stage compared with its 30-day median",
+    "description": "Time in stage compared with the historical median",
     "area": "Area",
-    "flagged": "Bottleneck",
-    "critical": "Critical bottleneck",
-    "count_one": "{{count}} request",
-    "count_other": "{{count}} requests",
+    "multiple": "{{value}}×",
+    "levels": {
+      "normal": "Normal",
+      "slow": "Slow",
+      "bottleneck": "Bottleneck"
+    },
+    "legend": {
+      "label": "Color legend",
+      "normal": "Normal (below {{value}})",
+      "slow": "Slow ({{value}} or more)",
+      "bottleneck": "Bottleneck (unusual pile-up or average above SLA)"
+    },
+    "cell": "{{area}}, {{stage}}: {{value}}, {{level}}. View requests",
+    "noData": "no data",
+    "count_one": "{{count}} open request",
+    "count_other": "{{count}} open requests",
     "avgHours": "Average in stage: {{value}}",
-    "median": "30-day median: {{count}} · {{hours}}",
+    "median": "Historical median: {{value}}",
     "slaMax": "Stage SLA maximum: {{value}}",
-    "open": "View {{area}} requests in “{{stage}}”",
     "reasons": {
-      "count_above_median": "Above 1.5 times the median",
+      "count_above_median": "More than 1.5 times the usual count",
       "avg_above_sla": "Average above the SLA maximum"
     },
-    "empty": "There are no areas to show."
+    "empty": "No areas to show."
   },
-  "atRisk": {
-    "title": "At risk",
-    "description": "Overdue first, then by share of SLA consumed",
-    "consumed": "{{value}}% of SLA",
-    "empty": "No overdue or due-soon requests."
+  "greeting": "Hi, {{name}}",
+  "greetingEmoji": "👋",
+  "attention_zero": "<brand>Solvia</brand> already reviewed your requests: <emphasis>none needs urgent attention today</emphasis>.",
+  "attention_one": "<brand>Solvia</brand> already reviewed your requests: <emphasis>{{count}} needs your attention today</emphasis>.",
+  "attention_other": "<brand>Solvia</brand> already reviewed your requests: <emphasis>{{count}} need your attention today</emphasis>.",
+  "refreshedAt": "Refresh (data from {{time}})",
+  "status": {
+    "title": "Current status",
+    "mine": "My requests at a glance",
+    "today": "Today's figures",
+    "open": "Open",
+    "overdue": "Overdue",
+    "dueSoon": "Due soon",
+    "stalled": "Stalled",
+    "inAreas_one": "in {{count}} area",
+    "inAreas_other": "in {{count}} areas",
+    "yourScope": "in your scope",
+    "overdueUp": "+{{count}} since yesterday",
+    "overdueDown": "−{{count}} since yesterday",
+    "overdueSame": "Same as yesterday",
+    "highRisk_one": "{{count}} at high risk",
+    "highRisk_other": "{{count}} at high risk",
+    "forgotten_one": "{{count}} possibly forgotten",
+    "forgotten_other": "{{count}} possibly forgotten",
+    "stagesLabel": "Open by stage",
+    "stageCount": "{{stage}} · {{count}}",
+    "linkHint": "View requests"
   },
-  "stalled": {
-    "title": "Stalled",
-    "description": "Sorted by hours without activity",
-    "idle": "No activity {{time}}",
-    "empty": "Every open request has recent activity."
+  "risk": {
+    "title": "At risk of delay",
+    "viewAll": "See all",
+    "listLabel": "Requests with the highest risk",
+    "empty": "No open request is at risk.",
+    "detail": "Risk detail",
+    "assignee": "Assignee",
+    "unassigned": "Unassigned",
+    "inStage": "in {{stage}}",
+    "reference": "reference: {{kind}}",
+    "assigneeLoad": "open requests held by the assignee",
+    "noAssignee": "no assignee yet",
+    "suggestion": "Suggestion",
+    "suggestionText": "Reassign to {{name}}, who has {{count}} open.",
+    "noSuggestion": "No reassignment suggested.",
+    "open": "Open",
+    "reassignNow": "Reassign now",
+    "confirmTitle": "Reassign {{code}}",
+    "confirmMessage": "{{code}} will go to {{name}}, who has {{count}} open requests.",
+    "confirm": "Reassign",
+    "idle": "without activity",
+    "tileMultiple": "{{value}} times the reference"
   },
-  "block": {
-    "loading": "Loading…",
-    "error": "This block could not be loaded.",
-    "empty": "There is no data for this range."
+  "mine": {
+    "title": "My requests",
+    "description": "Most recently active",
+    "empty": "You have no open requests.",
+    "viewAll": "See all"
   }
 }

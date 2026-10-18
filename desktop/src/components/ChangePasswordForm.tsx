@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/ui/FormField'
-import { inputClass } from '@/components/ui/styles'
+import { InlineAlert } from '@/components/ui/States'
+import { TextField } from '@/components/ui/TextField'
 import { useTranslateError } from '@/lib/api/errors'
 import { changePassword } from '@/lib/auth/preferences'
 
@@ -58,12 +59,12 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
         htmlFor={ids.current}
         error={errors.current?.message}
       >
-        <input
+        <TextField
           id={ids.current}
           type="password"
+          revealable
           autoComplete="current-password"
           aria-invalid={Boolean(errors.current)}
-          className={inputClass}
           {...register('current')}
         />
       </FormField>
@@ -73,12 +74,12 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
         error={errors.next?.message}
         hint={t('changePassword.hint')}
       >
-        <input
+        <TextField
           id={ids.next}
           type="password"
+          revealable
           autoComplete="new-password"
           aria-invalid={Boolean(errors.next)}
-          className={inputClass}
           {...register('next')}
         />
       </FormField>
@@ -87,27 +88,19 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
         htmlFor={ids.confirm}
         error={errors.confirm?.message}
       >
-        <input
+        <TextField
           id={ids.confirm}
           type="password"
+          revealable
           autoComplete="new-password"
           aria-invalid={Boolean(errors.confirm)}
-          className={inputClass}
           {...register('confirm')}
         />
       </FormField>
-      {submitError !== null && (
-        <p role="alert" className="bg-danger-soft text-danger rounded-lg px-3 py-2 text-sm">
-          {translateError(submitError)}
-        </p>
-      )}
-      {saved && (
-        <p role="status" className="text-success text-sm">
-          {t('changePassword.success')}
-        </p>
-      )}
+      {submitError !== null && <InlineAlert tone="error">{translateError(submitError)}</InlineAlert>}
+      {saved && <InlineAlert tone="success">{t('changePassword.success')}</InlineAlert>}
       <div>
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
+        <Button type="submit" variant="solid" loading={isSubmitting}>
           {isSubmitting ? t('changePassword.submitting') : t('changePassword.submit')}
         </Button>
       </div>

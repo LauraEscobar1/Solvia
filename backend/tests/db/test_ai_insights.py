@@ -545,6 +545,31 @@ async def test_overview_endpoints_follow_the_role_scope(
         assert latest.json()["insight"]["id"] == analyzed.json()["insight"]["id"]
 
 
+async def test_overview_keeps_the_headline_and_never_mixes_languages(
+    db_client: httpx2.AsyncClient,
+    factory: Factory,
+    world: World,
+    script: ScriptedDeepSeek,
+    provider: DeepSeekProvider,
+) -> None:
+    script.add(overview_reply(headline="La etapa Asignada acumula retraso en Soporte."))
+    headers = world.headers(factory, "admin")
+
+    analyzed = await db_client.post(
+        "/api/v1/ai/overview/analyze", headers=headers, params={"language": "es"}
+    )
+    spanish = await db_client.get("/api/v1/ai/overview", headers=headers, params={"language": "es"})
+    english = await db_client.get("/api/v1/ai/overview", headers=headers, params={"language": "en"})
+
+    assert analyzed.json()["insight"]["content"]["headline"] == {
+        "text": "La etapa Asignada acumula retraso en Soporte.",
+        "code": None,
+        "params": {},
+    }
+    assert spanish.json()["insight"]["language"] == "es"
+    assert english.json()["insight"] is None
+
+
 @pytest.mark.parametrize(
     ("actor", "expected"), [("admin", 200), ("supervisor", 403), ("carla", 403)]
 )

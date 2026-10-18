@@ -1,7 +1,7 @@
 {
   "views": {
     "label": "View",
-    "table": "Table",
+    "table": "List",
     "board": "Board"
   },
   "new": "New request",
@@ -24,10 +24,11 @@
     "area": "Area",
     "assignee": "Assignee",
     "priority": "Priority",
-    "status": "Status",
-    "due_at": "Due date",
-    "last_activity_at": "Last activity",
-    "risk_score": "Risk"
+    "status": "Stage",
+    "due_at": "Due",
+    "last_activity_at": "Activity",
+    "risk_score": "Risk",
+    "request": "Request"
   },
   "sortBy": "Sort by {{column}}",
   "unassigned": "Unassigned",
@@ -42,17 +43,29 @@
     "status": "Status",
     "priority": "Priority",
     "area": "Area",
-    "allAreas": "All areas",
+    "allAreas": "All",
     "assignee": "Assignee",
-    "anyAssignee": "Any assignee",
-    "overdue": "Overdue only",
+    "anyAssignee": "Anyone",
+    "overdue": "Overdue",
     "dueSoon": "Due soon",
     "stalled": "Stalled",
     "receivedFrom": "Received from",
     "receivedTo": "Received until",
     "completedFrom": "Completed from",
     "completedTo": "Completed until",
-    "clear": "Clear filters"
+    "clear": "Clear filters",
+    "title": "Filters",
+    "label": "Request filters",
+    "stage": "Stage",
+    "open": "Open",
+    "all": "All",
+    "selected": "{{count}} selected",
+    "onlyRisky": "At risk only",
+    "more": "More filters",
+    "sla": "Deadline",
+    "dates": "Dates",
+    "active_one": "{{count}} active filter",
+    "active_other": "{{count}} active filters"
   },
   "empty": "No requests match these filters.",
   "loading": "Loading requests…",
@@ -79,13 +92,17 @@
     "reopen": "Reopen"
   },
   "board": {
-    "showCancelled": "Show cancelled",
     "showing": "Showing {{count}} of {{total}}",
     "empty": "No requests",
     "moveTo": "Move {{code}} to…",
     "move": "Move to…",
     "notAllowed": "You cannot move {{code}} to “{{status}}”.",
-    "column": "{{status}} column"
+    "column": "{{status}} column",
+    "expand": "Show {{status}}",
+    "collapse": "Hide {{status}}",
+    "drag": "Drag {{code}}",
+    "moveMenu": "Move {{code}} to…",
+    "collapsedHint": "Drop here to move to {{status}}"
   },
   "transitionDialog": {
     "title": "{{action}} · {{code}}",
@@ -112,11 +129,11 @@
       "title": "Title",
       "description": "Description",
       "priority": "Priority",
-      "due_at": "Due date",
+      "due_at": "Due (SLA)",
       "area": "Area",
       "requester": "Requester",
       "assignee": "Assignee",
-      "received_at": "Received",
+      "received_at": "Created",
       "last_activity_at": "Last activity",
       "completed_at": "Completed"
     },
@@ -125,30 +142,62 @@
       "save": "Save changes",
       "saved": "Changes saved.",
       "discard": "Discard changes",
-      "readOnly": "Read only: you can comment to communicate."
+      "readOnly": "Read only: you can comment to communicate.",
+      "open": "Edit",
+      "dialogTitle": "Edit {{code}}"
     },
     "reassign": "Reassign",
     "reassignTitle": "Reassign · {{code}}",
     "actions": "Actions",
-    "history": "History",
-    "loadMore": "Show more",
+    "history": "History and comments",
+    "loadMore": "Show earlier",
     "comment": {
       "label": "New comment",
-      "submit": "Comment"
+      "submit": "Send",
+      "placeholder": "Write a comment"
     },
-    "transitionGone": "That action is no longer available: the request changed in the meantime."
+    "transitionGone": "That action is no longer available: the request changed in the meantime.",
+    "moveTo": "Move to {{stage}}",
+    "description": "Description",
+    "info": "Information",
+    "cancelTitle": "Cancel {{code}}",
+    "cancelMessage": "{{code}} will be cancelled.",
+    "keep": "Go back",
+    "stepper": {
+      "label": "Request stages",
+      "step": "Step {{number}}",
+      "done": "Done · {{duration}}",
+      "current": "Current · {{duration}}",
+      "currentShort": "Current",
+      "pending": "Pending",
+      "finished": "Finished · {{date}}",
+      "cancelled": "Cancelled at this stage"
+    }
   },
   "events": {
-    "created": "{{actor}} created the request",
-    "status_changed": "{{actor}} changed the status from “{{from}}” to “{{to}}”",
-    "returned": "{{actor}} returned the request",
-    "assigned": "{{actor}} assigned the request to {{assignee}}",
-    "reassigned": "{{actor}} reassigned the request from {{previous}} to {{assignee}}",
+    "created": "created the request",
+    "status_changed": "changed the status from “{{from}}” to “{{to}}”",
+    "returned": "returned the request",
+    "assigned": "assigned the request to {{assignee}}",
+    "reassigned": "reassigned the request from {{previous}} to {{assignee}}",
     "areaOverride": "Assigned outside the request's area",
-    "comment": "{{actor}} commented",
-    "updated": "{{actor}} edited the request",
+    "comment": "commented",
+    "updated": "edited the request",
     "someone": "Someone",
     "change": "{{field}}: {{from}} → {{to}}",
     "empty": "(empty)"
+  },
+  "priorityLabel": "{{priority}} priority",
+  "due": {
+    "overdue": "Overdue by {{time}}",
+    "dueIn": "Due in {{time}}",
+    "stalled": "Idle for {{time}}",
+    "none": "No due date"
+  },
+  "count": {
+    "open_one": "{{value}} open",
+    "open_other": "{{value}} open",
+    "any_one": "{{value}} request",
+    "any_other": "{{value}} requests"
   }
 }

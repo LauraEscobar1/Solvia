@@ -4,5 +4,13 @@
   "requests": "Solicitudes",
   "alerts": "Alertas",
   "admin": "Administración",
-  "settings": "Configuración"
+  "settings": "Configuración",
+  "analytics": "Análisis",
+  "accountMenu": "Menú de la cuenta",
+  "users": "Usuarios",
+  "areas": "Áreas",
+  "sla": "SLA",
+  "ai": "IA",
+  "unread": "({{count}} sin leer)",
+  "skipToContent": "Saltar al contenido"
 }
