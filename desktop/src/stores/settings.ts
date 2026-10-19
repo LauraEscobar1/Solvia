@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-export const DEFAULT_API_BASE_URL = 'http://localhost:8000'
+const FALLBACK_API_BASE_URL = 'http://localhost:8000'
+const BUILD_API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '')
+
+export const DEFAULT_API_BASE_URL = BUILD_API_BASE_URL || FALLBACK_API_BASE_URL
 export const SETTINGS_STORAGE_KEY = 'solvia.settings'
 
 interface SettingsState {

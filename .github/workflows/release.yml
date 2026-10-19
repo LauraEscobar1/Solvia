@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  instaladores:
+    name: Instalador · ${{ matrix.nombre }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nombre: Windows
+            runner: windows-latest
+            rust_targets: ''
+            args: --bundles nsis,msi
+          - nombre: macOS universal
+            runner: macos-latest
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target universal-apple-darwin --bundles dmg
+    runs-on: ${{ matrix.runner }}
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verificar la URL de la API
+        shell: bash
+        run: |
+          if [ -z "${VITE_API_URL}" ]; then
+            echo "Define la variable del repositorio VITE_API_URL con la dirección pública de la API." >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: desktop/.nvmrc
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Instalar dependencias del frontend
+        working-directory: desktop
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: Solvia ${{ github.ref_name }}
+          releaseBody: Instaladores sin firmar de Solvia. Windows muestra el aviso de SmartScreen y macOS pide abrir la app con clic derecho › Abrir.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
