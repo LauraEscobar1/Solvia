@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
-import type { RequestAnalysis, RequestDetail, RequestSummary, User } from '@/lib/api/types'
+import type { RequestAnalysis, RequestDetail, RequestStages, RequestSummary, StageTime, User } from '@/lib/api/types'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { useSessionStore } from '@/stores/session'
 import { expectNoA11yViolations } from './a11y'
@@ -74,6 +74,13 @@ function detail(id: string): RequestDetail {
   }
 }
 
+function stages(id: string): RequestStages {
+  const current = RISKY.find((item) => item.id === id)?.status ?? 'received'
+  const visits: StageTime[] = [{ status: 'received', hours: 10, entered_at: '2026-09-25T10:00:00Z', visits: 1 }]
+  if (current !== 'received') visits.push({ status: current, hours: 144, entered_at: '2026-09-26T10:00:00Z', visits: 1 })
+  return { current, stages: visits }
+}
+
 interface MockOptions {
   summaryStatus?: number
   suggestion?: boolean
@@ -98,6 +105,8 @@ function mockPanel({ summaryStatus = 200, suggestion = true }: MockOptions = {})
           : null,
       })
     }
+    const stagesMatch = /^\/api\/v1\/requests\/([^/]+)\/stages$/.exec(path)
+    if (stagesMatch?.[1]) return jsonResponse(stages(stagesMatch[1]))
     const assignMatch = /^\/api\/v1\/requests\/([^/]+)\/assign$/.exec(path)
     if (assignMatch?.[1] && request.method === 'POST') return jsonResponse(detail(assignMatch[1]))
     const detailMatch = /^\/api\/v1\/requests\/(req-[^/?]+)$/.exec(path)
@@ -184,6 +193,13 @@ describe('panel', () => {
     expect(load).toHaveTextContent('14')
     expect(load).toHaveTextContent('1,4×')
     expect(await within(panel).findByText('Reasignar a Pablo Ortiz, con 5 abiertas.')).toBeInTheDocument()
+    expect(idle).toHaveTextContent('Normal en la etapa: 12 h')
+    expect(reference).toHaveTextContent('P90 del área: 1 día')
+    expect(load).toHaveTextContent('Referencia de carga: 10')
+    const flow = await within(panel).findByRole('list', { name: 'Recorrido de la solicitud' })
+    const steps = within(flow).getAllByRole('listitem')
+    expect(steps.map((step) => step.textContent)).toEqual(['Recibida10 h', 'Asignada6 días', 'En proceso—', 'Completada—'])
+    expect(steps[1]).toHaveAttribute('aria-current', 'step')
 
     tabs[0]?.focus()
     await user.keyboard('{ArrowDown}')

@@ -118,7 +118,12 @@
     "confirmMessage": "{{code}} will go to {{name}}, who has {{count}} open requests.",
     "confirm": "Reassign",
     "idle": "without activity",
-    "tileMultiple": "{{value}} times the reference"
+    "tileMultiple": "{{value}} times the reference",
+    "idleReference": "Normal in this stage: {{value}}",
+    "stageSla": "Stage SLA: {{value}}",
+    "stageReference": "{{kind}}: {{value}}",
+    "loadReference": "Load reference: {{value}}",
+    "flowLabel": "Request journey"
   },
   "mine": {
     "title": "My requests",
