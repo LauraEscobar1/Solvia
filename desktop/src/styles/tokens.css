@@ -68,6 +68,19 @@
   --risk-mid: #f4bb5e;
   --risk-end: #ff8d7c;
   --risk-track: #36393c;
+  --risk-panel: #2f343b;
+  --risk-panel-row: #3d434b;
+  --risk-panel-row-hover: #454c55;
+  --risk-panel-row-selected: #4a5260;
+  --risk-panel-row-edge: rgb(255 255 255 / 0.09);
+  --risk-tile-from: #f1effc;
+  --risk-tile-to: #dedaf7;
+  --risk-tile-ink: #3e3480;
+  --risk-tile-icon: rgb(106 91 208 / 0.14);
+  --risk-tile-track: rgb(62 52 128 / 0.14);
+  --risk-tile-reference: #5a5390;
+  --risk-flow: #6a5bd0;
+  --risk-flow-track: #cfcde0;
 
   --stage-received: #b7c3d0;
   --stage-assigned: #7f93a8;
@@ -138,6 +151,10 @@
   --pill-inner-neutral: #4d5661;
 
   --risk-track: #3e4b57;
+  --risk-panel: #252a31;
+  --risk-panel-row: #323840;
+  --risk-panel-row-hover: #3a4049;
+  --risk-panel-row-selected: #3f4753;
 
   --stage-received: #7f93a8;
   --stage-assigned: #a9b8c7;

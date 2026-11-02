@@ -250,8 +250,9 @@ contador de no leídas); el menú ☰ abre **Configuración**, **Administración
   - Banner **Solvia IA** con el análisis global (admin y supervisor).
   - Estado actual: abiertas, vencidas (con el cambio desde ayer), por vencer y sin movimiento,
     cada una enlazada a la lista filtrada, y la barra de abiertas por etapa.
-  - «En riesgo de retraso»: las 5 abiertas con más riesgo, con su detalle y la sugerencia de
-    reasignación por reglas (confirmada antes de asignar).
+  - «En riesgo de retraso»: las 10 abiertas con más riesgo en una lista desplazable, con su detalle
+    (métricas con su referencia, recorrido por etapas) y la sugerencia de reasignación por reglas
+    (confirmada antes de asignar).
   - Responsables y solicitantes ven sus solicitudes, sin IA ni cifras globales.
   - Filtro de área (admin), compartido con Análisis, y refresco automático cada 60 s.
 - **Análisis**: periodo de 7 días, 30 días o trimestre (90 días).

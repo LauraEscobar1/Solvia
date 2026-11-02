@@ -118,7 +118,12 @@
     "confirmMessage": "{{code}} pasará a {{name}}, que tiene {{count}} solicitudes abiertas.",
     "confirm": "Reasignar",
     "idle": "sin movimiento",
-    "tileMultiple": "{{value}} veces la referencia"
+    "tileMultiple": "{{value}} veces la referencia",
+    "idleReference": "Normal en la etapa: {{value}}",
+    "stageSla": "SLA de la etapa: {{value}}",
+    "stageReference": "{{kind}}: {{value}}",
+    "loadReference": "Referencia de carga: {{value}}",
+    "flowLabel": "Recorrido de la solicitud"
   },
   "mine": {
     "title": "Mis solicitudes",
