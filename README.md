@@ -25,21 +25,29 @@ que detecta problemas antes de que se conviertan en atrasos.
 
 ## Capturas
 
-| Inicio de sesión | Panel de control |
-| --- | --- |
-| ![Inicio de sesión](docs/screenshots/01-login.png) | ![Panel de control](docs/screenshots/02-panel.png) |
+### Inicio de sesión
+<img src="docs/screenshots/01-login.png" alt="Inicio de sesión" width="100%">
 
-| Lista de solicitudes | Tablero |
-| --- | --- |
-| ![Lista de solicitudes](docs/screenshots/03-solicitudes-lista.png) | ![Tablero](docs/screenshots/04-solicitudes-tablero.png) |
+### Panel de control
+<img src="docs/screenshots/02-panel.png" alt="Panel de control" width="100%">
 
-| Análisis | Detalle de solicitud |
-| --- | --- |
-| ![Análisis](docs/screenshots/05-analisis.png) | ![Detalle de solicitud](docs/screenshots/06-detalle.png) |
+### Lista de solicitudes
+<img src="docs/screenshots/03-solicitudes-lista.png" alt="Lista de solicitudes" width="100%">
 
-| Alertas | Nueva solicitud |
-| --- | --- |
-| ![Alertas](docs/screenshots/07-alertas.png) | ![Nueva solicitud](docs/screenshots/09-nueva-solicitud.png) |
+### Tablero
+<img src="docs/screenshots/04-solicitudes-tablero.png" alt="Tablero" width="100%">
+
+### Análisis
+<img src="docs/screenshots/05-analisis.png" alt="Análisis" width="100%">
+
+### Detalle de solicitud
+<img src="docs/screenshots/06-detalle.png" alt="Detalle de solicitud" width="100%">
+
+### Alertas
+<img src="docs/screenshots/07-alertas.png" alt="Alertas" width="100%">
+
+### Nueva solicitud
+<img src="docs/screenshots/09-nueva-solicitud.png" alt="Nueva solicitud" width="100%">
 
 ## Inteligencia artificial
 
